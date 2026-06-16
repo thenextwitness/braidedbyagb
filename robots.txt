@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Block admin and API from crawlers
+Disallow: /admin/
+Disallow: /api/
+Disallow: /config/
+Disallow: /includes/
+Disallow: /cron/
+Disallow: /database/
+Disallow: /vendor/
+Disallow: /uploads/receipts/
+
+# Block backup/temp files
+Disallow: /*.bak$
+Disallow: /*.zip$
+Disallow: /*.sql$
+Disallow: /public/index.backup.php
+Disallow: /admin/htaccess
+Disallow: /htaccess
+
+Sitemap: https://braidedbyagb.co.uk/sitemap.xml

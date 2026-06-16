@@ -1,0 +1,9 @@
+# ============================================================
+# BraidedbyAGB — API routing
+# FILE: /api/.htaccess
+# ============================================================
+RewriteEngine On
+RewriteBase /api/
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([a-z-]+)/?$ index.php?endpoint=$1 [L,QSA]

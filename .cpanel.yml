@@ -1,0 +1,31 @@
+---
+# ============================================================
+# BraidedbyAGB — cPanel Git Version Control deploy manifest
+# FILE: /.cpanel.yml  (must live at the repo root)
+#
+# How it works:
+#   cPanel → Git Version Control → after you `git push` and click "Deploy"
+#   (or "Update from Remote" + "Deploy HEAD Commit"), cPanel runs these tasks.
+#   They copy the web files from the checked-out repo into the live web root.
+#
+# Notes:
+#   • DEPLOYPATH is the live web root for braidedbyagb.co.uk.
+#   • config/ is intentionally NOT deployed — it holds secrets (DB password,
+#     Stripe + Resend keys). Keep config/database.php on the server only and
+#     upload it by hand the rare times it changes. This stops a deploy from
+#     overwriting server secrets and keeps keys out of routine pushes.
+#   • mobile/ and vendor/ are not web files, so they are not deployed.
+#     (vendor/ is no longer used by the email system; deploy once by hand if ever needed.)
+#   • Using `dir/.` copies the *contents* of each folder so existing files are
+#     merged/overwritten rather than nested (avoids the classic cp -R gotcha).
+# ============================================================
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/jussxvwc/braidedbyagb.co.uk
+    - /bin/mkdir -p $DEPLOYPATH/api      && /bin/cp -Rf api/.      $DEPLOYPATH/api/
+    - /bin/mkdir -p $DEPLOYPATH/admin    && /bin/cp -Rf admin/.    $DEPLOYPATH/admin/
+    - /bin/mkdir -p $DEPLOYPATH/includes && /bin/cp -Rf includes/. $DEPLOYPATH/includes/
+    - /bin/mkdir -p $DEPLOYPATH/public   && /bin/cp -Rf public/.   $DEPLOYPATH/public/
+    - /bin/mkdir -p $DEPLOYPATH/cron     && /bin/cp -Rf cron/.     $DEPLOYPATH/cron/
+    - /bin/mkdir -p $DEPLOYPATH/database && /bin/cp -Rf database/. $DEPLOYPATH/database/
+    - /bin/mkdir -p $DEPLOYPATH/assets   && /bin/cp -Rf assets/.   $DEPLOYPATH/assets/

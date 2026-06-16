@@ -1,0 +1,91 @@
+DirectoryIndex index.php index.html
+
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Let real files and folders through
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Static pages
+RewriteRule ^about/?$ public/about.php [L]
+RewriteRule ^contact/?$ public/contact.php [L]
+RewriteRule ^policies/?$ public/policies.php [L]
+RewriteRule ^review/?$ public/review.php [L,QSA]
+RewriteRule ^custom-request/?$ public/custom-request.php [L,QSA]
+RewriteRule ^services/?$ public/services.php [L]
+RewriteRule ^services/([a-z0-9-]+)/?$ public/service-detail.php?slug=$1 [L,QSA]
+
+# Direct payment link (admin-generated)
+RewriteRule ^pay/?$ public/pay.php [L,QSA]
+
+# Booking
+RewriteRule ^booking/confirmation/?$ public/booking/confirmation.php [L,QSA]
+RewriteRule ^booking/?$ public/booking.php [L]
+RewriteRule ^booking/([a-z0-9-]+)/?$ public/booking.php?service=$1 [L,QSA]
+
+# Shop
+RewriteRule ^cart/?$ public/cart.php [L]
+RewriteRule ^checkout/?$ public/checkout.php [L]
+RewriteRule ^order-confirmation/?$ public/order-confirmation.php [L,QSA]
+RewriteRule ^shop/?$ public/shop.php [L]
+RewriteRule ^shop/([a-z0-9-]+)/?$ public/product.php?slug=$1 [L,QSA]
+
+# Sitemap
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+
+# API
+RewriteRule ^api/chat/?$ api/chat.php [L,QSA]
+# Admin REST API (must come before the general api rule)
+RewriteRule ^api/admin/auth/?$ api/admin.php?endpoint=auth [L,QSA]
+RewriteRule ^api/admin/([a-z-]+)/([0-9]+)/([a-z-]+)/?$ api/admin.php?endpoint=$1&id=$2&action=$3 [L,QSA]
+RewriteRule ^api/admin/([a-z-]+)/([0-9]+)/?$ api/admin.php?endpoint=$1&id=$2 [L,QSA]
+RewriteRule ^api/admin/([a-z-]+)/([a-z-]+)/?$ api/admin.php?endpoint=$1&action=$2 [L,QSA]
+RewriteRule ^api/admin/([a-z-]+)/?$ api/admin.php?endpoint=$1 [L,QSA]
+RewriteRule ^api/([a-z-]+)/?$ api/index.php?endpoint=$1 [L,QSA]
+
+# Admin
+RewriteRule ^admin/?$ admin/index.php [L]
+RewriteRule ^admin/login/?$ admin/login.php [L]
+RewriteRule ^admin/logout/?$ admin/logout.php [L]
+RewriteRule ^admin/bookings/?$ admin/bookings.php [L]
+RewriteRule ^admin/bookings/([0-9]+)/?$ admin/booking-detail.php?id=$1 [L,QSA]
+RewriteRule ^admin/calendar/?$ admin/calendar.php [L]
+RewriteRule ^admin/orders/?$ admin/orders.php [L]
+RewriteRule ^admin/services/?$ admin/services.php [L]
+RewriteRule ^admin/products/?$ admin/products.php [L]
+RewriteRule ^admin/pipeline/?$ admin/pipeline.php [L]
+RewriteRule ^admin/reviews/?$ admin/reviews.php [L]
+RewriteRule ^admin/customers/?$ admin/customers.php [L]
+RewriteRule ^admin/customer-detail/?$ admin/customer-detail.php [L,QSA]
+RewriteRule ^admin/accounting/?$ admin/accounting.php [L]
+RewriteRule ^admin/discounts/?$ admin/discounts.php [L]
+RewriteRule ^admin/settings/?$ admin/settings.php [L]
+RewriteRule ^admin/custom-requests/?$ admin/custom-requests.php [L]
+RewriteRule ^admin/addons/?$ admin/addons.php [L]
+
+# Security headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# Block sensitive files from public access
+<FilesMatch "\.(sql|bak|log|zip|env|json|lock)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Block access to htaccess file itself  
+<Files ".htaccess">
+  Order allow,deny
+  Deny from all
+</Files>

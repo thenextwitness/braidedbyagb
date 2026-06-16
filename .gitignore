@@ -1,0 +1,50 @@
+# ============================================================
+# BraidedbyAGB — .gitignore
+# ============================================================
+
+# ── Secrets ─────────────────────────────────────────────────
+# Holds live DB password + Stripe + Resend keys. Keep it OFF GitHub and
+# upload it to the server by hand (it is excluded from .cpanel.yml deploys too).
+config/database.php
+
+# Firebase service-account PRIVATE KEY — never commit. Lives on the server only.
+config/firebase-service-account.json
+# Firebase Android config (contains API keys) — keep local, not in the repo.
+mobile/app/google-services.json
+
+# ── PHP / Composer ──────────────────────────────────────────
+# Composer-managed; restore on the server (or anywhere) with `composer install`.
+/vendor/
+composer.lock
+
+# ── Runtime / user-generated data (lives on the server only) ─
+/uploads/
+cron/*.log
+*.log
+
+# ── Android / Kotlin build artifacts ────────────────────────
+mobile/build/
+mobile/app/build/
+mobile/.gradle/
+mobile/.kotlin/
+mobile/local.properties
+mobile/.idea/
+mobile/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# ── OS / editor noise ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+
+# ── Local tooling / server artifacts ────────────────────────
+.claude/
+error_log
+.ftpquota

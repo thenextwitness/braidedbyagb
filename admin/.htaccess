@@ -1,0 +1,43 @@
+# ============================================================
+# BraidedbyAGB — Admin Portal Routes
+# FILE: /admin/.htaccess
+# ============================================================
+
+Options -Indexes
+
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Admin routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule ^$                      /admin/index.php [L]
+RewriteRule ^login/?$               /admin/login.php [L]
+RewriteRule ^logout/?$              /admin/logout.php [L]
+RewriteRule ^bookings/?$            /admin/bookings.php [L]
+RewriteRule ^bookings/([0-9]+)/?$   /admin/booking-detail.php?id=$1 [L]
+RewriteRule ^bookings/?$            /admin/bookings/new [L]
+RewriteRule ^calendar/?$            /admin/calendar.php [L]
+RewriteRule ^orders/?$              /admin/orders.php [L]
+RewriteRule ^orders/([0-9]+)/?$     /admin/order-detail.php?id=$1 [L]
+RewriteRule ^services/?$            /admin/services.php [L]
+RewriteRule ^products/?$            /admin/products.php [L]
+RewriteRule ^pipeline/?$            /admin/pipeline.php [L]
+RewriteRule ^reviews/?$             /admin/reviews.php [L]
+RewriteRule ^customers/?$           /admin/customers.php [L]
+RewriteRule ^customers/([0-9]+)/?$  /admin/customer-detail.php?id=$1 [L,QSA]
+RewriteRule ^discounts/?$           /admin/discounts.php [L]
+RewriteRule ^settings/?$            /admin/settings.php [L]
+RewriteRule ^custom-requests/?$     /admin/custom-requests.php [L]
+RewriteRule ^livechat/?$            /admin/livechat.php [L,QSA]
+RewriteRule ^addons/?$            /admin/addons.php [L]
+
+# Block direct PHP file access from outside
+<FilesMatch "\.php$">
+  Order allow,deny
+  Allow from all
+</FilesMatch>

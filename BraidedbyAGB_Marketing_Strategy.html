@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BraidedbyAGB — Growth Marketing Strategy 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Lato:wght@300;400;700&display=swap');
+
+  :root {
+    --purple: #4B0082;
+    --purple-mid: #7B2FBE;
+    --purple-light: #EDE7F6;
+    --gold: #B8860B;
+    --gold-light: #FFF8E1;
+    --dark: #1A1A2E;
+    --mid: #555555;
+    --light: #F5F5F5;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --orange: #E65100;
+    --orange-light: #FFF3E0;
+    --blue: #1565C0;
+    --blue-light: #E3F2FD;
+    --white: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lato', Arial, sans-serif;
+    color: var(--dark);
+    background: #fafafa;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: white; font-size: 12px; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    .section-card { box-shadow: none; border: 1px solid #ddd; }
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 980px; margin: 0 auto; padding: 20px; }
+
+  /* ── Title Page ── */
+  .title-page {
+    background: linear-gradient(160deg, var(--purple) 0%, #7B2FBE 60%, #9c4dcc 100%);
+    color: white;
+    padding: 80px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .title-page::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 300px; height: 300px;
+    background: rgba(184,134,11,0.15);
+    border-radius: 50%;
+  }
+  .title-page::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -60px;
+    width: 400px; height: 400px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .title-page .logo { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 16px; }
+  .title-page h1 { font-family: 'Montserrat', sans-serif; font-size: 48px; font-weight: 800; margin-bottom: 8px; }
+  .title-page .subtitle { font-size: 16px; color: rgba(255,255,255,0.75); margin-bottom: 40px; }
+  .title-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-top: 3px solid var(--gold);
+    padding: 24px 48px;
+    border-radius: 4px;
+    margin: 20px 0;
+  }
+  .title-badge h2 { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 2px; }
+  .title-badge p { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 8px; }
+  .title-meta { margin-top: 40px; }
+  .title-meta .goal { font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+  .title-meta .date { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+  /* ── TOC ── */
+  .toc {
+    background: white;
+    border-left: 5px solid var(--purple);
+    padding: 32px 40px;
+    margin: 32px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  .toc h3 { font-family: 'Montserrat', sans-serif; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple); margin-bottom: 16px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: var(--purple); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section Cards ── */
+  .section-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    margin: 32px 0;
+    overflow: hidden;
+  }
+
+  .section-header {
+    background: linear-gradient(135deg, var(--purple), #7B2FBE);
+    color: white;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 3px solid var(--gold);
+  }
+  .section-header .sec-num {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    opacity: 0.4;
+  }
+  .section-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .section-body { padding: 32px; }
+
+  /* ── Typography ── */
+  h3.sub {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--purple);
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--purple-light);
+  }
+  h4.subsub {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 20px 0 8px;
+  }
+  p { margin: 10px 0; color: var(--dark); line-height: 1.75; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 5px solid;
+  }
+  .callout.purple { background: var(--purple-light); border-color: var(--purple); }
+  .callout.green  { background: var(--green-light);  border-color: var(--green);  }
+  .callout.orange { background: var(--orange-light); border-color: var(--orange); }
+  .callout.blue   { background: var(--blue-light);   border-color: var(--blue);   }
+  .callout.gold   { background: var(--gold-light);   border-color: var(--gold);   }
+
+  .callout .callout-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .callout.purple .callout-title { color: var(--purple); }
+  .callout.green  .callout-title { color: var(--green);  }
+  .callout.orange .callout-title { color: var(--orange); }
+  .callout.blue   .callout-title { color: var(--blue);   }
+  .callout.gold   .callout-title { color: var(--gold);   }
+
+  .callout ul, .callout ol { padding-left: 20px; }
+  .callout li { margin: 5px 0; font-size: 14px; color: var(--mid); }
+  .callout p  { font-size: 14px; color: var(--mid); margin: 5px 0; }
+
+  /* ── Tables ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .data-table th {
+    background: var(--purple);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e8e8e8;
+    vertical-align: top;
+  }
+  .data-table tr:nth-child(even) td { background: var(--light); }
+  .data-table tr:hover td { background: var(--purple-light); }
+
+  .data-table .label-col {
+    font-weight: 700;
+    color: var(--purple);
+    width: 30%;
+    background: var(--purple-light) !important;
+  }
+
+  /* ── Keyword groups ── */
+  .kw-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .kw-tag {
+    background: var(--purple-light);
+    color: var(--purple);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: monospace;
+  }
+  .kw-tag.negative { background: #ffebee; color: #c62828; }
+
+  /* ── Ad example ── */
+  .ad-example {
+    border: 1px solid #ddd;
+    border-top: 3px solid var(--blue);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    background: white;
+    font-size: 13px;
+  }
+  .ad-example .ad-url { color: #006621; font-size: 12px; margin-bottom: 4px; }
+  .ad-example .ad-title { color: var(--blue); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .ad-example .ad-desc { color: #555; line-height: 1.5; }
+
+  /* ── Action checklist ── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding: 10px 14px 10px 40px;
+    position: relative;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: '☐';
+    position: absolute;
+    left: 12px;
+    font-size: 18px;
+    color: var(--purple);
+    top: 8px;
+  }
+  .checklist li .week-badge {
+    display: inline-block;
+    background: var(--purple);
+    color: white;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── Budget table ── */
+  .priority-high { color: var(--green); font-weight: 700; }
+  .priority-med  { color: var(--blue);  font-weight: 700; }
+  .priority-low  { color: var(--mid);   font-weight: 600; }
+
+  /* ── Divider ── */
+  .divider {
+    height: 2px;
+    background: linear-gradient(90deg, var(--purple), transparent);
+    margin: 24px 0;
+    border: none;
+  }
+
+  /* ── WhatsApp template ── */
+  .whatsapp-bubble {
+    background: #e7f5e7;
+    border-radius: 12px 12px 12px 2px;
+    padding: 16px 20px;
+    max-width: 500px;
+    margin: 16px 0;
+    border: 1px solid #c8e6c9;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    position: relative;
+  }
+  .whatsapp-bubble::before {
+    content: '📱 WhatsApp Template';
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #388e3c;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── Metrics grid ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .metric-card {
+    background: var(--purple-light);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    border-top: 3px solid var(--purple);
+  }
+  .metric-card .metric-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--purple);
+    display: block;
+  }
+  .metric-card .metric-label {
+    font-size: 12px;
+    color: var(--mid);
+    margin-top: 4px;
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--mid);
+    font-size: 13px;
+    border-top: 2px solid var(--purple-light);
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TITLE PAGE ── -->
+<div class="title-page">
+  <div class="container">
+    <p class="logo">BraidedbyAGB · braidedbyagb.co.uk</p>
+    <h1>Growth Marketing Strategy</h1>
+    <p class="subtitle">African Hair Braiding Specialist · Farnborough, Hampshire, UK</p>
+    <div class="title-badge">
+      <h2>GOOGLE ADS · RETENTION · MULTI-CHANNEL</h2>
+      <p>A complete roadmap to sustainable client growth on a tight budget</p>
+    </div>
+    <div class="title-meta">
+      <p class="goal">🎯 Goal: 10 Returning Clients Per Week</p>
+      <p class="date">Budget: Under £100/month · Prepared May 2026</p>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ── TOC ── -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#s1">Where You Are Right Now</a></li>
+    <li><a href="#s2">Google Ads Strategy</a> — Setup, Keywords, Ad Copy, Extensions, Landing Page</li>
+    <li><a href="#s3">Retention Strategy</a> — Rebooking, WhatsApp, Email, Loyalty Schemes</li>
+    <li><a href="#s4">Other Recommended Channels</a> — Google Business Profile, TikTok, Local Partnerships, Pinterest</li>
+    <li><a href="#s5">Prioritised Action Plan</a> — Week-by-week checklist</li>
+    <li><a href="#s6">Tracking & Success Metrics</a></li>
+    <li><a href="#s7">Budget Allocation Summary</a></li>
+  </ol>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s1">
+  <div class="section-header">
+    <span class="sec-num">01</span>
+    <h2>Where You Are Right Now</h2>
+  </div>
+  <div class="section-body">
+    <p>Before mapping out where to go, it helps to be clear about the current picture. You have a professionally built website at <strong>braidedbyagb.co.uk</strong>, an established set of nine services spanning braids, twists, locs and kids styles, an online booking system with deposit handling, and an active Instagram presence. You have already tested paid advertising on both Facebook and Instagram — which demonstrates commitment to growth. The results just haven't matched the effort yet.</p>
+
+    <p>The primary goal is not simply more bookings — it is specifically <strong>10 returning clients weekly</strong>. That is a meaningful distinction. A returning client is worth far more than a new one: they cost less to acquire, book more confidently, spend more over time, and are your most powerful source of referrals. Everything in this strategy has been designed with that retention lens in mind.</p>
+
+    <div class="callout blue">
+      <p class="callout-title">📍 Your Biggest Opportunity: Location</p>
+      <ul>
+        <li>Farnborough, Hampshire is <strong>underserved for specialist African braiding</strong>. Very few competitors rank on Google in your radius.</li>
+        <li>Neighbouring towns — Aldershot, Fleet, Camberley, Guildford — all represent untapped catchment area.</li>
+        <li>On Google, being first in a low-competition local niche is far more valuable than being 5th in London.</li>
+      </ul>
+    </div>
+
+    <h3 class="sub">Why Facebook & Instagram Ads Under-Delivered</h3>
+    <p>Social media ads work on an <strong>interruption model</strong> — your ad appears in a feed while someone is scrolling for entertainment. They were not actively looking for braiding. You pay for impressions from people who may have zero intent to book. Conversion rates are typically lower, and you need sustained spend to build retargeting audiences.</p>
+    <p>Google Ads operates on the <strong>opposite principle — intent</strong>. Someone searches "African hair braiding near me" or "knotless braids Farnborough" and your ad appears. They are already in buying mode. For a local service business, this is almost always more efficient per booking, especially on a tight budget.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s2">
+  <div class="section-header">
+    <span class="sec-num">02</span>
+    <h2>Google Ads Strategy</h2>
+  </div>
+  <div class="section-body">
+    <p>Google Ads will be your primary paid acquisition channel. With under £100/month, the key is hyper-precision: the right keywords, tight geography, and ad copy that speaks directly to the person searching. Here is how to set it up correctly from day one.</p>
+
+    <h3 class="sub">2.1 Account & Campaign Setup</h3>
+    <h4 class="subsub">Step 1: Create Your Google Ads Account</h4>
+    <p>Go to <strong>ads.google.com</strong> and sign in with a Google account (ideally the same one linked to your Google Business Profile). Choose "Create a campaign" → "Search" campaign type. Set the goal to <strong>"Leads"</strong> — this lets you track booking form completions as conversions.</p>
+
+    <h4 class="subsub">Step 2: Geography & Language — The Most Critical Setting</h4>
+    <p>With a small budget, wasting clicks on people in London or Birmingham is expensive. Be precise:</p>
+    <table class="data-table">
+      <tr><td class="label-col">Targeting type</td><td>Radius targeting — <strong>NOT "United Kingdom"</strong></td></tr>
+      <tr><td class="label-col">Centre point</td><td>Farnborough, Hampshire, GU14</td></tr>
+      <tr><td class="label-col">Starting radius</td><td><strong>15 miles.</strong> Expand to 25 miles after 4 weeks if budget allows.</td></tr>
+      <tr><td class="label-col">Location option</td><td>Tick "People in your targeted location" only — NOT "interested in"</td></tr>
+      <tr><td class="label-col">Language</td><td>English</td></tr>
+    </table>
+
+    <h4 class="subsub">Step 3: Budget & Bidding</h4>
+    <table class="data-table">
+      <tr><td class="label-col">Daily budget</td><td><strong>£3.00/day</strong> (approx. £90/month). Keep £10 in reserve for top-up on high-performing weeks.</td></tr>
+      <tr><td class="label-col">Bid strategy</td><td>Start with <strong>"Maximise Clicks"</strong>. After 30 days and 50+ clicks, switch to "Target CPA".</td></tr>
+      <tr><td class="label-col">Expected CPC</td><td>£0.40 – £1.20 per click for local hair braiding terms.</td></tr>
+      <tr><td class="label-col">Est. monthly clicks</td><td>75 – 200 clicks per month at this budget.</td></tr>
+      <tr><td class="label-col">Conversion tracking</td><td>Track the "Book Now" button click as a Google Ads conversion event.</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <h3 class="sub">2.2 Keyword Strategy</h3>
+    <p>At this budget level, use <strong>Exact Match and Phrase Match only</strong>. Broad Match will burn your budget on irrelevant searches. Below are your priority keyword groups.</p>
+
+    <h4 class="subsub">Group A — High Intent (Run from Day 1)</h4>
+    <p>These people are ready to book. They know what they want.</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>Keyword</th><th>Match Type</th><th>Why It Matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>[african hair braiding farnborough]</code></td><td>Exact</td><td>Hyper-local, lowest competition</td></tr>
+        <tr><td><code>[knotless braids farnborough]</code></td><td>Exact</td><td>Most popular & highest-value service</td></tr>
+        <tr><td><code>[box braids farnborough]</code></td><td>Exact</td><td>Classic, high-volume search</td></tr>
+        <tr><td><code>"hair braiding near me"</code></td><td>Phrase</td><td>Geo captured by location settings</td></tr>
+        <tr><td><code>"african braids hampshire"</code></td><td>Phrase</td><td>Catchment area coverage</td></tr>
+        <tr><td><code>[loc retwist near me]</code></td><td>Exact</td><td>Returning client service — ideal for your goal</td></tr>
+        <tr><td><code>[starter locs hampshire]</code></td><td>Phrase</td><td>Emerging segment, very low competition</td></tr>
+        <tr><td><code>[kids braids farnborough]</code></td><td>Exact</td><td>Parents book repeatedly — high lifetime value</td></tr>
+      </tbody>
+    </table>
+
+    <h4 class="subsub">Group B — Service Discovery (Add in Week 3)</h4>
+    <p>Slightly broader, still relevant. Add once Group A is converting.</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>Keyword</th><th>Match Type</th><th>Why It Matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>"feed in braids near me"</code></td><td>Phrase</td><td>Growing search trend in UK</td></tr>
+        <tr><td><code>"cornrow braiding hampshire"</code></td><td>Phrase</td><td>Lower price point, builds client base</td></tr>
+        <tr><td><code>"black hair salon farnborough"</code></td><td>Phrase</td><td>Broader but highly relevant</td></tr>
+        <tr><td><code>[braiding salon aldershot]</code></td><td>Exact</td><td>Nearby town, likely no direct competitors</td></tr>
+      </tbody>
+    </table>
+
+    <h4 class="subsub">Negative Keywords — Add Before Going Live</h4>
+    <div class="callout orange">
+      <p class="callout-title">🚫 Add All of These as Negative Keywords</p>
+      <p>These prevent your budget being wasted on irrelevant searches. Go to Tools → Keywords → Negative Keywords in Google Ads.</p>
+      <div class="kw-group">
+        <span class="kw-tag negative">free</span>
+        <span class="kw-tag negative">DIY</span>
+        <span class="kw-tag negative">tutorial</span>
+        <span class="kw-tag negative">how to</span>
+        <span class="kw-tag negative">course</span>
+        <span class="kw-tag negative">learn</span>
+        <span class="kw-tag negative">school</span>
+        <span class="kw-tag negative">supplies</span>
+        <span class="kw-tag negative">extensions shop</span>
+        <span class="kw-tag negative">wig</span>
+        <span class="kw-tag negative">weave</span>
+        <span class="kw-tag negative">relaxer</span>
+        <span class="kw-tag negative">colour</span>
+        <span class="kw-tag negative">dye</span>
+        <span class="kw-tag negative">perm</span>
+        <span class="kw-tag negative">london</span>
+        <span class="kw-tag negative">manchester</span>
+        <span class="kw-tag negative">birmingham</span>
+        <span class="kw-tag negative">bristol</span>
+        <span class="kw-tag negative">leeds</span>
+        <span class="kw-tag negative">removal</span>
+        <span class="kw-tag negative">youtube</span>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <h3 class="sub">2.3 Ad Copy — Responsive Search Ads (RSA)</h3>
+    <p>Create one RSA per Ad Group. Provide 15 headlines and 4 descriptions — Google will mix and match to find the highest-performing combination. Below are your ready-to-use options.</p>
+
+    <h4 class="subsub">15 Headlines (max 30 characters each)</h4>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Headline</th><th>Chars</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>African Hair Braiding Farnborough</td><td>33</td></tr>
+        <tr><td>2</td><td>Knotless, Box Braids & Starter Locs</td><td>35</td></tr>
+        <tr><td>3</td><td>Book Online — Same Week Slots</td><td>29</td></tr>
+        <tr><td>4</td><td>BraidedbyAGB — Hampshire's Specialist</td><td>37</td></tr>
+        <tr><td>5</td><td>Professional Braiding from £35</td><td>29</td></tr>
+        <tr><td>6</td><td>Kids, Adults & Loc Maintenance</td><td>30</td></tr>
+        <tr><td>7</td><td>Book Now — Online Booking Available</td><td>35</td></tr>
+        <tr><td>8</td><td>5-Star African Braiding Near You</td><td>31</td></tr>
+        <tr><td>9</td><td>Farnborough, Aldershot & Fleet Area</td><td>35</td></tr>
+        <tr><td>10</td><td>Knotless Braids from £100</td><td>24</td></tr>
+        <tr><td>11</td><td>Box Braids, Cornrows & Twists</td><td>28</td></tr>
+        <tr><td>12</td><td>Local Braiding Specialist — Book Today</td><td>37</td></tr>
+        <tr><td>13</td><td>Starter Locs & Retwist Services</td><td>30</td></tr>
+        <tr><td>14</td><td>Kids Styles from £35</td><td>20</td></tr>
+        <tr><td>15</td><td>Hampshire's African Hair Expert</td><td>30</td></tr>
+      </tbody>
+    </table>
+
+    <h4 class="subsub">4 Descriptions (max 90 characters each)</h4>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Description</th><th>Focus</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Professional African hair braiding in Farnborough. Knotless braids, box braids, starter locs, cornrows & kids styles. Book online in minutes.</td><td>Services + Location + CTA</td></tr>
+        <tr><td>2</td><td>Serving Farnborough, Aldershot, Fleet & surrounding Hampshire areas. Quality braiding from £35. Book your appointment online today.</td><td>Geography + Price Anchor</td></tr>
+        <tr><td>3</td><td>Specialist in knotless braids, starter locs & loc retwists. Natural results that last. Friendly, professional service — see why clients keep coming back.</td><td>Quality + Retention Signal</td></tr>
+        <tr><td>4</td><td>Kids and adult braiding styles. Box braids from £90. Starter locs from £80. Online booking with flexible slots. Based in Farnborough, Hampshire.</td><td>Price + Accessibility</td></tr>
+      </tbody>
+    </table>
+
+    <h4 class="subsub">What Your Ad Will Look Like</h4>
+    <div class="ad-example">
+      <p class="ad-url">Ad · braidedbyagb.co.uk/booking</p>
+      <p class="ad-title">African Hair Braiding Farnborough | Knotless Braids from £100</p>
+      <p class="ad-desc">Professional African hair braiding in Farnborough. Knotless braids, box braids, starter locs, cornrows & kids styles. Book online in minutes. · Serving Farnborough, Aldershot, Fleet & surrounding Hampshire areas.</p>
+    </div>
+
+    <hr class="divider">
+
+    <h3 class="sub">2.4 Ad Extensions — Free, Always Use Them</h3>
+    <p>Ad extensions increase your ad's size and click-through rate at <strong>no extra cost</strong>. Set up every one of these.</p>
+    <table class="data-table">
+      <thead><tr><th>Extension Type</th><th>What to Add</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Call Extension</strong></td><td>07769 064 971 — mobile users can tap to call directly</td></tr>
+        <tr><td><strong>Location Extension</strong></td><td>Link your Google Business Profile — shows address under the ad</td></tr>
+        <tr><td><strong>Sitelink Extensions</strong></td><td>'Book Now', 'Our Services', 'View Prices', 'Contact Us'</td></tr>
+        <tr><td><strong>Callout Extensions</strong></td><td>'Online Booking', 'Same Week Slots', 'Kids Welcome', 'Hampshire Based'</td></tr>
+        <tr><td><strong>Structured Snippets</strong></td><td>Type: Services. Values: Knotless Braids, Box Braids, Starter Locs, Loc Retwists, Cornrows</td></tr>
+        <tr><td><strong>Image Extension</strong></td><td>Upload your best before/after photo — significantly increases mobile visibility</td></tr>
+      </tbody>
+    </table>
+
+    <hr class="divider">
+
+    <h3 class="sub">2.5 Landing Page Fixes</h3>
+    <p>Every £1 spent on ads is only as effective as the page people land on. Here are the critical improvements needed on braidedbyagb.co.uk for ad traffic to convert.</p>
+    <div class="callout orange">
+      <p class="callout-title">⚠️ Critical Landing Page Improvements</p>
+      <ol>
+        <li>Add a prominent <strong>"Book Now"</strong> button <strong>above the fold on mobile</strong> — visible without scrolling.</li>
+        <li>Display your <strong>phone/WhatsApp number in the top header</strong> on every page, not just the footer.</li>
+        <li>Add a short sentence on the homepage mentioning <strong>Farnborough by name</strong> (Google uses this for geo-relevance).</li>
+        <li>Ensure page load speed is <strong>under 3 seconds on mobile</strong> — use PageSpeed Insights (free) to check.</li>
+        <li>Add a trust signal near the booking button: <strong>"5★ rated"</strong> or <strong>"Trusted by 200+ clients"</strong>.</li>
+        <li>Consider creating a dedicated <strong>landing page per service</strong> (e.g. /knotless-braids-farnborough) for higher ad relevance scores.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s3">
+  <div class="section-header">
+    <span class="sec-num">03</span>
+    <h2>Retention Strategy</h2>
+  </div>
+  <div class="section-body">
+    <p>Getting to 10 returning clients per week cannot be achieved through ads alone — no matter the channel or budget. The most efficient path is to turn every new client into a repeat one. The following strategies work together to build a loyal client base that sustains your business independently of ad spend.</p>
+
+    <h3 class="sub">3.1 The Rebooking Conversation — Single Highest-Impact Action</h3>
+    <p>Braiding services are naturally recurring. Box braids last 6–8 weeks, loc retwists every 4–6 weeks, cornrows often monthly. Most clients <em>want</em> to come back — they just forget to book. Close that gap at the chair.</p>
+    <div class="callout green">
+      <p class="callout-title">💬 Script for the Chair</p>
+      <p>At the end of every appointment, say:</p>
+      <p style="margin-top:8px; font-style:italic; color:#2E7D32; font-weight:600;">"Your braids will be looking their best for about 6–8 weeks. Would you like to book your next appointment now so you don't lose your slot?"</p>
+      <p style="margin-top:8px;">Then open your booking system and book them in before they leave. This single habit, done consistently, can add <strong>3–5 returning clients per week</strong> on its own — with zero ad spend.</p>
+    </div>
+
+    <h3 class="sub">3.2 WhatsApp Rebooking Reminders</h3>
+    <p>Send a short, warm message to each past client approximately 5 weeks after their appointment. Keep a simple note of appointment dates — your booking system already stores these.</p>
+    <div class="whatsapp-bubble">
+      Hi [Name]! It's [Your name] from BraidedbyAGB 💜<br><br>
+      Hope you're loving your [style]! It's been about 5 weeks so just checking in — would you like to book your next appointment? I have slots coming up soon 😊<br><br>
+      Reply here or book online: braidedbyagb.co.uk ✨
+    </div>
+    <p style="font-size:13px; color:var(--mid);">Send this to every client 35 days after their appointment. Even a 30% reply rate on 20 past clients = 6 bookings per month from a free channel.</p>
+
+    <h3 class="sub">3.3 Email Marketing</h3>
+    <p>Your website already captures customer emails at booking. A monthly email to your client list is one of the highest-ROI marketing actions available to a small business.</p>
+    <table class="data-table">
+      <tr><td class="label-col">Platform</td><td><strong>Mailchimp</strong> (free up to 500 contacts) or <strong>Brevo</strong> (free up to 300 emails/day)</td></tr>
+      <tr><td class="label-col">Frequency</td><td>Once per month maximum. More than that reduces open rates.</td></tr>
+      <tr><td class="label-col">Best subject lines</td><td>"Summer styles now booking 🌸", "New: Starter Locs — Begin your journey", "Bank holiday slots — book before they go"</td></tr>
+      <tr><td class="label-col">Content formula</td><td>1 featured service + 1 client photo (with permission) + 1 booking link + 1 care tip</td></tr>
+      <tr><td class="label-col">Expected impact</td><td>A 20% open rate on 100 contacts = 20 people who see your message. At 10% click rate = 10 potential bookings per send.</td></tr>
+    </table>
+
+    <h3 class="sub">3.4 Loyalty & Referral Schemes</h3>
+    <p>Your booking system already supports discount codes. Use these to power a simple scheme that rewards loyalty and word-of-mouth.</p>
+    <table class="data-table">
+      <thead><tr><th>Scheme</th><th>How It Works</th><th>Offer</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Loyalty Card</strong></td>
+          <td>Every 5th appointment gets a discount. Use a simple paper stamp card or a free digital app (Loopy Loyalty).</td>
+          <td>10% off 5th visit. Create code: LOYAL10 in your admin.</td>
+        </tr>
+        <tr>
+          <td><strong>Referral Reward</strong></td>
+          <td>Client refers a friend — both receive a discount on their next booking.</td>
+          <td>£10 off for referrer + £10 off for the new client. Win-win.</td>
+        </tr>
+        <tr>
+          <td><strong>Review Incentive</strong></td>
+          <td>Leave a Google or Instagram review → receive a discount code. This feature is already built into your website admin.</td>
+          <td>10% off next booking. Enable in Admin → Settings → Review Incentive.</td>
+        </tr>
+        <tr>
+          <td><strong>Birthday Treat</strong></td>
+          <td>Collect birthday months at booking. Send a personalised code a week before their birthday.</td>
+          <td>Free Wash &amp; Prep add-on (£15 value). Feels personal, costs little.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s4">
+  <div class="section-header">
+    <span class="sec-num">04</span>
+    <h2>Other Recommended Channels</h2>
+  </div>
+  <div class="section-body">
+
+    <h3 class="sub">4.1 Google Business Profile — Do This Before Ads</h3>
+    <p>If your Google Business Profile (GBP) is not fully optimised, do this first. GBP listings appear <em>above</em> paid ads in local search results and are completely free. This is the single highest-ROI action available to your business.</p>
+    <div class="callout green">
+      <p class="callout-title">✅ Google Business Profile Checklist</p>
+      <ul>
+        <li>Claim and verify your profile at <strong>business.google.com</strong></li>
+        <li>Set primary category to <strong>"Hair Braiding Salon"</strong> + secondary: "Hair Salon"</li>
+        <li>Add all 9 services with descriptions and prices from your website</li>
+        <li>Upload at least <strong>20 photos</strong> — before/afters, workspace, style close-ups</li>
+        <li>Add your booking link as the primary appointment URL</li>
+        <li>Post a "Google Post" every 2 weeks — these appear in search results</li>
+        <li>Ask every happy client to leave a <strong>Google Review</strong> — aim for 20+ reviews</li>
+        <li>Enable messaging so potential clients can contact you directly from Google Search</li>
+      </ul>
+    </div>
+    <p>A fully optimised GBP with 20+ reviews consistently generates free bookings. Many local service businesses get <strong>40–60% of their bookings from GBP alone</strong>.</p>
+
+    <hr class="divider">
+
+    <h3 class="sub">4.2 TikTok & Instagram Reels — Organic Content</h3>
+    <p>Braiding is inherently visual and satisfying to watch, which means it performs exceptionally well on short-form video. You don't need a big following — you need good content posted consistently.</p>
+    <table class="data-table">
+      <tr><td class="label-col">Posting target</td><td><strong>3 videos per week</strong> for a minimum of 6 weeks to build momentum</td></tr>
+      <tr><td class="label-col">Best content types</td><td>Time-lapse of a full install, "transformation" reveal, prep & aftercare tips, "a day in my chair" POV, trending audio + braid content</td></tr>
+      <tr><td class="label-col">Always do</td><td>Add location tag: <strong>Farnborough, Hampshire</strong>. Include booking link in bio. Film in good natural light.</td></tr>
+      <tr><td class="label-col">Key hashtags</td><td>#AfricanHairBraiding #KnotlessBraids #FarnboroughHair #HampshireHair #BoxBraids #HairBraidingUK #StarterLocs #BraidedbyAGB</td></tr>
+      <tr><td class="label-col">Cross-posting</td><td>Post every TikTok as an Instagram Reel too. Same video, double the reach, zero extra effort.</td></tr>
+      <tr><td class="label-col">The opportunity</td><td>One viral video (10K+ views) is equivalent to months of paid advertising. It only takes one. Braiding videos go viral regularly.</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <h3 class="sub">4.3 Local Partnerships — Zero Cost, High Trust</h3>
+    <table class="data-table">
+      <thead><tr><th>Partner Type</th><th>Approach</th></tr></thead>
+      <tbody>
+        <tr><td><strong>African & Caribbean grocery stores</strong></td><td>Leave business cards. Offer the owner a complimentary appointment to experience your work — they become your most vocal referrer.</td></tr>
+        <tr><td><strong>Local churches & community centres</strong></td><td>Many African and Caribbean communities gather here. Ask to leave cards or sponsor a small event for visibility.</td></tr>
+        <tr><td><strong>Schools near Farnborough</strong></td><td>Parents of girls are a key demographic for kids styles. Advertise on school notice boards or in parent Facebook groups.</td></tr>
+        <tr><td><strong>Nail salons & beauticians</strong></td><td>Cross-refer naturally: their clients need braiding, your clients need nails. Swap business cards and send each other clients.</td></tr>
+        <tr><td><strong>Local fitness studios & gyms</strong></td><td>Active women frequently get protective styles. Approach reception with a small card holder and a simple exclusive offer.</td></tr>
+        <tr><td><strong>Community Facebook groups</strong></td><td>Search "Farnborough", "Aldershot", "Hampshire African" Facebook groups. Join and introduce your business (following group rules). These convert exceptionally well.</td></tr>
+      </tbody>
+    </table>
+
+    <hr class="divider">
+
+    <h3 class="sub">4.4 Pinterest SEO — Underrated for Hair</h3>
+    <p>People use Pinterest to find style inspiration, and pins link directly to your website. Create a BraidedbyAGB Pinterest board, upload your best photos with keyword-rich descriptions ("knotless braids Farnborough", "box braids UK 2026") and a link to your site. Pinterest images also rank in Google Image Search, giving you additional free visibility over time.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s5">
+  <div class="section-header">
+    <span class="sec-num">05</span>
+    <h2>Prioritised Action Plan</h2>
+  </div>
+  <div class="section-body">
+    <p>Ordered by impact. Start with the free, high-impact actions before committing ad spend. Tick each item as you complete it.</p>
+
+    <h3 class="sub">Week 1 — Foundation (Free, High Impact)</h3>
+    <ul class="checklist">
+      <li><span class="week-badge">W1</span>Claim and fully optimise your Google Business Profile — all fields, 20+ photos, all 9 services with prices.</li>
+      <li><span class="week-badge">W1</span>Enable the <strong>review incentive</strong> in your website Admin → Settings (10% off for leaving a review).</li>
+      <li><span class="week-badge">W1</span>Begin asking every client to <strong>rebook before they leave</strong> the chair. Start today.</li>
+      <li><span class="week-badge">W1</span>Create TikTok account as @BraidedbyAGB. Film and post your first 2 videos (transformation reveal + intro to your services).</li>
+      <li><span class="week-badge">W1</span>Join 3 local Facebook groups (Farnborough, Aldershot, Hampshire African/Caribbean community). Introduce your business with a photo.</li>
+    </ul>
+
+    <h3 class="sub">Week 2 — Google Ads Launch</h3>
+    <ul class="checklist">
+      <li><span class="week-badge">W2</span>Create Google Ads account. Create one Search campaign with <strong>Group A keywords only</strong>.</li>
+      <li><span class="week-badge">W2</span>Set daily budget to £3/day. Set geography to <strong>15-mile radius of Farnborough GU14</strong>.</li>
+      <li><span class="week-badge">W2</span>Write your RSA ad using the headlines and descriptions from Section 2.3 above.</li>
+      <li><span class="week-badge">W2</span>Add all 6 ad extensions: call, location, sitelinks, callouts, structured snippets, image.</li>
+      <li><span class="week-badge">W2</span>Add <strong>all negative keywords</strong> from Section 2.2 before going live.</li>
+      <li><span class="week-badge">W2</span>Set up conversion tracking: track "Book Now" button click as a Google Ads conversion.</li>
+      <li><span class="week-badge">W2</span>Make the landing page improvements listed in Section 2.5 (at minimum: mobile CTA button + phone in header).</li>
+    </ul>
+
+    <h3 class="sub">Weeks 3–4 — Retention Systems</h3>
+    <ul class="checklist">
+      <li><span class="week-badge">W3</span>Set up a free <strong>Mailchimp</strong> or Brevo account. Export your customer email list from the website database and import it.</li>
+      <li><span class="week-badge">W3</span>Send your first email newsletter to all past clients (1 featured service + booking link).</li>
+      <li><span class="week-badge">W3</span>Start your <strong>WhatsApp rebooking list</strong>: note each client's appointment date, set a 35-day reminder to message them.</li>
+      <li><span class="week-badge">W3</span>Create a simple loyalty stamp card (physical or digital via Loopy Loyalty app — free).</li>
+      <li><span class="week-badge">W4</span>Add <strong>Group B keywords</strong> to your Google Ads campaign. Review Group A performance — pause anything with zero clicks after 2 weeks.</li>
+      <li><span class="week-badge">W4</span>Approach 3 local businesses for referral partnership — African grocery stores first.</li>
+    </ul>
+
+    <h3 class="sub">Month 2+ — Scale What's Working</h3>
+    <ul class="checklist">
+      <li><span class="week-badge">M2</span>Review Google Ads weekly. After 50+ conversions, switch bid strategy to "Target CPA" at £15–20.</li>
+      <li><span class="week-badge">M2</span>Continue posting 3x/week on TikTok and cross-posting to Instagram Reels.</li>
+      <li><span class="week-badge">M2</span>Send monthly email newsletter to your growing list.</li>
+      <li><span class="week-badge">M2</span>Ask every client for a Google Review — use the review incentive discount code as motivation.</li>
+      <li><span class="week-badge">M2</span>Expand Google Ads radius to 25 miles once local terms are fully saturated.</li>
+      <li><span class="week-badge">M2</span>Add a Google Display Remarketing campaign (£10–15/month) to retarget website visitors who didn't book.</li>
+      <li><span class="week-badge">M2</span>Create a Pinterest board with your best 20 photos. Add keyword-rich descriptions and website links.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s6">
+  <div class="section-header">
+    <span class="sec-num">06</span>
+    <h2>Tracking & Success Metrics</h2>
+  </div>
+  <div class="section-body">
+    <p>You cannot improve what you don't measure. Review these every Monday morning — it takes 20 minutes and will compound significantly over time.</p>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-value">10</span>
+        <p class="metric-label">Returning clients/week (target)</p>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">5%+</span>
+        <p class="metric-label">Google Ads click-through rate</p>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">8–15%</span>
+        <p class="metric-label">Ads conversion rate (clicks → bookings)</p>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">&lt;£12</span>
+        <p class="metric-label">Target cost per booking</p>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">20+</span>
+        <p class="metric-label">Google reviews target (60 days)</p>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">60%</span>
+        <p class="metric-label">Rebooking rate within 8 weeks</p>
+      </div>
+    </div>
+
+    <table class="data-table" style="margin-top:20px;">
+      <thead><tr><th>Metric</th><th>What to Do if Below Target</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CTR below 3%</strong></td><td>Rewrite your headlines — make them more specific and benefit-led</td></tr>
+        <tr><td><strong>Conv. rate below 5%</strong></td><td>Fix your landing page — the issue is almost always a slow page or no clear CTA</td></tr>
+        <tr><td><strong>Cost per booking above £20</strong></td><td>Pause low-performing keywords, tighten your geography, review negative keyword list</td></tr>
+        <tr><td><strong>Email open rate below 20%</strong></td><td>Improve subject lines — more specific, seasonal, or curiosity-driven</td></tr>
+        <tr><td><strong>WhatsApp replies below 20%</strong></td><td>Make the message more personal — mention the specific style they had last time</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout gold" style="margin-top:24px;">
+      <p class="callout-title">💡 Monthly Review Habit (30 minutes, 1st of each month)</p>
+      <ul>
+        <li>How many bookings came from Google Ads? (Google Ads → Conversions report)</li>
+        <li>How many of last month's clients were returning vs new?</li>
+        <li>What is my current Google Review count?</li>
+        <li>Which WhatsApp messages got the highest reply rate?</li>
+        <li>What is my best-performing TikTok video this month?</li>
+      </ul>
+      <p style="margin-top:8px;">Use the answers to double down on what's working and cut what isn't.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section-card" id="s7">
+  <div class="section-header">
+    <span class="sec-num">07</span>
+    <h2>Budget Allocation Summary</h2>
+  </div>
+  <div class="section-body">
+    <p>Below is a recommended breakdown of your £100/month marketing budget, alongside the free channels that form the backbone of the strategy.</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Channel</th>
+          <th>Monthly Cost</th>
+          <th>Est. Bookings/Month</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Google Business Profile</strong></td>
+          <td>Free</td>
+          <td>4–8 (organic)</td>
+          <td class="priority-high">Do First</td>
+        </tr>
+        <tr>
+          <td><strong>Google Ads (Search)</strong></td>
+          <td>£90/month</td>
+          <td>6–12 (paid)</td>
+          <td class="priority-high">Week 2</td>
+        </tr>
+        <tr>
+          <td><strong>TikTok / Instagram Reels</strong></td>
+          <td>Free (time only)</td>
+          <td>2–6 (social)</td>
+          <td class="priority-high">Week 1</td>
+        </tr>
+        <tr>
+          <td><strong>WhatsApp Rebooking</strong></td>
+          <td>Free</td>
+          <td>3–6 (retention)</td>
+          <td class="priority-med">Week 3</td>
+        </tr>
+        <tr>
+          <td><strong>Email Newsletter</strong></td>
+          <td>Free (Mailchimp)</td>
+          <td>2–4 (retention)</td>
+          <td class="priority-med">Week 3</td>
+        </tr>
+        <tr>
+          <td><strong>Loyalty / Referral Scheme</strong></td>
+          <td>Discount cost only</td>
+          <td>2–4 (word of mouth)</td>
+          <td class="priority-med">Week 4</td>
+        </tr>
+        <tr>
+          <td><strong>Local Partnerships</strong></td>
+          <td>Free (time only)</td>
+          <td>1–3 (referral)</td>
+          <td class="priority-low">Month 2</td>
+        </tr>
+        <tr>
+          <td><strong>Display Remarketing (optional)</strong></td>
+          <td>£10/month</td>
+          <td>1–2</td>
+          <td class="priority-low">Month 2+</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout green" style="margin-top:24px;">
+      <p class="callout-title">🎯 Realistic Path to 10 Returning Clients Per Week</p>
+      <ul>
+        <li><strong>Month 1:</strong> Google Ads + GBP optimisation + rebooking habit → 8–15 new bookings, rebooking conversation starts building returns.</li>
+        <li><strong>Month 2:</strong> WhatsApp reminders + email → 4–6 of Month 1 clients rebook. 5–8 returning clients per week becomes realistic.</li>
+        <li><strong>Month 3:</strong> Loyalty scheme + referrals + TikTok growth → <strong>10+ returning clients per week is achievable.</strong></li>
+        <li><strong>Key principle:</strong> Consistent execution across ALL channels, not reliance on any single one. The channels amplify each other.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="doc-footer">
+  <p><strong>BraidedbyAGB</strong> — African Hair Braiding Specialist · Farnborough, Hampshire</p>
+  <p style="margin-top:6px;">braidedbyagb.co.uk · WhatsApp: 07769 064 971 · @BraidedbyAGB</p>
+  <p style="margin-top:6px; color:#aaa;">Growth Marketing Strategy · May 2026 · Confidential</p>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>
