@@ -21,7 +21,12 @@
 require_once __DIR__ . '/../config/database.php';
 
 // ── Access guard ──────────────────────────────────────────
-define('MIGRATE_KEY', 'CHANGE-ME-to-a-long-random-secret');  // ← set your own secret
+// Preferred: define MIGRATE_KEY in config/database.php (server-only, NOT in git,
+// so it survives every deploy). The fallback below is only used if config does
+// not define it — and the script refuses to run while it's still the placeholder.
+if (!defined('MIGRATE_KEY')) {
+    define('MIGRATE_KEY', 'CHANGE-ME-to-a-long-random-secret');
+}
 
 $isCli = (php_sapi_name() === 'cli');
 if (!$isCli) {
