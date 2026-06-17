@@ -30,14 +30,28 @@ function sendMail($to, string $subject, string $html, string $altText = '', arra
     $recipients = is_array($to) ? array_values(array_filter($to)) : [(string)$to];
     if (empty($recipients)) { error_log('sendMail: no recipient.'); return false; }
 
+    // Always include a plain-text alternative. A multipart (HTML + text) email
+    // scores noticeably better with spam filters than HTML-only. If the caller
+    // didn't supply one, derive it from the HTML.
+    if ($altText === '') {
+        $altText = trim(preg_replace('/\n{3,}/', "\n\n",
+            html_entity_decode(strip_tags(preg_replace('/<(br|\/p|\/div|\/tr|\/h[1-6])>/i', "\n", $html)), ENT_QUOTES, 'UTF-8')
+        ));
+    }
+
     $payload = [
         'from'     => MAIL_FROM_NAME . ' <' . MAIL_FROM . '>',
         'to'       => $recipients,
         'subject'  => $subject,
         'html'     => $html,
+        'text'     => $altText,
         'reply_to' => MAIL_REPLY_TO,
+        // Helps inbox placement (Gmail/Yahoo bulk-sender guidance) and gives a
+        // one-click unsubscribe; points at the contact page + mailto.
+        'headers'  => [
+            'List-Unsubscribe' => '<' . SITE_URL . '/contact>, <mailto:' . MAIL_FROM . '?subject=unsubscribe>',
+        ],
     ];
-    if ($altText !== '')     $payload['text']        = $altText;
     if (!empty($attachments)) $payload['attachments'] = $attachments;
 
     $ch = curl_init('https://api.resend.com/emails');
@@ -190,11 +204,12 @@ function emailWrapper(string $content, string $preheader = ''): string {
 <body>
 {$preheaderHtml}
 <div class="wrapper">
-  <div class="header">
-    <span class="logo-badge">
-      <img src="{$logoUrl}" alt="{$siteName} — Beauty Salon" width="160">
+  <div class="header" style="background:linear-gradient(135deg,#4B0082,#800080);padding:30px 40px 26px;text-align:center;">
+    <span class="logo-badge" style="display:inline-block;background:#ffffff;border-radius:16px;padding:12px 20px;">
+      <img src="{$logoUrl}" alt="{$siteName} — Beauty Salon" width="160"
+           style="display:block;width:160px;max-width:62vw;height:auto;border:0;outline:none;text-decoration:none;">
     </span>
-    <p>{$tagline}</p>
+    <p style="color:#D4AF37;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:16px 0 0;">{$tagline}</p>
   </div>
   <div class="body">
     {$content}
