@@ -1107,7 +1107,7 @@ function emailBankTransferConfirm(array $booking, array $customer): bool {
             ? "<tr><td>Sort Code:</td><td><strong style='font-family:monospace'>{$bankSort}</strong></td></tr>"
             : '';
 
-        // Pre-encode for WhatsApp URL (can't use <?= ?> tags inside a heredoc)
+        // Pre-encode for WhatsApp URL (PHP short-echo tags do not work inside a heredoc)
         $waRef = rawurlencode("Hi, I have sent my deposit transfer for booking {$ref}");
 
         $content = <<<HTML
