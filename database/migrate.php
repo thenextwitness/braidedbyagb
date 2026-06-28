@@ -120,6 +120,82 @@ step("settings.business_address row",
     fn() => $db->exec("INSERT INTO settings (setting_key, setting_value) VALUES ('business_address','')"),
     $report);
 
+// ── Revert add-ons to a per-service model ─────────────────
+// A previous change converted every add-on to "global" (service_id = NULL,
+// is_global = 1) plus a service_addon_exclusions table. That made add-on
+// prices un-editable per service. We revert to per-service add-ons: each
+// global add-on is copied onto every active, non-excluded service, then the
+// global originals are retired (kept — not deleted — so historical
+// booking_addons foreign keys stay intact).
+//
+// The first three steps just guarantee the columns/table exist so the
+// explode query is valid even on a DB that never ran the old global migration.
+
+step('service_addons.is_global column (ensure exists)',
+    fn() => columnExists($db, $dbName, 'service_addons', 'is_global'),
+    fn() => $db->exec("ALTER TABLE service_addons ADD COLUMN is_global TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active"),
+    $report);
+
+step('service_addons.service_id nullable (for retired globals)',
+    fn() => (function() use ($db, $dbName) {
+        $s = $db->prepare("SELECT IS_NULLABLE FROM information_schema.COLUMNS
+                           WHERE TABLE_SCHEMA=? AND TABLE_NAME='service_addons' AND COLUMN_NAME='service_id'");
+        $s->execute([$dbName]);
+        return strtoupper((string)$s->fetchColumn()) === 'YES';
+    })(),
+    fn() => $db->exec("ALTER TABLE service_addons MODIFY COLUMN service_id INT UNSIGNED NULL DEFAULT NULL"),
+    $report);
+
+step('service_addon_exclusions table (ensure exists)',
+    fn() => tableExists($db, $dbName, 'service_addon_exclusions'),
+    fn() => $db->exec("CREATE TABLE service_addon_exclusions (
+        service_id INT NOT NULL,
+        addon_id   INT NOT NULL,
+        PRIMARY KEY (service_id, addon_id)
+    )"),
+    $report);
+
+step('Explode global add-ons into per-service rows, then retire globals',
+    // Already applied once no global add-ons remain.
+    fn() => (int)$db->query("SELECT COUNT(*) FROM service_addons WHERE is_global = 1")->fetchColumn() === 0,
+    function() use ($db) {
+        $db->beginTransaction();
+        try {
+            $globals  = $db->query("SELECT id, name, price, is_active FROM service_addons WHERE is_global = 1")->fetchAll();
+            $services = $db->query("SELECT id FROM services WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
+
+            // exclusions[service_id][addon_id] = true
+            $exc = [];
+            foreach ($db->query("SELECT service_id, addon_id FROM service_addon_exclusions")->fetchAll() as $r) {
+                $exc[(int)$r['service_id']][(int)$r['addon_id']] = true;
+            }
+            // existing per-service add-on names so we never duplicate one
+            $existing = [];
+            foreach ($db->query("SELECT service_id, name FROM service_addons WHERE service_id IS NOT NULL")->fetchAll() as $r) {
+                $existing[(int)$r['service_id']][$r['name']] = true;
+            }
+
+            $ins = $db->prepare("INSERT INTO service_addons (service_id, name, price, is_active, is_global) VALUES (?,?,?,?,0)");
+            foreach ($globals as $g) {
+                foreach ($services as $sid) {
+                    $sid = (int)$sid;
+                    if (isset($exc[$sid][(int)$g['id']]))   continue;  // service had this global excluded
+                    if (isset($existing[$sid][$g['name']])) continue;  // a per-service add-on with this name already exists
+                    $ins->execute([$sid, $g['name'], $g['price'], (int)$g['is_active']]);
+                    $existing[$sid][$g['name']] = true;
+                }
+            }
+            // Retire the global originals: hide them and clear the global flag.
+            // Kept (not deleted) so booking_addons rows that reference them remain valid.
+            $db->exec("UPDATE service_addons SET is_active = 0, is_global = 0 WHERE is_global = 1");
+            $db->commit();
+        } catch (Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

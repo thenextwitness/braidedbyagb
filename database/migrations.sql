@@ -181,19 +181,20 @@ INSERT INTO settings (setting_key, setting_value) VALUES
     ('loyalty_min_redeem','500')
 ON DUPLICATE KEY UPDATE setting_value = setting_value;
 
--- ── Global Add-ons (run once) ────────────────────────────────────────────────
--- Makes service_id nullable so add-ons can exist without a specific service.
--- is_global=1 means the add-on appears on every service at booking time.
+-- ── Add-ons schema columns (run once) ────────────────────────────────────────
+-- Keeps service_id nullable and the is_global flag present for backward
+-- compatibility. NOTE: the "global add-ons" model was REVERTED — add-ons are
+-- per-service again. See database/migrate.php ("Explode global add-ons into
+-- per-service rows"), which is the canonical runner.
 ALTER TABLE service_addons
     MODIFY COLUMN service_id INT UNSIGNED NULL DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS is_global TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active;
 
--- ── Backfill: convert all existing per-service add-ons to global (run once) ──
--- After running the ALTER above, this makes all existing add-ons global so they
--- appear on every service at booking. Safe to re-run (idempotent).
-UPDATE service_addons
-SET service_id = NULL, is_global = 1
-WHERE service_id IS NOT NULL;
+-- ⚠️ DISABLED — DO NOT RUN. This globalised every add-on and broke per-service
+-- pricing. Add-ons are now per-service. Left here only as a historical record.
+-- UPDATE service_addons
+-- SET service_id = NULL, is_global = 1
+-- WHERE service_id IS NOT NULL;
 
 -- ── Backfill: auto-complete all past bookings (run once) ─────────────────────
 -- Marks every confirmed/pending booking whose appointment date has already

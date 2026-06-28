@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -82,21 +83,11 @@ fun ServiceEditScreen(
                     durationMins = svc.durationMins.toString()
                     category     = svc.category ?: ""
                     variants     = svc.variants
+                    addons       = svc.addons      // per-service add-ons
                 }
             }
         } catch (_: Exception) {}
         loading = false
-    }
-
-    // ── Load global add-ons (fires when savedId becomes available) ─
-    LaunchedEffect(savedId) {
-        if (savedId == null) return@LaunchedEffect
-        try {
-            val res = ApiClient.api.getServicesAdmin()
-            if (res.isSuccessful) {
-                addons = res.body()?.globalAddons ?: emptyList()
-            }
-        } catch (_: Exception) {}
     }
 
     // ── Save service details ──────────────────────────────
@@ -188,19 +179,20 @@ fun ServiceEditScreen(
         }
     }
 
-    // ── Add add-on (global — applies to all services) ────
+    // ── Add add-on (belongs to this service) ──────────────
     fun submitAddon() {
+        val sid = savedId ?: return
         val price = addonPrice.toDoubleOrNull() ?: 0.0
         if (addonName.isBlank()) { scope.launch { snack.showSnackbar("Add-on name required") }; return }
         scope.launch {
             savingAddon = true
             try {
                 val res = ApiClient.api.addAddon(
-                    req = AddonCreateRequest(addonName.trim(), price)
+                    req = AddonCreateRequest(sid, addonName.trim(), price)
                 )
                 if (res.isSuccessful && res.body()?.success == true) {
                     val newId = res.body()!!.id!!
-                    addons = addons + ServiceAddonFull(newId, null, addonName.trim(), price)
+                    addons = addons + ServiceAddonFull(newId, sid, addonName.trim(), price)
                     addonName = ""; addonPrice = ""
                     showAddAddon = false
                 } else {
@@ -208,6 +200,20 @@ fun ServiceEditScreen(
                 }
             } catch (_: Exception) { snack.showSnackbar("Connection error") }
             savingAddon = false
+        }
+    }
+
+    // ── Edit add-on in place (name / price) ───────────────
+    fun updateAddon(aid: Int, newName: String, newPrice: Double) {
+        if (newName.isBlank()) { scope.launch { snack.showSnackbar("Add-on name required") }; return }
+        scope.launch {
+            try {
+                val res = ApiClient.api.updateAddon(AddonUpdateRequest(aid, newName.trim(), newPrice))
+                if (res.isSuccessful) {
+                    addons = addons.map { if (it.id == aid) it.copy(name = newName.trim(), price = newPrice) else it }
+                    snack.showSnackbar("Add-on updated")
+                } else snack.showSnackbar("Failed to update add-on")
+            } catch (_: Exception) { snack.showSnackbar("Connection error") }
         }
     }
 
@@ -410,34 +416,24 @@ fun ServiceEditScreen(
                     }
                 }
 
-                // ── Global Add-ons ────────────────────────
-                item { SectionHeader("Global Add-ons — apply to all services") }
+                // ── Add-ons (this service only) ───────────
+                item { SectionHeader("Add-ons for this service") }
 
                 if (addons.isEmpty()) {
                     item {
                         Text(
-                            "No global add-ons yet. Add-ons created here are available on every service at booking.",
+                            "No add-ons yet. Add-ons created here apply only to this service and have their own prices.",
                             fontSize = 13.sp, color = TextMuted
                         )
                     }
                 }
 
                 items(addons, key = { "a${it.id}" }) { a ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(a.name, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                Text("£%.2f".format(a.price), fontSize = 12.sp, color = TextMuted)
-                            }
-                            IconButton(onClick = { deleteAddon(a.id) }) {
-                                Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
+                    AddonEditRow(
+                        addon    = a,
+                        onSave   = { newName, newPrice -> updateAddon(a.id, newName, newPrice) },
+                        onDelete = { deleteAddon(a.id) }
+                    )
                 }
 
                 // Add add-on form / button
@@ -501,4 +497,56 @@ private fun SectionHeader(title: String) {
         color      = Primary,
         modifier   = Modifier.padding(top = 4.dp, bottom = 2.dp)
     )
+}
+
+/**
+ * Editable add-on row — change the name or price and press ✓ to save in place
+ * (no delete-and-recreate). The save button enables only when something changed.
+ */
+@Composable
+private fun AddonEditRow(
+    addon: ServiceAddonFull,
+    onSave: (String, Double) -> Unit,
+    onDelete: () -> Unit
+) {
+    var name  by remember(addon.id) { mutableStateOf(addon.name) }
+    var price by remember(addon.id) { mutableStateOf("%.2f".format(addon.price)) }
+    val parsedPrice = price.toDoubleOrNull()
+    val dirty = name.trim() != addon.name || (parsedPrice != null && parsedPrice != addon.price)
+    val canSave = dirty && name.isNotBlank() && parsedPrice != null
+
+    Card(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value         = name,
+                onValueChange = { name = it },
+                label         = { Text("Name") },
+                singleLine    = true,
+                modifier      = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value         = price,
+                onValueChange = { price = it },
+                label         = { Text("Price") },
+                singleLine    = true,
+                modifier      = Modifier.width(110.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                prefix        = { Text("£") }
+            )
+            IconButton(onClick = { onSave(name, parsedPrice ?: addon.price) }, enabled = canSave) {
+                Icon(
+                    Icons.Default.Check, "Save",
+                    tint = if (canSave) Primary else TextMuted,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
 }

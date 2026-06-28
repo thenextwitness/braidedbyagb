@@ -1036,21 +1036,20 @@ switch ($endpoint) {
         $db     = getDB();
         $action = $_GET['action'] ?? '';
 
-        // ── GET — list ALL services with variants + addons ────
+        // ── GET — list ALL services with variants + per-service addons ────
         if ($method === 'GET' && $action === '') {
-            $services     = $db->query("SELECT id, name, description, price_from, duration_mins, category, is_active, display_order FROM services ORDER BY display_order ASC, id ASC")->fetchAll();
-            $variants     = $db->query("SELECT id, service_id, variant_name, price, duration_mins FROM service_variants ORDER BY display_order ASC")->fetchAll();
-            $allAddons    = $db->query("SELECT id, COALESCE(service_id,0) as service_id, name, price, is_active, COALESCE(is_global,0) as is_global FROM service_addons ORDER BY id ASC")->fetchAll();
-            $varsBySvc    = []; foreach ($variants  as $v) { $varsBySvc[$v['service_id']][] = $v; }
-            $svcAddons    = []; foreach ($allAddons  as $a) { if (!$a['is_global']) $svcAddons[$a['service_id']][] = $a; }
-            $globalAddons = array_values(array_filter($allAddons, fn($a) => (bool)$a['is_global']));
+            $services  = $db->query("SELECT id, name, description, price_from, duration_mins, category, is_active, display_order FROM services ORDER BY display_order ASC, id ASC")->fetchAll();
+            $variants  = $db->query("SELECT id, service_id, variant_name, price, duration_mins FROM service_variants ORDER BY display_order ASC")->fetchAll();
+            // Per-service add-ons only (retired global rows have service_id = NULL and are excluded).
+            $allAddons = $db->query("SELECT id, service_id, name, price, is_active FROM service_addons WHERE service_id IS NOT NULL AND is_active = 1 ORDER BY id ASC")->fetchAll();
+            $varsBySvc = []; foreach ($variants  as $v) { $varsBySvc[$v['service_id']][] = $v; }
+            $addBySvc  = []; foreach ($allAddons as $a) { $addBySvc[$a['service_id']][] = $a; }
             foreach ($services as &$s) {
                 $s['variants'] = $varsBySvc[$s['id']] ?? [];
-                // Merge: service-specific add-ons first, then global ones
-                $s['addons']   = array_merge($svcAddons[$s['id']] ?? [], $globalAddons);
+                $s['addons']   = $addBySvc[$s['id']] ?? [];
             }
-            // Also return global add-ons as a top-level list for the admin UI
-            echo json_encode(['services' => $services, 'global_addons' => $globalAddons]); exit;
+            unset($s);
+            echo json_encode(['services' => $services]); exit;
         }
 
         // ── POST — create service ─────────────────────────────
@@ -1122,23 +1121,42 @@ switch ($endpoint) {
         }
 
         // ── POST action=add_addon ─────────────────────────────
-        // Add-ons are GLOBAL — they apply to every service automatically.
-        // service_id is ignored; is_global=1, service_id=NULL.
+        // Add-ons are per-service: each belongs to one service and has its own price.
         if ($method === 'POST' && $action === 'add_addon') {
+            $body      = json_decode(file_get_contents('php://input'), true) ?? [];
+            $serviceId = (int)($body['service_id'] ?? 0);
+            $name      = trim($body['name']  ?? '');
+            $price     = (float)($body['price'] ?? 0);
+            if (!$serviceId) { http_response_code(400); echo json_encode(['error' => 'service_id required']); exit; }
+            if (!$name)      { http_response_code(400); echo json_encode(['error' => 'Name required']); exit; }
+            $db->prepare("INSERT INTO service_addons (service_id, name, price, is_active, is_global) VALUES (?,?,?,1,0)")
+               ->execute([$serviceId, $name, $price]);
+            echo json_encode(['success' => true, 'id' => (int)$db->lastInsertId()]); exit;
+        }
+
+        // ── POST action=update_addon ──────────────────────────
+        // Edit an add-on's name/price in place (no delete-and-recreate).
+        if ($method === 'POST' && $action === 'update_addon') {
             $body  = json_decode(file_get_contents('php://input'), true) ?? [];
+            $aid   = (int)($body['addon_id'] ?? 0);
             $name  = trim($body['name']  ?? '');
             $price = (float)($body['price'] ?? 0);
+            if (!$aid)  { http_response_code(400); echo json_encode(['error' => 'addon_id required']); exit; }
             if (!$name) { http_response_code(400); echo json_encode(['error' => 'Name required']); exit; }
-            $db->prepare("INSERT INTO service_addons (service_id, name, price, is_active, is_global) VALUES (NULL,?,?,1,1)")
-               ->execute([$name, $price]);
-            echo json_encode(['success' => true, 'id' => (int)$db->lastInsertId()]); exit;
+            $db->prepare("UPDATE service_addons SET name=?, price=? WHERE id=?")->execute([$name, $price, $aid]);
+            echo json_encode(['success' => true]); exit;
         }
 
         // ── DELETE action=del_addon ───────────────────────────
         if ($method === 'DELETE' && $action === 'del_addon') {
             $aid = (int)($_GET['addon_id'] ?? 0);
             if (!$aid) { http_response_code(400); echo json_encode(['error' => 'addon_id required']); exit; }
-            $db->prepare("DELETE FROM service_addons WHERE id=?")->execute([$aid]);
+            try {
+                $db->prepare("DELETE FROM service_addons WHERE id=?")->execute([$aid]);
+            } catch (PDOException $e) {
+                // Referenced by past bookings (booking_addons FK) — soft-delete instead.
+                $db->prepare("UPDATE service_addons SET is_active=0 WHERE id=?")->execute([$aid]);
+            }
             echo json_encode(['success' => true]); exit;
         }
 
@@ -1318,19 +1336,14 @@ switch ($endpoint) {
             $stmt->execute();
             $completedCount = $stmt->rowCount();
 
-            // 2. Convert all per-service add-ons to global (apply to every service)
-            $stmt2 = $db->prepare("
-                UPDATE service_addons
-                SET service_id = NULL, is_global = 1
-                WHERE service_id IS NOT NULL
-            ");
-            $stmt2->execute();
-            $addonsConverted = $stmt2->rowCount();
+            // NOTE: add-ons are per-service. Maintenance must NOT touch service_addons —
+            // a previous version globalised them here on every run, which broke
+            // per-service pricing. Left intentionally as a no-op for add-ons.
 
             echo json_encode([
                 'success'          => true,
                 'completed'        => $completedCount,
-                'addons_converted' => $addonsConverted
+                'addons_converted' => 0
             ]);
         } else {
             http_response_code(400);

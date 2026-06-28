@@ -138,8 +138,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'Add-on updated.';
 
         } elseif ($action === 'delete_addon') {
-            $db->prepare("DELETE FROM service_addons WHERE id=?")->execute([(int)$_POST['id']]);
-            $msg = 'Add-on deleted.';
+            $aid = (int)$_POST['id'];
+            try {
+                $db->prepare("DELETE FROM service_addons WHERE id=?")->execute([$aid]);
+                $msg = 'Add-on deleted.';
+            } catch (PDOException $e) {
+                // Referenced by past bookings (booking_addons FK) — hide instead of delete.
+                $db->prepare("UPDATE service_addons SET is_active=0 WHERE id=?")->execute([$aid]);
+                $msg = 'Add-on is used by past bookings — hidden instead of deleted.';
+            }
         }
 
     } catch (Exception $e) {

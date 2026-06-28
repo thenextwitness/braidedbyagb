@@ -142,31 +142,14 @@ switch ($endpoint) {
         $serviceId = (int)($_GET['service_id'] ?? 0);
         if (!$serviceId) jsonResponse(['addons' => []]);
         $db = getDB();
-        // Return service-specific add-ons AND global add-ons, excluding any
-        // that have been manually excluded for this service via service_addon_exclusions.
-        try {
-            $stmt = $db->prepare("
-                SELECT id, name, price
-                FROM service_addons
-                WHERE is_active = 1
-                  AND (service_id = ? OR COALESCE(is_global, 0) = 1)
-                  AND id NOT IN (
-                      SELECT addon_id FROM service_addon_exclusions WHERE service_id = ?
-                  )
-                ORDER BY COALESCE(is_global, 0) ASC, id ASC
-            ");
-            $stmt->execute([$serviceId, $serviceId]);
-        } catch (Throwable $e) {
-            // service_addon_exclusions table not yet migrated — fall back to old query
-            $stmt = $db->prepare("
-                SELECT id, name, price
-                FROM service_addons
-                WHERE is_active = 1
-                  AND (service_id = ? OR COALESCE(is_global, 0) = 1)
-                ORDER BY COALESCE(is_global, 0) ASC, id ASC
-            ");
-            $stmt->execute([$serviceId]);
-        }
+        // Per-service add-ons only — each service owns its add-ons and their prices.
+        $stmt = $db->prepare("
+            SELECT id, name, price
+            FROM service_addons
+            WHERE is_active = 1 AND service_id = ?
+            ORDER BY id ASC
+        ");
+        $stmt->execute([$serviceId]);
         jsonResponse(['addons' => $stmt->fetchAll()]);
         break;
 

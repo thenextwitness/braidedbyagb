@@ -163,6 +163,11 @@ interface AdminApiService {
         @Body req: AddonCreateRequest
     ): Response<ServiceMutateResponse>
 
+    @POST("api/admin.php?endpoint=services&action=update_addon")
+    suspend fun updateAddon(
+        @Body req: AddonUpdateRequest
+    ): Response<SuccessResponse>
+
     @HTTP(method = "DELETE", path = "api/admin.php?endpoint=services&action=del_addon", hasBody = false)
     suspend fun deleteAddon(@Query("addon_id") addonId: Int): Response<SuccessResponse>
 

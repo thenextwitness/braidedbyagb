@@ -360,8 +360,7 @@ data class ServiceAddonFull(
 )
 
 data class ServicesFullResponse(
-    val services: List<ServiceFull>,
-    @SerializedName("global_addons") val globalAddons: List<ServiceAddonFull> = emptyList()
+    val services: List<ServiceFull>
 )
 
 data class ServiceCreateRequest(
@@ -387,6 +386,13 @@ data class VariantCreateRequest(
 )
 
 data class AddonCreateRequest(
+    @SerializedName("service_id") val serviceId: Int,
+    val name: String,
+    val price: Double
+)
+
+data class AddonUpdateRequest(
+    @SerializedName("addon_id") val addonId: Int,
     val name: String,
     val price: Double
 )
