@@ -308,6 +308,10 @@ $pageTitle = 'Custom Style Request';
     .cr-perk-text span { font-size: 0.73rem; color: #7a5a8a; line-height: 1.5; }
   </style>
 <?php include __DIR__ . '/../includes/gtag.php'; ?>
+<?php if ($sent): ?>
+<!-- Event snippet for Request quote conversion -->
+<script>gtag('event', 'conversion', {'send_to': 'AW-17943670219/k6cyCKr-5sYcEMvbmuxC'});</script>
+<?php endif; ?>
 </head>
 <body>
 

@@ -50,7 +50,7 @@ $items = $items->fetchAll();
   <link rel="stylesheet" href="/assets/css/shop.css">
 <?php include __DIR__ . '/../includes/gtag.php'; ?>
 <!-- Event snippet for order conversion -->
-<script>gtag('event', 'conversion', {'send_to': 'AW-17393399906/YhPWCPDLmaocEOLw6OVA'});</script>
+<script>gtag('event', 'conversion', {'send_to': 'AW-17943670219/k6cyCKr-5sYcEMvbmuxC'});</script>
 </head>
 <body>
 <?php include __DIR__ . '/../includes/nav.php'; ?>
