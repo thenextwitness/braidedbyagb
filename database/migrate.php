@@ -196,6 +196,21 @@ step('Explode global add-ons into per-service rows, then retire globals',
     },
     $report);
 
+// ── Discount codes: standardise on uses_count ─────────────
+// The app counts redemptions in discount_codes.uses_count (see schema.sql).
+// Some older databases were built with a legacy `times_used` column, which
+// made coupon validation fail. Ensure uses_count exists and carry over any
+// legacy counts.
+step('discount_codes.uses_count column (ensure exists)',
+    fn() => columnExists($db, $dbName, 'discount_codes', 'uses_count'),
+    function() use ($db, $dbName) {
+        $db->exec("ALTER TABLE discount_codes ADD COLUMN uses_count INT UNSIGNED NOT NULL DEFAULT 0");
+        if (columnExists($db, $dbName, 'discount_codes', 'times_used')) {
+            $db->exec("UPDATE discount_codes SET uses_count = times_used");
+        }
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

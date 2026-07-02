@@ -168,6 +168,20 @@ $bankAcc  = getSetting('bank_account_number', '');
 
       <!-- Right: Order Summary -->
       <div class="cart-summary-col" style="position:sticky;top:100px;height:fit-content">
+
+        <!-- Discount code -->
+        <div class="booking-summary" style="margin-bottom:var(--space-4)">
+          <div class="booking-summary-header">Discount Code</div>
+          <div class="booking-summary-body">
+            <div style="display:flex;gap:var(--space-3)">
+              <input type="text" id="discount-code-input" class="form-control"
+                     placeholder="Enter code" style="flex:1;text-transform:uppercase">
+              <button type="button" class="btn btn-outline-primary" onclick="applyDiscount()">Apply</button>
+            </div>
+            <p id="discount-message" style="font-size:var(--text-sm);margin-top:var(--space-2);display:none"></p>
+          </div>
+        </div>
+
         <div class="booking-summary">
           <div class="booking-summary-header">Order Summary</div>
           <div class="booking-summary-body" id="checkout-order-summary">
@@ -229,6 +243,44 @@ function buildOrderSummary() {
   document.getElementById('bank-ref-label').textContent = name.split(' ')[0].toUpperCase() + '-ORDER';
 }
 
+async function applyDiscount() {
+  const input = document.getElementById('discount-code-input');
+  const msg   = document.getElementById('discount-message');
+  const code  = input.value.trim().toUpperCase();
+  msg.style.display = 'block';
+  if (!code) {
+    appliedDiscount = null;
+    sessionStorage.removeItem('agb_discount');
+    msg.style.color = 'var(--color-text-muted)';
+    msg.textContent = 'Discount removed.';
+    buildOrderSummary();
+    return;
+  }
+  msg.style.color = 'var(--color-text-muted)';
+  msg.textContent = 'Checking…';
+  try {
+    const res  = await fetch(`/api/validate-discount?code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+    if (data.valid) {
+      appliedDiscount = data;
+      sessionStorage.setItem('agb_discount', JSON.stringify(appliedDiscount));
+      msg.style.color = 'var(--color-success)';
+      msg.textContent = `✓ "${code}" applied — ${data.type === 'percent' ? data.value + '% off' : '£' + data.value + ' off'}`;
+      buildOrderSummary();
+      if (typeof showToast === 'function') showToast('Discount code applied! 🎉', 'success');
+    } else {
+      appliedDiscount = null;
+      sessionStorage.removeItem('agb_discount');
+      msg.style.color = '#c0392b';
+      msg.textContent = data.error || 'Invalid or expired code.';
+      buildOrderSummary();
+    }
+  } catch (e) {
+    msg.style.color = '#c0392b';
+    msg.textContent = 'Could not validate code. Please try again.';
+  }
+}
+
 function selectDelivery(method) {
   deliveryMethod = method;
   document.getElementById('opt-shipping').classList.toggle('selected', method === 'shipping');
@@ -248,6 +300,17 @@ function selectPaymentMethod(method, btn) {
 // Init Stripe
 window.addEventListener('DOMContentLoaded', () => {
   buildOrderSummary();
+  // Reflect a code already applied on the cart page
+  if (appliedDiscount && appliedDiscount.code) {
+    const input = document.getElementById('discount-code-input');
+    if (input) input.value = appliedDiscount.code;
+    const msg = document.getElementById('discount-message');
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = 'var(--color-success)';
+      msg.textContent = `✓ "${appliedDiscount.code}" applied`;
+    }
+  }
   stripe = Stripe(STRIPE_KEY);
   const elements = stripe.elements({ locale: 'en-GB' });
   cardElement = elements.create('card', {

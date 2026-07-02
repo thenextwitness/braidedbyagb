@@ -19,7 +19,7 @@ if ($serviceSlug) {
 
 // Fetch all active services with variants
 $services = $db->query("
-    SELECT s.id, s.name, s.slug, s.duration_mins, s.category, s.prep_notes, s.price_from,
+    SELECT s.id, s.name, s.slug, s.description, s.duration_mins, s.category, s.prep_notes, s.price_from,
            JSON_ARRAYAGG(
                JSON_OBJECT(
                    'id', sv.id,
@@ -48,6 +48,7 @@ foreach ($services as $svc) {
         'duration'    => $svc['duration_mins'],
         'price_from'  => $svc['price_from'],
         'prep_notes'  => $svc['prep_notes'],
+        'description' => $svc['description'],
         'variants'    => array_values($variants),
     ];
 }
@@ -239,6 +240,11 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
               <div class="service-select-price">From £<?= number_format((float)$svc['price_from'], 0) ?></div>
             </button>
             <?php endforeach; ?>
+          </div>
+
+          <!-- Service description (shown once a service is chosen) -->
+          <div id="service-desc-box" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-left:4px solid var(--color-primary);border-radius:0 var(--border-radius-lg,8px) var(--border-radius-lg,8px) 0">
+            <p id="service-desc-text" style="margin:0;font-size:var(--text-sm);color:var(--color-text,#3a2540);line-height:1.6"></p>
           </div>
 
           <!-- Variant selector (shown once a service is chosen) -->
@@ -688,6 +694,16 @@ function selectService(id) {
     document.getElementById('step1-next').disabled = false;
   }
 
+  // Service description
+  const descBox  = document.getElementById('service-desc-box');
+  const descText = document.getElementById('service-desc-text');
+  if (svc.description && svc.description.trim()) {
+    descText.textContent = svc.description;
+    descBox.style.display = 'block';
+  } else {
+    descBox.style.display = 'none';
+  }
+
   // Prep notes
   const prepBox  = document.getElementById('prep-note-box');
   const prepText = document.getElementById('prep-note-text');
@@ -1067,6 +1083,7 @@ function resetDraftUI() {
   document.getElementById('variant-section').style.display   = 'none';
   document.getElementById('addons-section').style.display    = 'none';
   document.getElementById('prep-note-box').style.display     = 'none';
+  document.getElementById('service-desc-box').style.display  = 'none';
   document.getElementById('addon-list').innerHTML            = '';
   document.getElementById('step1-next').disabled             = true;
   document.getElementById('step2-next').disabled             = true;

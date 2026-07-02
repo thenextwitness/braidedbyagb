@@ -547,7 +547,7 @@ switch ($endpoint) {
         $code = strtoupper(sanitize($_GET['code'] ?? ''));
         if (!$code) jsonResponse(['valid' => false, 'error' => 'No code provided']);
         $db   = getDB();
-        $stmt = $db->prepare("SELECT * FROM discount_codes WHERE code=? AND is_active=1 AND (uses_limit IS NULL OR times_used < uses_limit) AND (expiry_date IS NULL OR expiry_date >= CURDATE()) LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM discount_codes WHERE code=? AND is_active=1 AND (uses_limit IS NULL OR uses_count < uses_limit) AND (expiry_date IS NULL OR expiry_date >= CURDATE()) LIMIT 1");
         $stmt->execute([$code]);
         $discount = $stmt->fetch();
         if (!$discount) jsonResponse(['valid' => false, 'error' => 'Invalid or expired discount code.']);
@@ -611,7 +611,7 @@ switch ($endpoint) {
 
             $discountAmount = 0; $discountCodeId = null;
             if (!empty($data['discount_code'])) {
-                $dStmt = $db->prepare("SELECT * FROM discount_codes WHERE code=? AND is_active=1 AND (uses_limit IS NULL OR times_used < uses_limit) AND (expiry_date IS NULL OR expiry_date >= CURDATE())");
+                $dStmt = $db->prepare("SELECT * FROM discount_codes WHERE code=? AND is_active=1 AND (uses_limit IS NULL OR uses_count < uses_limit) AND (expiry_date IS NULL OR expiry_date >= CURDATE())");
                 $dStmt->execute([strtoupper($data['discount_code'])]);
                 $dc = $dStmt->fetch();
                 if ($dc) {
@@ -649,7 +649,7 @@ switch ($endpoint) {
             }
 
             if ($discountCodeId) {
-                $db->prepare("UPDATE discount_codes SET times_used = times_used + 1 WHERE id=?")->execute([$discountCodeId]);
+                $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id=?")->execute([$discountCodeId]);
             }
 
             $db->commit();

@@ -154,7 +154,7 @@ $customers = $db->query("SELECT id, name, email FROM customers ORDER BY name ASC
     <tbody>
     <?php foreach ($codes as $dc):
       $isExpired = $dc['expiry_date'] && $dc['expiry_date'] < date('Y-m-d');
-      $isExhausted = $dc['uses_limit'] && $dc['times_used'] >= $dc['uses_limit'];
+      $isExhausted = $dc['uses_limit'] && $dc['uses_count'] >= $dc['uses_limit'];
     ?>
     <tr>
       <td>
@@ -170,7 +170,7 @@ $customers = $db->query("SELECT id, name, email FROM customers ORDER BY name ASC
         <?php endif; ?>
       </td>
       <td>
-        <?= (int)$dc['times_used'] ?> /
+        <?= (int)$dc['uses_count'] ?> /
         <?= $dc['uses_limit'] ? $dc['uses_limit'] : '∞' ?>
       </td>
       <td>
