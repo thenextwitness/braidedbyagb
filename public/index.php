@@ -22,6 +22,8 @@ $formSent = false; $formError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $formError = 'Security error. Please refresh and try again.';
+    } elseif (!verifyRecaptcha($_POST['g-recaptcha-response'] ?? '')) {
+        $formError = 'Please complete the reCAPTCHA verification.';
     } else {
         $name    = sanitize($_POST['contact_name']    ?? '');
         $email   = sanitizeEmail($_POST['contact_email'] ?? '');
@@ -323,6 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
             <div class="sp-field"><label>Email</label><input type="email" name="contact_email" placeholder="your@email.com" required></div>
             <div class="sp-field"><label>Phone <span>(optional)</span></label><input type="tel" name="contact_phone" placeholder="07700 000000"></div>
             <div class="sp-field"><label>Message</label><textarea name="contact_message" rows="5" placeholder="How can we help you?" required></textarea></div>
+            <div class="sp-field"><div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>"></div></div>
             <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center">Send Message</button>
           </form>
         <?php endif; ?>
@@ -375,10 +378,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
 <script src="/assets/js/main.js"></script>
 <script src="/assets/js/cart.js"></script>
 <script src="/assets/js/chat-widget.js" defer></script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
 const ham=document.getElementById('spHamburger'),menu=document.getElementById('spMobileMenu');
 if(ham&&menu){ham.addEventListener('click',()=>{ham.classList.toggle('open');menu.classList.toggle('open');});menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ham.classList.remove('open');menu.classList.remove('open');}));}
 document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}});});
+const spForm=document.querySelector('.sp-form');
+if(spForm){spForm.addEventListener('submit',function(e){if(typeof grecaptcha==='undefined'||grecaptcha.getResponse().length===0){e.preventDefault();alert('Please tick the “I’m not a robot” box to continue.');}});}
 </script>
 </body>
 </html>

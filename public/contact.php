@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include __DIR__ . '/../includes/brand-styles.php'; ?>
   <link rel="stylesheet" href="/assets/css/global.css">
   <link rel="stylesheet" href="/assets/css/pages.css">
-  <script src="https://www.google.com/recaptcha/api.js?render=<?= RECAPTCHA_SITE_KEY ?>"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <?php include __DIR__ . '/../includes/gtag.php'; ?>
 </head>
 <body>
@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <span class="field-error">Please enter your message.</span>
                 </div>
 
-                <input type="hidden" name="g-recaptcha-response" id="contact-recaptcha-token">
+                <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>" style="margin-bottom:var(--space-6)"></div>
 
                 <button type="submit" class="btn btn-primary w-full btn-lg" id="contact-submit-btn">
                   Send Message
@@ -247,16 +247,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!form) return;
   form.addEventListener('submit', function(e) {
     if (!validateForm(form)) { e.preventDefault(); return; }
-    e.preventDefault();
+    if (typeof grecaptcha === 'undefined' || grecaptcha.getResponse().length === 0) {
+      e.preventDefault();
+      alert('Please tick the “I’m not a robot” box to continue.');
+      return;
+    }
     var btn = document.getElementById('contact-submit-btn');
     btn.disabled = true;
     btn.textContent = 'Sending…';
-    grecaptcha.ready(function() {
-      grecaptcha.execute('<?= RECAPTCHA_SITE_KEY ?>', {action: 'contact'}).then(function(token) {
-        document.getElementById('contact-recaptcha-token').value = token;
-        form.submit();
-      });
-    });
   });
 })();
 </script>

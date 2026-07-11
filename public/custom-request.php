@@ -106,7 +106,7 @@ $pageTitle = 'Custom Style Request';
 <?php include __DIR__ . '/../includes/brand-styles.php'; ?>
   <link rel="stylesheet" href="/assets/css/global.css">
   <link rel="stylesheet" href="/assets/css/pages.css">
-  <script src="https://www.google.com/recaptcha/api.js?render=<?= RECAPTCHA_SITE_KEY ?>"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>
     .cr-hero {
       background: linear-gradient(135deg, #2d0050 0%, #7a0050 50%, #4B0082 100%);
@@ -471,7 +471,7 @@ $pageTitle = 'Custom Style Request';
           <p class="cr-hint">Only used to help us check availability — not a confirmed booking.</p>
         </div>
 
-        <input type="hidden" name="g-recaptcha-response" id="cr-recaptcha-token">
+        <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>" style="margin-bottom:16px"></div>
 
         <button type="submit" class="cr-submit" id="cr-submit-btn">
           ✦ Send My Request →
@@ -525,21 +525,19 @@ zone.addEventListener('drop',      e => {
   }
 });
 
-// reCAPTCHA v3 — intercept form submit, get token, then submit
+// reCAPTCHA v2 — require the checkbox before allowing submit
 (function() {
   var form = document.getElementById('cr-form');
   if (!form) return;
   form.addEventListener('submit', function(e) {
-    e.preventDefault();
+    if (typeof grecaptcha === 'undefined' || grecaptcha.getResponse().length === 0) {
+      e.preventDefault();
+      alert('Please tick the “I’m not a robot” box to continue.');
+      return;
+    }
     var btn = document.getElementById('cr-submit-btn');
     btn.disabled = true;
     btn.textContent = 'Sending…';
-    grecaptcha.ready(function() {
-      grecaptcha.execute('<?= RECAPTCHA_SITE_KEY ?>', {action: 'custom_request'}).then(function(token) {
-        document.getElementById('cr-recaptcha-token').value = token;
-        form.submit();
-      });
-    });
   });
 })();
 </script>
