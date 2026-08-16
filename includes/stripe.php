@@ -314,13 +314,11 @@ function finalizeOrderPayment(PDO $db, string $piId, array $meta, string $confir
 
             // Decrement stock + increment discount usage — done here (not at order
             // creation) so abandoned Stripe checkouts never consume stock/uses.
-            // NOTE: stock is decremented by product_id to match the existing
-            // confirm-order behaviour (see api/index.php); see audit note.
-            $items = $db->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+            // Decrement by the specific variant (see decrementProductStock).
+            $items = $db->prepare("SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?");
             $items->execute([$orderId]);
-            $sQ = $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE product_id = ?");
             foreach ($items->fetchAll() as $it) {
-                $sQ->execute([(int) $it['quantity'], (int) $it['product_id']]);
+                decrementProductStock($db, (int) $it['product_id'], $it['variant_id'] !== null ? (int) $it['variant_id'] : null, (int) $it['quantity']);
             }
             if (!empty($order['discount_code_id'])) {
                 $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id = ?")

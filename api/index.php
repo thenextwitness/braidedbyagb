@@ -643,10 +643,10 @@ switch ($endpoint) {
             $orderId = (int)$db->lastInsertId();
 
             $iStmt = $db->prepare("INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_charged) VALUES (?,?,?,?,?)");
-            $sStmt = $db->prepare("UPDATE product_variants SET stock_qty=GREATEST(0, stock_qty-?) WHERE product_id=?");
             foreach ($data['items'] as $item) {
-                $iStmt->execute([$orderId, (int)$item['productId'], $item['variantId'] ? (int)$item['variantId'] : null, (int)$item['quantity'], (float)$item['price']]);
-                $sStmt->execute([(int)$item['quantity'], (int)$item['productId']]);
+                $variantId = $item['variantId'] ? (int)$item['variantId'] : null;
+                $iStmt->execute([$orderId, (int)$item['productId'], $variantId, (int)$item['quantity'], (float)$item['price']]);
+                decrementProductStock($db, (int)$item['productId'], $variantId, (int)$item['quantity']);
             }
 
             if ($discountCodeId) {
@@ -1101,8 +1101,9 @@ switch ($endpoint) {
             // Bank transfer: reserve stock + discount usage now, acknowledge now
             // (mirrors previous confirm-order behaviour; payment stays pending).
             if ($method === 'bank_transfer') {
-                $sStmt = $db->prepare("UPDATE product_variants SET stock_qty=GREATEST(0, stock_qty-?) WHERE product_id=?");
-                foreach ($data['items'] as $item) $sStmt->execute([(int)$item['quantity'], (int)$item['productId']]);
+                foreach ($data['items'] as $item) {
+                    decrementProductStock($db, (int)$item['productId'], !empty($item['variantId']) ? (int)$item['variantId'] : null, (int)$item['quantity']);
+                }
                 if ($discountCodeId) $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id=?")->execute([$discountCodeId]);
             }
 

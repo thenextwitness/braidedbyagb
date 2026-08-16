@@ -152,6 +152,30 @@ function calculateRemainingBalance(float $total, float $deposit): float {
 }
 
 /**
+ * decrementProductStock — reduce stock for a purchased line item.
+ *
+ * Stock lives only on product_variants.stock_qty, so it must be decremented by
+ * the specific variant id. Passing a variant id targets exactly that variant.
+ * When no variant is recorded (variant_id NULL) we fall back to the product,
+ * which is only unambiguous for single-variant products — a customer always
+ * picks a variant for a multi-variant product, so NULL never occurs there.
+ *
+ * @param int      $productId Product id (fallback target when $variantId is null)
+ * @param int|null $variantId Chosen variant id, or null
+ * @param int      $qty       Quantity purchased
+ */
+function decrementProductStock(PDO $db, int $productId, ?int $variantId, int $qty): void {
+    if ($qty < 1) return;
+    if ($variantId) {
+        $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE id = ?")
+           ->execute([$qty, $variantId]);
+    } else {
+        $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE product_id = ?")
+           ->execute([$qty, $productId]);
+    }
+}
+
+/**
  * isSlotAvailable — duration-aware overlap check.
  *
  * Returns false if:
