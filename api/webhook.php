@@ -3,17 +3,17 @@
 // BraidedbyAGB — Stripe Webhook
 // FILE: /api/webhook.php   (route: /api/webhook)
 //
-// Authoritative payment finalizer. Fires on payment_intent.succeeded (and
-// async_payment_succeeded for methods that settle later) and runs the SAME
-// idempotent finalize as the customer return page — so a booking/order is
-// confirmed even if the customer closes the tab before returning.
+// Authoritative payment finalizer. Fires on payment_intent.succeeded and runs
+// the SAME idempotent finalize as the customer return page — so a booking/order
+// is confirmed even if the customer closes the tab before returning. Delayed /
+// async payment methods also emit payment_intent.succeeded once they settle
+// (they sit in 'processing' until then), so this one event covers every case.
 //
 // SETUP (once, in the Stripe dashboard → Developers → Webhooks):
 //   1. Add endpoint:  https://braidedbyagb.co.uk/api/webhook.php
 //      (use the direct .php file — the /api/webhook rewrite lives in .htaccess,
 //       which cPanel does NOT auto-deploy, so the file URL is the safe choice.)
-//   2. Select events: payment_intent.succeeded
-//                     payment_intent.async_payment_succeeded  (optional)
+//   2. Select event:  payment_intent.succeeded  (covers delayed methods too)
 //   3. Copy the "Signing secret" (whsec_...) and paste it into the SERVER's
 //      config/database.php as STRIPE_WEBHOOK_SECRET (config is not deployed —
 //      edit it directly on the server).
@@ -48,7 +48,7 @@ $type = $event['type'] ?? '';
 
 // Only payment-success events do anything; everything else is acknowledged so
 // Stripe stops retrying.
-if (in_array($type, ['payment_intent.succeeded', 'payment_intent.async_payment_succeeded'], true)) {
+if ($type === 'payment_intent.succeeded') {
     $intent = $event['data']['object'] ?? [];
     try {
         finalizeStripePayment(getDB(), $intent, 'stripe_webhook');
