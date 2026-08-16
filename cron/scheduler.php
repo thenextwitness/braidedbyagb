@@ -208,6 +208,39 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
+// 5b. AUTO-CANCEL ABANDONED STRIPE CHECKOUTS
+// A card/Klarna/Clearpay/PayPal booking is written as pending (deposit_paid=0)
+// BEFORE the customer is sent to pay, so the slot is held during the redirect.
+// If they never complete (closed tab, cancelled at Klarna/PayPal), the booking
+// would otherwise hold the slot forever. These methods settle within minutes,
+// so anything still unpaid after a short window is abandoned — free the slot.
+// A genuinely paid booking has deposit_paid=1 (set by the webhook), so it is
+// never touched here. No customer email — they did not complete a booking.
+// ─────────────────────────────────────────────────────────
+try {
+    $stripeHoldHours = (int)getSetting('stripe_pending_hold_hours', '2');
+    if ($stripeHoldHours < 1) $stripeHoldHours = 2;
+    $stripeCutoff = (clone $now)->modify("-{$stripeHoldHours} hours")->format('Y-m-d H:i:s');
+
+    $stmt = $db->prepare("
+        SELECT id, booking_ref
+        FROM bookings
+        WHERE payment_method = 'stripe'
+          AND deposit_paid = 0
+          AND status = 'pending'
+          AND created_at <= ?
+    ");
+    $stmt->execute([$stripeCutoff]);
+    foreach ($stmt->fetchAll() as $b) {
+        $db->prepare("UPDATE bookings SET status='rejected', admin_notes='Auto-cancelled: card/BNPL payment not completed.' WHERE id=?")
+           ->execute([$b['id']]);
+        cronLog("[auto-cancel] {$b['booking_ref']} — abandoned Stripe checkout");
+    }
+} catch (Exception $e) {
+    cronLog('[ERROR] Auto-cancel (stripe): ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
 // 6. LOW STOCK ALERTS (max once per 3 days per variant)
 // ─────────────────────────────────────────────────────────
 try {

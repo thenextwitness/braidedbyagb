@@ -5,6 +5,7 @@
 // ============================================================
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/stripe.php';
 
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
@@ -826,6 +827,385 @@ switch ($endpoint) {
             $db->rollBack();
             error_log('pay-booking error: ' . $e->getMessage());
             jsonResponse(['error' => 'Could not confirm payment. Please contact us directly.'], 500);
+        }
+        break;
+
+    // ── CART INTENT (pending-first booking + Payment Element) ─────────
+    // Replaces the old create-payment-intent + confirm-cart two-step. Writes
+    // the bookings as PENDING (deposit_paid=0) FIRST so the appointment slots
+    // are held during the redirect, then (for card/Klarna/Clearpay/PayPal via
+    // Stripe) creates a PaymentIntent with automatic_payment_methods and returns
+    // its client_secret. Bank-transfer bookings are created and acknowledged
+    // exactly as before. Stripe confirmation emails are sent by finalize (on
+    // payment success), never here.
+    case 'cart-intent':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
+        $data   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $payer  = $data['payer'] ?? [];
+        $items  = $data['items'] ?? [];
+        $method = $data['payment_method'] ?? '';
+
+        if (empty($payer['name']) || empty($payer['email']) || empty($payer['phone'])) {
+            jsonResponse(['error' => 'Missing payer details'], 400);
+        }
+        if (!is_array($items) || count($items) === 0) {
+            jsonResponse(['error' => 'Your cart is empty'], 400);
+        }
+        if (!in_array($method, ['stripe', 'bank_transfer'], true)) {
+            jsonResponse(['error' => 'Invalid payment method'], 400);
+        }
+        foreach ($items as $idx => $it) {
+            foreach (['service_id', 'date', 'time'] as $f) {
+                if (empty($it[$f])) jsonResponse(['error' => 'Appointment ' . ($idx + 1) . " is missing: $f"], 400);
+            }
+        }
+        if ($method === 'stripe' && !stripeConfigured()) {
+            jsonResponse(['error' => 'Card payment is not configured. Please use bank transfer.'], 500);
+        }
+
+        // Authoritative deposit total (pence). Matches the amount the Payment
+        // Element was mounted with client-side, so confirmPayment() won't reject.
+        $depositTotal = 0.0;
+        foreach ($items as $it) $depositTotal += (float)($it['deposit'] ?? 0);
+        $depositPence = (int) round($depositTotal * 100);
+        if ($method === 'stripe' && $depositPence < 30) {
+            jsonResponse(['error' => 'Deposit amount is too small to charge by card.'], 400);
+        }
+
+        // Shared group reference (created up-front so it can be stamped into the
+        // PaymentIntent metadata for finalization).
+        $groupRef = 'AGBC' . date('Y') . strtoupper(bin2hex(random_bytes(3)));
+
+        // For card payments create the PaymentIntent BEFORE writing rows so a
+        // Stripe failure leaves nothing behind.
+        $clientSecret = null; $piId = null;
+        if ($method === 'stripe') {
+            try {
+                $intent = stripeCreatePaymentIntent($depositPence, 'gbp', [
+                    'kind'      => 'cart',
+                    'group_ref' => $groupRef,
+                    'source'    => 'braidedbyagb_booking',
+                ], 'cart_' . $groupRef);
+                $clientSecret = $intent['client_secret'] ?? null;
+                $piId         = $intent['id'] ?? null;
+            } catch (Throwable $e) {
+                error_log('cart-intent PI error: ' . $e->getMessage());
+                jsonResponse(['error' => 'Payment could not be initiated. Please try again.'], 500);
+            }
+            if (!$clientSecret || !$piId) jsonResponse(['error' => 'Payment could not be initiated. Please try again.'], 500);
+        }
+
+        $db = getDB();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare("INSERT INTO customers (name, email, phone, email_optin) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), email_optin=VALUES(email_optin)");
+            $stmt->execute([
+                sanitize($payer['name']), sanitizeEmail($payer['email']),
+                sanitize($payer['phone']), (int)($payer['email_optin'] ?? 1),
+            ]);
+            $customerId = (int)$db->lastInsertId();
+            if (!$customerId) {
+                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
+                $r->execute([sanitizeEmail($payer['email'])]);
+                $customerId = (int)$r->fetchColumn();
+            }
+            if (!$customerId) { $db->rollBack(); jsonResponse(['error' => 'Could not create your customer record.'], 500); }
+
+            $blk = $db->prepare("SELECT is_blocked FROM customers WHERE id=?");
+            $blk->execute([$customerId]);
+            $blkRow = $blk->fetch();
+            if ($blkRow && $blkRow['is_blocked']) {
+                $db->rollBack();
+                jsonResponse(['error' => 'We are unable to accept your booking at this time. Please contact us directly.'], 403);
+            }
+
+            $durStmt = $db->prepare("
+                SELECT COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
+                FROM services s LEFT JOIN service_variants sv ON sv.id = ? WHERE s.id = ?
+            ");
+            $insBooking = $db->prepare("
+                INSERT INTO bookings
+                    (booking_ref, cart_group_ref, customer_id, guest_name, service_id, variant_id,
+                     booked_date, booked_time, payment_method, deposit_amount, deposit_paid,
+                     total_price, remaining_balance, client_notes, policy_accepted, status)
+                VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,1,'pending')
+            ");
+            $insAddon   = $db->prepare("INSERT INTO booking_addons (booking_id, addon_id, price_charged) SELECT ?, id, price FROM service_addons WHERE id=?");
+            $insPayment = $db->prepare("
+                INSERT INTO payments (booking_id, stripe_id, amount, type, method, status, confirmed_by, confirmed_at)
+                VALUES (?,?,?,'deposit',?, 'pending', NULL, NULL)
+            ");
+
+            $accepted = []; $createdRefs = []; $createdIds = [];
+            foreach ($items as $idx => $it) {
+                $serviceId = (int)$it['service_id'];
+                $variantId = !empty($it['variant_id']) ? (int)$it['variant_id'] : null;
+                $date      = sanitize($it['date']);
+                $time      = sanitize($it['time']);
+
+                $durStmt->execute([$variantId, $serviceId]);
+                $durRow = $durStmt->fetch();
+                $dur    = ($durRow && (int)$durRow['dur'] > 0) ? (int)$durRow['dur'] : 60;
+
+                if (!isSlotAvailable($date, $time, $dur)) {
+                    $db->rollBack();
+                    jsonResponse(['error' => "The {$time} slot on {$date} was just taken. Please review your cart and pick another time."], 409);
+                }
+                $start = strtotime($date . ' ' . $time);
+                $end   = $start + $dur * 60;
+                foreach (($accepted[$date] ?? []) as $win) {
+                    if ($start < $win[1] && $end > $win[0]) {
+                        $db->rollBack();
+                        jsonResponse(['error' => "Two appointments in your cart overlap at {$time} on {$date}. Please adjust the times."], 409);
+                    }
+                }
+
+                $guest = trim((string)($it['guest_name'] ?? ''));
+                if ($guest === '' || strcasecmp($guest, 'myself') === 0) $guest = null;
+                else $guest = sanitize($guest);
+
+                $itTotal   = (float)($it['total'] ?? 0);
+                $itDeposit = (float)($it['deposit'] ?? 0);
+                $itBalance = round($itTotal - $itDeposit, 2);
+
+                $ref = generateBookingRef();
+                $insBooking->execute([
+                    $ref, $groupRef, $customerId, $guest, $serviceId, $variantId,
+                    $date, $time, $method, $itDeposit, $itTotal, $itBalance, sanitize($it['notes'] ?? ''),
+                ]);
+                $bookingId = (int)$db->lastInsertId();
+
+                if (!empty($it['addons']) && is_array($it['addons'])) {
+                    foreach ($it['addons'] as $a) $insAddon->execute([$bookingId, (int)$a]);
+                }
+                if (!empty($it['pipeline_products']) && is_array($it['pipeline_products'])) {
+                    $oRef   = generateOrderRef();
+                    $pTotal = array_sum(array_column($it['pipeline_products'], 'price'));
+                    $db->prepare("INSERT INTO orders (order_ref, customer_id, booking_id, subtotal, total, status, delivery_type, payment_method, from_pipeline) VALUES (?,?,?,?,?,'pending','shipping',?,1)")
+                       ->execute([$oRef, $customerId, $bookingId, $pTotal, $pTotal, $method]);
+                    $orderId = (int)$db->lastInsertId();
+                    $isP = $db->prepare("INSERT INTO order_items (order_id, product_id, quantity, price_charged) VALUES (?,?,1,?)");
+                    foreach ($it['pipeline_products'] as $prod) $isP->execute([$orderId, (int)$prod['id'], (float)$prod['price']]);
+                }
+
+                $insPayment->execute([$bookingId, $piId, $itDeposit, $method]);
+
+                $accepted[$date][] = [$start, $end];
+                $createdRefs[]     = $ref;
+                $createdIds[]      = $bookingId;
+            }
+
+            $db->commit();
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('cart-intent error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Your booking could not be saved. Please contact us directly.'], 500);
+        }
+
+        if ($method === 'stripe') {
+            // Payment pending — emails are sent by finalize on success.
+            jsonResponse(['success' => true, 'client_secret' => $clientSecret, 'group_ref' => $groupRef, 'ref' => $createdRefs[0] ?? '']);
+        }
+
+        // Bank transfer — acknowledge immediately (unchanged behaviour).
+        try {
+            if (is_readable(__DIR__ . '/../includes/mailer.php')) {
+                require_once __DIR__ . '/../includes/mailer.php';
+                $in    = implode(',', array_fill(0, count($createdIds), '?'));
+                $eStmt = $db->prepare("
+                    SELECT b.booking_ref, b.guest_name, b.booked_date, b.booked_time,
+                           b.total_price, b.deposit_amount, b.remaining_balance,
+                           s.name AS service_name, sv.variant_name
+                    FROM bookings b
+                    JOIN services s ON s.id = b.service_id
+                    LEFT JOIN service_variants sv ON sv.id = b.variant_id
+                    WHERE b.id IN ($in)
+                    ORDER BY b.booked_date ASC, b.booked_time ASC
+                ");
+                $eStmt->execute($createdIds);
+                $emailItems = $eStmt->fetchAll();
+                $payerArr   = ['name' => sanitize($payer['name']), 'email' => sanitizeEmail($payer['email']), 'phone' => sanitize($payer['phone'])];
+                emailCartConfirmation($payerArr, $emailItems, $groupRef, 'bank_transfer');
+                emailAdminNewCartBooking($payerArr, $emailItems, $groupRef);
+            }
+        } catch (Throwable $e) {
+            error_log('cart-intent (bank) email error (non-fatal): ' . $e->getMessage());
+        }
+        jsonResponse(['success' => true, 'group_ref' => $groupRef, 'refs' => $createdRefs]);
+        break;
+
+    // ── ORDER INTENT (pending-first shop order + Payment Element) ─────
+    // Replaces create-order-payment-intent + confirm-order. Writes the order as
+    // PENDING, then for Stripe creates a PaymentIntent (automatic_payment_methods)
+    // and returns its client_secret. Stock decrement, discount usage and
+    // confirmation emails happen in finalize on payment success, so abandoned
+    // card checkouts never consume stock. Bank transfer keeps prior behaviour.
+    case 'order-intent':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        foreach (['items','name','email','phone','payment_method','total'] as $f) {
+            if (empty($data[$f])) jsonResponse(['error' => 'Missing: ' . $f], 400);
+        }
+        $method = $data['payment_method'];
+        if (!in_array($method, ['stripe', 'bank_transfer'], true)) jsonResponse(['error' => 'Invalid payment method'], 400);
+        if ($method === 'stripe' && !stripeConfigured()) {
+            jsonResponse(['error' => 'Card payment is not configured. Please use bank transfer.'], 500);
+        }
+
+        $db = getDB();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare("INSERT INTO customers (name, email, phone) VALUES (?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone)");
+            $stmt->execute([sanitize($data['name']), sanitizeEmail($data['email']), sanitize($data['phone'])]);
+            $customerId = (int)$db->lastInsertId();
+            if (!$customerId) {
+                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
+                $r->execute([sanitizeEmail($data['email'])]);
+                $customerId = (int)$r->fetchColumn();
+            }
+
+            $discountAmount = 0; $discountCodeId = null;
+            if (!empty($data['discount_code'])) {
+                $dStmt = $db->prepare("SELECT * FROM discount_codes WHERE code=? AND is_active=1 AND (uses_limit IS NULL OR uses_count < uses_limit) AND (expiry_date IS NULL OR expiry_date >= CURDATE())");
+                $dStmt->execute([strtoupper($data['discount_code'])]);
+                $dc = $dStmt->fetch();
+                if ($dc) {
+                    $sub            = array_reduce($data['items'], fn($s,$i) => $s + $i['price'] * $i['quantity'], 0);
+                    $discountAmount = $dc['type'] === 'percent' ? $sub * ($dc['value'] / 100) : min((float)$dc['value'], $sub);
+                    $discountCodeId = $dc['id'];
+                }
+            }
+
+            $sub      = array_reduce($data['items'], fn($s,$i) => $s + $i['price'] * $i['quantity'], 0);
+            $shipping = $data['delivery_type'] === 'local_pickup' ? 0 : ($sub >= 50 ? 0 : 3.99);
+            $total    = max(0, $sub - $discountAmount) + $shipping;
+            $ref      = generateOrderRef();
+
+            $stmt = $db->prepare("
+                INSERT INTO orders
+                    (order_ref, customer_id, subtotal, discount_amount, discount_code_id, shipping_cost,
+                     total, status, delivery_type, delivery_address, payment_method, payment_status, stripe_payment_id)
+                VALUES (?,?,?,?,?,?,?,'pending',?,?,?, 'pending', '')
+            ");
+            $stmt->execute([
+                $ref, $customerId, $sub, $discountAmount, $discountCodeId, $shipping, $total,
+                $data['delivery_type'], sanitize($data['delivery_address'] ?? ''), $method,
+            ]);
+            $orderId = (int)$db->lastInsertId();
+
+            $iStmt = $db->prepare("INSERT INTO order_items (order_id, product_id, variant_id, quantity, price_charged) VALUES (?,?,?,?,?)");
+            foreach ($data['items'] as $item) {
+                $iStmt->execute([$orderId, (int)$item['productId'], $item['variantId'] ? (int)$item['variantId'] : null, (int)$item['quantity'], (float)$item['price']]);
+            }
+
+            // Bank transfer: reserve stock + discount usage now, acknowledge now
+            // (mirrors previous confirm-order behaviour; payment stays pending).
+            if ($method === 'bank_transfer') {
+                $sStmt = $db->prepare("UPDATE product_variants SET stock_qty=GREATEST(0, stock_qty-?) WHERE product_id=?");
+                foreach ($data['items'] as $item) $sStmt->execute([(int)$item['quantity'], (int)$item['productId']]);
+                if ($discountCodeId) $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id=?")->execute([$discountCodeId]);
+            }
+
+            $db->commit();
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('order-intent error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Order could not be saved. Please try again or contact us.'], 500);
+        }
+
+        if ($method === 'stripe') {
+            $totalPence = (int) round($total * 100);
+            if ($totalPence < 30) jsonResponse(['error' => 'Order total is too small to charge by card.'], 400);
+            try {
+                $intent = stripeCreatePaymentIntent($totalPence, 'gbp', [
+                    'kind'      => 'order',
+                    'order_id'  => $orderId,
+                    'order_ref' => $ref,
+                    'source'    => 'braidedbyagb_shop',
+                ], 'order_' . $orderId);
+                $cs  = $intent['client_secret'] ?? null;
+                $pid = $intent['id'] ?? null;
+                if (!$cs || !$pid) throw new RuntimeException('No client secret');
+                $db->prepare("UPDATE orders SET stripe_payment_id=? WHERE id=?")->execute([$pid, $orderId]);
+                jsonResponse(['success' => true, 'client_secret' => $cs, 'ref' => $ref]);
+            } catch (Throwable $e) {
+                error_log('order-intent PI error: ' . $e->getMessage());
+                // Void the unpaid pending order so it doesn't linger.
+                $db->prepare("UPDATE orders SET status='cancelled' WHERE id=? AND payment_status='pending'")->execute([$orderId]);
+                jsonResponse(['error' => 'Payment could not be initiated. Please try again.'], 500);
+            }
+        }
+
+        // Bank transfer — acknowledge immediately (unchanged behaviour).
+        try {
+            if (is_readable(__DIR__ . '/../includes/mailer.php')) {
+                require_once __DIR__ . '/../includes/mailer.php';
+                $customer = ['name' => sanitize($data['name']), 'email' => sanitizeEmail($data['email'])];
+                $orderRow = $db->query("SELECT * FROM orders WHERE id={$orderId}")->fetch();
+                emailOrderConfirmation($orderRow, $customer, $data['items']);
+                emailAdminNewOrder($orderRow, $customer, $data['items']);
+            }
+        } catch (Throwable $e) {
+            error_log('order-intent (bank) email error (non-fatal): ' . $e->getMessage());
+        }
+        jsonResponse(['success' => true, 'ref' => $ref]);
+        break;
+
+    // ── PAY-BOOKING INTENT (deposit link, pay.php + Payment Element) ──
+    // The booking already exists (admin-generated link). Validate the token,
+    // create a PaymentIntent for the deposit, and return its client_secret.
+    // finalize marks the deposit paid, clears the token and emails the receipt.
+    case 'pay-booking-intent':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
+        if (!stripeConfigured()) jsonResponse(['error' => 'Card payment is not configured.'], 500);
+        $body  = json_decode(file_get_contents('php://input'), true) ?? [];
+        $token = sanitize($body['token'] ?? '');
+        if (!$token) jsonResponse(['error' => 'Missing token'], 400);
+
+        $db   = getDB();
+        $stmt = $db->prepare("
+            SELECT id, booking_ref, deposit_amount
+            FROM bookings
+            WHERE payment_token = ? AND deposit_paid = 0 AND status NOT IN ('cancelled','completed')
+            LIMIT 1
+        ");
+        $stmt->execute([$token]);
+        $bk = $stmt->fetch();
+        if (!$bk) jsonResponse(['error' => 'Payment link is invalid or has already been used.'], 409);
+
+        $pence = (int) round((float)$bk['deposit_amount'] * 100);
+        if ($pence < 30) jsonResponse(['error' => 'Deposit amount is invalid.'], 400);
+        try {
+            $intent = stripeCreatePaymentIntent($pence, 'gbp', [
+                'kind'        => 'pay-booking',
+                'booking_id'  => (int)$bk['id'],
+                'booking_ref' => $bk['booking_ref'],
+                'source'      => 'braidedbyagb_pay_link',
+            ], 'paybk_' . $bk['id']);
+            $cs = $intent['client_secret'] ?? null;
+            if (!$cs) throw new RuntimeException('No client secret');
+            jsonResponse(['success' => true, 'client_secret' => $cs, 'ref' => $bk['booking_ref']]);
+        } catch (Throwable $e) {
+            error_log('pay-booking-intent PI error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Payment could not be initiated. Please try again.'], 500);
+        }
+        break;
+
+    // ── FINALIZE PAYMENT (return-page fast path) ──────────────────────
+    // Called by the confirmation pages after the customer returns from a
+    // redirect payment method. Verifies the PaymentIntent server-side and
+    // finalizes. Fully idempotent and also driven by the webhook.
+    case 'finalize-payment':
+        $pi = sanitize($_GET['payment_intent'] ?? ($_POST['payment_intent'] ?? ''));
+        if (!$pi) jsonResponse(['error' => 'Missing payment_intent'], 400);
+        if (!stripeConfigured()) jsonResponse(['error' => 'Stripe not configured'], 500);
+        try {
+            $intent = stripeRetrievePaymentIntent($pi);
+            $result = finalizeStripePayment(getDB(), $intent, 'return_page');
+            jsonResponse(['status' => $intent['status'] ?? 'unknown'] + $result);
+        } catch (Throwable $e) {
+            error_log('finalize-payment error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Could not verify payment.'], 500);
         }
         break;
 

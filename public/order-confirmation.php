@@ -9,6 +9,18 @@ require_once __DIR__ . '/../includes/helpers.php';
 $db  = getDB();
 $ref = sanitize($_GET['ref'] ?? '');
 
+// Finalize a returning Stripe payment (card inline, or Klarna/Clearpay/PayPal
+// redirect). Fast path; the webhook is the authoritative backstop. Idempotent.
+if (!empty($_GET['payment_intent'])) {
+    try {
+        require_once __DIR__ . '/../includes/stripe.php';
+        $pi = stripeRetrievePaymentIntent(sanitize($_GET['payment_intent']));
+        finalizeStripePayment($db, $pi, 'return_page');
+    } catch (Throwable $e) {
+        error_log('order confirmation finalize error: ' . $e->getMessage());
+    }
+}
+
 $order = null;
 if ($ref) {
     $stmt = $db->prepare("
@@ -185,5 +197,10 @@ $items = $items->fetchAll();
 </style>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 <script src="/assets/js/main.js"></script>
+<script>
+// Order placed — clear the cart. Covers the redirect payment path (Klarna /
+// Clearpay / PayPal) where checkout.php navigated away before it could clear.
+try { localStorage.removeItem('agb_cart'); sessionStorage.removeItem('agb_discount'); } catch(e) {}
+</script>
 </body>
 </html>

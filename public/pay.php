@@ -200,20 +200,10 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
     }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
-    #stripe-card-element {
-      border: 1.5px solid var(--color-border);
-      border-radius: var(--border-radius);
-      padding: var(--space-3) var(--space-4);
-      background: var(--color-white);
-      font-size: 1rem;
+    /* The Stripe Payment Element renders its own bordered fields; just give the
+       wrapper some breathing room below it before the Pay button. */
+    #stripe-payment-element {
       margin-bottom: var(--space-5);
-    }
-    #stripe-card-element.StripeElement--focus {
-      border-color: var(--color-primary);
-      outline: none;
-    }
-    #stripe-card-element.StripeElement--invalid {
-      border-color: var(--color-error);
     }
     .bank-detail-box {
       background: var(--color-bg-light);
@@ -374,7 +364,7 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
       <?php if ($allowed === 'both'): ?>
         <!-- Tabs -->
         <div class="tab-row">
-          <button type="button" class="tab-btn active" id="tab-stripe" onclick="switchTab('stripe')">💳 Pay by Card</button>
+          <button type="button" class="tab-btn active" id="tab-stripe" onclick="switchTab('stripe')">💳 Card / PayPal / Klarna</button>
           <button type="button" class="tab-btn" id="tab-bank" onclick="switchTab('bank')">🏦 Bank Transfer</button>
         </div>
       <?php endif; ?>
@@ -382,7 +372,7 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
       <!-- ── Stripe card pane ───────────────────────────── -->
       <?php if (in_array($allowed, ['stripe','both'])): ?>
       <div class="tab-pane <?= $defaultTab === 'stripe' ? 'active' : '' ?>" id="pane-stripe">
-        <div id="stripe-card-element"></div>
+        <div id="stripe-payment-element"></div>
         <div id="stripe-error" class="pay-error" style="display:none"></div>
         <button type="button" id="stripe-pay-btn" class="btn btn-primary w-full btn-lg"
                 onclick="handleStripePay()" style="justify-content:center">
@@ -465,70 +455,47 @@ function copyRef(text) {
 }
 
 <?php if (in_array($allowed ?? 'both', ['stripe','both'])): ?>
-// ── Stripe card element ───────────────────────────────────
-var stripe  = Stripe('<?= STRIPE_PUBLIC_KEY ?>');
-var elements = stripe.elements();
-var card = elements.create('card', {
-  style: {
-    base: {
-      fontFamily: "'Lato', sans-serif",
-      fontSize: '16px',
-      color: '#2A0020',
-      '::placeholder': { color: '#7A4A70' }
-    },
-    invalid: { color: '#D9000D' }
-  },
-  hidePostalCode: true
-});
-card.mount('#stripe-card-element');
-
-card.on('change', function(e) {
-  var el = document.getElementById('stripe-error');
-  if (e.error) { el.textContent = e.error.message; el.style.display = ''; }
-  else { el.style.display = 'none'; }
-});
+// ── Stripe Payment Element (Card, PayPal, Klarna, Clearpay) ──
+var stripe = Stripe('<?= STRIPE_PUBLIC_KEY ?>');
+var payElements = stripe.elements({ mode: 'payment', amount: <?= (int)round($bk['deposit_amount'] * 100) ?>, currency: 'gbp', locale: 'en-GB' });
+var payElement = payElements.create('payment', { layout: 'tabs' });
+payElement.mount('#stripe-payment-element');
 
 function handleStripePay() {
-  var btn = document.getElementById('stripe-pay-btn');
+  var btn     = document.getElementById('stripe-pay-btn');
+  var errorEl = document.getElementById('stripe-error');
   btn.disabled = true;
   btn.textContent = 'Processing…';
-
-  var errorEl = document.getElementById('stripe-error');
   errorEl.style.display = 'none';
 
-  // Step 1: get payment intent from our API
-  fetch('/api/create-payment-intent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount: <?= (int)round($bk['deposit_amount'] * 100) ?> })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.error) throw new Error(data.error);
+  // Step 1: validate the entered payment details
+  payElements.submit().then(function(res) {
+    if (res.error) throw new Error(res.error.message || 'Please check your payment details.');
 
-    // Step 2: confirm card payment with Stripe
-    return stripe.confirmCardPayment(data.client_secret, {
-      payment_method: { card: card }
-    });
-  })
-  .then(function(result) {
-    if (result.error) throw new Error(result.error.message);
-
-    // Step 3: confirm booking payment on our server
-    return fetch('/api/pay-booking', {
+    // Step 2: create the PaymentIntent server-side (booking already exists)
+    return fetch('/api/pay-booking-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: '<?= htmlspecialchars($token) ?>',
-        stripe_payment_id: result.paymentIntent.id
-      })
+      body: JSON.stringify({ token: '<?= htmlspecialchars($token) ?>' })
     });
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.error) throw new Error(data.error);
-    // Success — redirect to booking confirmation page (server already cleared the token)
-    window.location.href = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+
+    // Step 3: confirm — cards inline, Klarna/Clearpay/PayPal redirect out
+    var returnUrl = window.location.origin + '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+    return stripe.confirmPayment({
+      elements: payElements,
+      clientSecret: data.client_secret,
+      confirmParams: { return_url: returnUrl },
+      redirect: 'if_required'
+    }).then(function(result) {
+      if (result.error) throw new Error(result.error.message);
+      var url = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+      if (result.paymentIntent && result.paymentIntent.id) url += '&payment_intent=' + encodeURIComponent(result.paymentIntent.id);
+      window.location.href = url;
+    });
   })
   .catch(function(err) {
     errorEl.textContent = err.message || 'Payment failed. Please try again or use bank transfer.';

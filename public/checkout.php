@@ -121,17 +121,17 @@ $bankAcc  = getSetting('bank_account_number', '');
           </div>
 
           <div class="payment-tabs">
-            <button class="payment-tab active" onclick="selectPaymentMethod('stripe', this)">💳 Pay by Card</button>
+            <button class="payment-tab active" onclick="selectPaymentMethod('stripe', this)">💳 Card / PayPal / Klarna</button>
             <button class="payment-tab" onclick="selectPaymentMethod('bank_transfer', this)">🏦 Bank Transfer</button>
           </div>
 
           <div id="stripe-section">
             <div class="stripe-card-wrap">
-              <label class="form-label">Card Details</label>
-              <div id="stripe-card-element" class="stripe-card-element"></div>
+              <label class="form-label">Payment Details</label>
+              <div id="stripe-payment-element"></div>
               <div id="stripe-card-errors" class="stripe-error" role="alert"></div>
             </div>
-            <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" disabled onclick="submitStripePayment()">
+            <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" onclick="submitStripePayment()">
               Pay — <span id="stripe-total-label">£0.00</span>
             </button>
           </div>
@@ -204,7 +204,7 @@ $bankAcc  = getSetting('bank_account_number', '');
 <script src="/assets/js/cart.js"></script>
 <script>
 const STRIPE_KEY = '<?= $stripePublicKey ?>';
-let stripe, cardElement, paymentMethod = 'stripe', deliveryMethod = 'shipping';
+let stripe, elements, paymentElement, paymentMethod = 'stripe', deliveryMethod = 'shipping';
 let orderTotal = 0;
 let appliedDiscount = null;
 
@@ -241,6 +241,15 @@ function buildOrderSummary() {
 
   const name = document.getElementById('co-name')?.value || 'YOUR NAME';
   document.getElementById('bank-ref-label').textContent = name.split(' ')[0].toUpperCase() + '-ORDER';
+
+  updatePaymentAmount();
+}
+
+// Keep the Payment Element in sync with the live order total (discount/delivery).
+function updatePaymentAmount() {
+  if (elements && orderTotal > 0) {
+    elements.update({ amount: Math.max(30, Math.round(orderTotal * 100)) });
+  }
 }
 
 async function applyDiscount() {
@@ -312,17 +321,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
   stripe = Stripe(STRIPE_KEY);
-  const elements = stripe.elements({ locale: 'en-GB' });
-  cardElement = elements.create('card', {
-    style: {
-      base: { fontFamily: 'Lato, sans-serif', fontSize: '16px', color: '#1A0014', '::placeholder': { color: '#9B8BA5' } }
-    }
-  });
-  cardElement.mount('#stripe-card-element');
-  cardElement.on('change', e => {
-    document.getElementById('stripe-card-errors').textContent = e.error ? e.error.message : '';
-    document.getElementById('stripe-pay-btn').disabled = !!(e.error) || !e.complete;
-  });
+  elements = stripe.elements({ mode: 'payment', amount: Math.max(30, Math.round(orderTotal * 100)), currency: 'gbp', locale: 'en-GB' });
+  paymentElement = elements.create('payment', { layout: 'tabs' });
+  paymentElement.mount('#stripe-payment-element');
   document.getElementById('bank-confirm-checkout')?.addEventListener('change', function() {
     document.getElementById('bank-submit-btn').disabled = !this.checked;
   });
@@ -344,30 +345,61 @@ function validateDetails() {
   return { name, email, phone };
 }
 
+function checkoutAddress() {
+  return deliveryMethod === 'shipping'
+    ? [document.getElementById('co-addr1').value, document.getElementById('co-addr2').value,
+       document.getElementById('co-city').value, document.getElementById('co-postcode').value].filter(Boolean).join(', ')
+    : null;
+}
+
+function resetCheckoutBtn() {
+  const btn = document.getElementById('stripe-pay-btn');
+  btn.disabled = false;
+  btn.innerHTML = 'Pay — <span id="stripe-total-label">£' + orderTotal.toFixed(2) + '</span>';
+}
+
+// ── Stripe payment submission (Payment Element, deferred intent) ──
 async function submitStripePayment() {
   const details = validateDetails(); if (!details) return;
-  const btn = document.getElementById('stripe-pay-btn');
-  btn.disabled = true; btn.textContent = 'Processing...';
+  const btn   = document.getElementById('stripe-pay-btn');
+  const errEl = document.getElementById('stripe-card-errors');
+  btn.disabled = true; btn.textContent = 'Processing...'; errEl.textContent = '';
   try {
-    const intentRes = await fetch('/api/create-order-payment-intent', {
+    const { error: submitError } = await elements.submit();
+    if (submitError) { errEl.textContent = submitError.message || 'Please check your payment details.'; resetCheckoutBtn(); return; }
+
+    const res = await fetch('/api/order-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: Math.round(orderTotal * 100) })
+      body: JSON.stringify({
+        items:            Cart.get(),
+        name:             details.name,
+        email:            details.email,
+        phone:            details.phone,
+        delivery_type:    deliveryMethod,
+        delivery_address: checkoutAddress(),
+        payment_method:   'stripe',
+        discount_code:    appliedDiscount?.code || null,
+        total:            orderTotal,
+      })
     });
-    const intentData = await intentRes.json();
-    if (intentData.error) throw new Error(intentData.error);
-    const result = await stripe.confirmCardPayment(intentData.client_secret, {
-      payment_method: { card: cardElement }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const returnUrl = window.location.origin + '/order-confirmation?ref=' + encodeURIComponent(data.ref);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements, clientSecret: data.client_secret,
+      confirmParams: { return_url: returnUrl }, redirect: 'if_required'
     });
-    if (result.error) {
-      document.getElementById('stripe-card-errors').textContent = result.error.message;
-      btn.disabled = false; btn.innerHTML = 'Pay — £' + orderTotal.toFixed(2);
-    } else if (result.paymentIntent.status === 'succeeded') {
-      await confirmOrder('stripe', result.paymentIntent.id, details);
-    }
+    if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetCheckoutBtn(); return; }
+
+    // No redirect required (e.g. card) — the confirmation page finalizes & clears the cart.
+    let url = '/order-confirmation?ref=' + encodeURIComponent(data.ref);
+    if (paymentIntent && paymentIntent.id) url += '&payment_intent=' + encodeURIComponent(paymentIntent.id);
+    window.location.href = url;
   } catch(e) {
     showToast(e.message || 'Payment failed.', 'error');
-    btn.disabled = false; btn.innerHTML = 'Pay — £' + orderTotal.toFixed(2);
+    resetCheckoutBtn();
   }
 }
 
@@ -375,37 +407,33 @@ async function submitBankTransfer() {
   const details = validateDetails(); if (!details) return;
   document.getElementById('bank-submit-btn').disabled = true;
   document.getElementById('bank-submit-btn').textContent = 'Confirming...';
-  await confirmOrder('bank_transfer', null, details);
-}
-
-async function confirmOrder(method, stripeId, details) {
-  const addr = deliveryMethod === 'shipping'
-    ? [document.getElementById('co-addr1').value, document.getElementById('co-addr2').value,
-       document.getElementById('co-city').value, document.getElementById('co-postcode').value].filter(Boolean).join(', ')
-    : null;
-
-  const res = await fetch('/api/confirm-order', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      items:            Cart.get(),
-      name:             details.name,
-      email:            details.email,
-      phone:            details.phone,
-      delivery_type:    deliveryMethod,
-      delivery_address: addr,
-      payment_method:   method,
-      stripe_payment_id: stripeId,
-      discount_code:    appliedDiscount?.code || null,
-      total:            orderTotal,
-    })
-  });
-  const data = await res.json();
-  if (data.error)  { showToast(data.error, 'error'); return; }
-  if (data.ref) {
-    Cart.clear();
-    sessionStorage.removeItem('agb_discount');
-    window.location.href = '/order-confirmation?ref=' + data.ref;
+  try {
+    const res = await fetch('/api/order-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items:            Cart.get(),
+        name:             details.name,
+        email:            details.email,
+        phone:            details.phone,
+        delivery_type:    deliveryMethod,
+        delivery_address: checkoutAddress(),
+        payment_method:   'bank_transfer',
+        discount_code:    appliedDiscount?.code || null,
+        total:            orderTotal,
+      })
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); document.getElementById('bank-submit-btn').disabled = false; document.getElementById('bank-submit-btn').textContent = 'Confirm Order by Bank Transfer'; return; }
+    if (data.ref) {
+      Cart.clear();
+      sessionStorage.removeItem('agb_discount');
+      window.location.href = '/order-confirmation?ref=' + encodeURIComponent(data.ref);
+    }
+  } catch(e) {
+    showToast(e.message || 'Error. Please try again.', 'error');
+    document.getElementById('bank-submit-btn').disabled = false;
+    document.getElementById('bank-submit-btn').textContent = 'Confirm Order by Bank Transfer';
   }
 }
 </script>

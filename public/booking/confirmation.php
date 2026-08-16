@@ -9,6 +9,21 @@ require_once __DIR__ . '/../../includes/helpers.php';
 $db  = getDB();
 $ref = sanitize($_GET['ref'] ?? '');
 
+// If the customer just returned from a Stripe payment (card confirmed inline, or
+// a Klarna/Clearpay/PayPal redirect), finalize it now for instant confirmation.
+// This is the fast path; the Stripe webhook is the authoritative backstop. Both
+// call the same idempotent finalizer, so running here is safe even if the
+// webhook already fired.
+if (!empty($_GET['payment_intent'])) {
+    try {
+        require_once __DIR__ . '/../../includes/stripe.php';
+        $pi = stripeRetrievePaymentIntent(sanitize($_GET['payment_intent']));
+        finalizeStripePayment($db, $pi, 'return_page');
+    } catch (Throwable $e) {
+        error_log('booking confirmation finalize error: ' . $e->getMessage());
+    }
+}
+
 $booking = null;
 if ($ref) {
     $stmt = $db->prepare("

@@ -40,6 +40,8 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 
 # API
 RewriteRule ^api/chat/?$ api/chat.php [L,QSA]
+# Stripe webhook (must come before the general api rule)
+RewriteRule ^api/webhook/?$ api/webhook.php [L,QSA]
 # Admin REST API (must come before the general api rule)
 RewriteRule ^api/admin/auth/?$ api/admin.php?endpoint=auth [L,QSA]
 RewriteRule ^api/admin/([a-z-]+)/([0-9]+)/([a-z-]+)/?$ api/admin.php?endpoint=$1&id=$2&action=$3 [L,QSA]

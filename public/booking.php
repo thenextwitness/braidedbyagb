@@ -442,18 +442,18 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
           <!-- Payment method tabs -->
           <div class="payment-tabs">
             <button class="payment-tab active" data-method="stripe" onclick="selectPaymentMethod('stripe', this)">
-              💳 Pay by Card
+              💳 Card / PayPal / Klarna
             </button>
             <button class="payment-tab" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer', this)">
               🏦 Bank Transfer
             </button>
           </div>
 
-          <!-- Stripe card section -->
+          <!-- Stripe payment section (Card, PayPal, Klarna, Clearpay via Payment Element) -->
           <div id="stripe-section">
             <div class="stripe-card-wrap">
-              <label class="form-label">Card Details</label>
-              <div id="stripe-card-element" class="stripe-card-element"></div>
+              <label class="form-label">Payment Details</label>
+              <div id="stripe-payment-element"></div>
               <div id="stripe-card-errors" class="stripe-error" role="alert"></div>
             </div>
             <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" disabled onclick="submitStripePayment()">
@@ -1119,7 +1119,7 @@ function cartTotal()     { return cart.reduce((s, it) => s + itemTotal(it), 0); 
 function cartDeposit()   { return cart.reduce((s, it) => s + itemDeposit(it), 0); }
 
 // ── Payment step ─────────────────────────────────────────
-let stripe, cardElement, paymentHandlersBound = false;
+let stripe, elements, paymentElement, paymentHandlersBound = false;
 
 function renderPaymentStep() {
   const deposit = cartDeposit();
@@ -1182,26 +1182,24 @@ function renderPaymentStep() {
       ⚠️ Please use your name as the payment reference. Your booking will be held for 24 hours pending confirmation of payment.
     </p>`;
 
-  // Init Stripe (once)
+  // Init the Stripe Payment Element (once). Deferred-intent flow: the element is
+  // mounted now with the deposit amount, and the PaymentIntent is created only
+  // when the customer clicks Pay. Cards confirm inline; Klarna/Clearpay/PayPal
+  // redirect out and return to the confirmation page.
+  const depositPence = Math.max(30, Math.round(deposit * 100));
   if (!stripe) {
     stripe = Stripe(STRIPE_KEY);
-    const elements = stripe.elements({ locale: 'en-GB' });
-    cardElement = elements.create('card', {
-      style: { base: { fontFamily: 'Lato, sans-serif', fontSize: '16px', color: '#1A0014', '::placeholder': { color: '#9B8BA5' } } }
-    });
-    cardElement.mount('#stripe-card-element');
-    cardElement.on('change', e => {
-      document.getElementById('stripe-card-errors').textContent = e.error ? e.error.message : '';
-      const policyTicked = document.getElementById('policy-checkbox').checked;
-      document.getElementById('stripe-pay-btn').disabled = !!(e.error) || !e.complete || !policyTicked;
-    });
+    elements = stripe.elements({ mode: 'payment', amount: depositPence, currency: 'gbp', locale: 'en-GB' });
+    paymentElement = elements.create('payment', { layout: 'tabs' });
+    paymentElement.mount('#stripe-payment-element');
+  } else {
+    elements.update({ amount: depositPence });
   }
 
   // Bind policy/bank checkbox handlers once
   if (!paymentHandlersBound) {
     document.getElementById('policy-checkbox').addEventListener('change', function() {
-      const cardComplete = cardElement && cardElement._complete;
-      document.getElementById('stripe-pay-btn').disabled   = !this.checked || !cardComplete;
+      document.getElementById('stripe-pay-btn').disabled   = !this.checked;
       document.getElementById('bank-submit-btn').disabled  = !(this.checked && document.getElementById('bank-confirm-checkbox').checked);
     });
     document.getElementById('bank-confirm-checkbox').addEventListener('change', function() {
@@ -1220,38 +1218,57 @@ function selectPaymentMethod(method, btn) {
   document.getElementById('bank-transfer-section').style.display = method === 'bank_transfer' ? 'block' : 'none';
 }
 
-// ── Stripe payment submission ────────────────────────────
+// ── Stripe payment submission (Payment Element, deferred intent) ──
 async function submitStripePayment() {
-  const btn = document.getElementById('stripe-pay-btn');
+  const btn   = document.getElementById('stripe-pay-btn');
+  const errEl = document.getElementById('stripe-card-errors');
+  const depositLabel = '£' + cartDeposit().toFixed(2);
   btn.disabled = true;
   btn.textContent = 'Processing...';
-  const depositLabel = '£' + cartDeposit().toFixed(2);
+  errEl.textContent = '';
 
   try {
-    const intentRes = await fetch('/api/create-payment-intent', {
+    // 1. Validate the details entered in the Payment Element
+    const { error: submitError } = await elements.submit();
+    if (submitError) { errEl.textContent = submitError.message || 'Please check your payment details.'; resetStripeBtn(depositLabel); return; }
+
+    // 2. Create the pending booking(s) + PaymentIntent server-side
+    const res = await fetch('/api/cart-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: Math.round(cartDeposit() * 100) })
+      body: JSON.stringify({
+        payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
+        payment_method: 'stripe',
+        items: buildCartItems()
+      })
     });
-    const intentData = await intentRes.json();
-    if (intentData.error) throw new Error(intentData.error);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-    const result = await stripe.confirmCardPayment(intentData.client_secret, {
-      payment_method: { card: cardElement }
+    // 3. Confirm — cards resolve inline; Klarna/Clearpay/PayPal redirect out.
+    const returnUrl = window.location.origin + '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret: data.client_secret,
+      confirmParams: { return_url: returnUrl },
+      redirect: 'if_required'
     });
+    if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetStripeBtn(depositLabel); return; }
 
-    if (result.error) {
-      document.getElementById('stripe-card-errors').textContent = result.error.message;
-      btn.disabled = false;
-      btn.textContent = 'Pay Deposit — ' + depositLabel;
-    } else if (result.paymentIntent.status === 'succeeded') {
-      await confirmCart('stripe', result.paymentIntent.id);
-    }
+    // No redirect required (e.g. card) — go to the confirmation page, which finalizes.
+    let url = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+    if (paymentIntent && paymentIntent.id) url += '&payment_intent=' + encodeURIComponent(paymentIntent.id);
+    window.location.href = url;
   } catch(e) {
     showToast(e.message || 'Payment failed. Please try again.', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Pay Deposit — ' + depositLabel;
+    resetStripeBtn(depositLabel);
   }
+}
+
+function resetStripeBtn(depositLabel) {
+  const btn = document.getElementById('stripe-pay-btn');
+  btn.disabled = false;
+  btn.textContent = 'Pay Deposit — ' + depositLabel;
 }
 
 // ── Bank transfer submission ─────────────────────────────
@@ -1260,7 +1277,7 @@ async function submitBankTransfer() {
   btn.disabled = true;
   btn.textContent = 'Confirming...';
   try {
-    await confirmCart('bank_transfer', null);
+    await confirmCart('bank_transfer');
   } catch(e) {
     showToast(e.message || 'Error. Please try again.', 'error');
     btn.disabled = false;
@@ -1268,14 +1285,13 @@ async function submitBankTransfer() {
   }
 }
 
-async function confirmCart(method, stripeId) {
-  const res = await fetch('/api/confirm-cart', {
+async function confirmCart(method) {
+  const res = await fetch('/api/cart-intent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
       payment_method: method,
-      stripe_payment_id: stripeId,
       items: buildCartItems()
     })
   });
