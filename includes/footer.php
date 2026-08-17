@@ -88,6 +88,39 @@
     </div>
   </div>
 
+  <!-- Accepted payment methods -->
+  <style>
+    .footer-payments{border-top:1px solid rgba(255,255,255,.08);padding:20px 0}
+    .footer-payments .container{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+    .footer-payments-label{color:rgba(255,255,255,.6);font-size:.78rem;letter-spacing:.05em;text-transform:uppercase}
+    .payment-logos{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+    .pay-chip{height:32px;min-width:52px;padding:0 10px;border-radius:6px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap}
+    .pay-visa{color:#1434CB;font:italic 800 16px/1 Arial,Helvetica,sans-serif;letter-spacing:.5px}
+    .pay-paypal{font:italic 800 15px/1 Arial,Helvetica,sans-serif}
+    .pay-paypal .p1{color:#003087}.pay-paypal .p2{color:#009cde}
+    .pay-klarna{background:#FFB3C7;color:#0A0A0A;font:700 15px/1 Arial,Helvetica,sans-serif}
+    .pay-clearpay{background:#B2FCE4;color:#0A0A0A;font:700 14px/1 Arial,Helvetica,sans-serif}
+    .pay-mc{padding:0 8px}
+  </style>
+  <div class="footer-payments">
+    <div class="container">
+      <span class="footer-payments-label">Secure payments accepted</span>
+      <div class="payment-logos">
+        <span class="pay-chip pay-visa" role="img" aria-label="Visa">VISA</span>
+        <span class="pay-chip pay-mc" role="img" aria-label="Mastercard">
+          <svg width="36" height="22" viewBox="0 0 40 24" aria-hidden="true">
+            <circle cx="15" cy="12" r="9" fill="#EB001B"/>
+            <circle cx="25" cy="12" r="9" fill="#F79E1B"/>
+            <path d="M20 5.4a9 9 0 0 0 0 13.2 9 9 0 0 0 0-13.2z" fill="#FF5F00"/>
+          </svg>
+        </span>
+        <span class="pay-chip pay-paypal" role="img" aria-label="PayPal"><span class="p1">Pay</span><span class="p2">Pal</span></span>
+        <span class="pay-chip pay-klarna" role="img" aria-label="Klarna">Klarna</span>
+        <span class="pay-chip pay-clearpay" role="img" aria-label="Clearpay">Clearpay</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom bar -->
   <div class="footer-bottom">
     <div class="container">
