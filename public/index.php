@@ -346,7 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
       <div class="sp-policy-card"><div class="sp-policy-icon">🕐</div><h4>Late Arrivals</h4><p>If you arrive more than 20 minutes late without prior notice, we reserve the right to cancel the appointment and retain the deposit.</p></div>
       <div class="sp-policy-card"><div class="sp-policy-icon">💇</div><h4>Hair Preparation</h4><p>Please arrive with clean, detangled, and fully dry hair. Hair requiring washing or detangling may incur an additional charge.</p></div>
       <div class="sp-policy-card"><div class="sp-policy-icon">✨</div><h4>Extensions</h4><p>Extensions are available from our shop or you may bring your own. Please confirm requirements when booking so we can prepare everything in advance.</p></div>
-      <div class="sp-policy-card"><div class="sp-policy-icon">💳</div><h4>Payment</h4><p>We accept card, bank transfer, and cash. The remaining balance is due on the day. Prices shown are starting prices — final cost confirmed at booking.</p></div>
+      <div class="sp-policy-card"><div class="sp-policy-icon">💳</div><h4>Payment</h4><p>We accept card, PayPal, Klarna, Clearpay, bank transfer, and cash. The remaining balance is due on the day. Prices shown are starting prices — final cost confirmed at booking.</p></div>
     </div>
     <p class="sp-policy-note">Thank you for respecting my time and business. By booking with BraidedbyAGB, you agree to these terms. Let's keep things professional and smooth for both of us.</p>
     <div style="text-align:center;margin-top:32px"><a href="/policies" class="btn btn-outline">Read Full Policy</a></div>
