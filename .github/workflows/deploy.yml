@@ -1,0 +1,58 @@
+name: Deploy to cPanel (FTPS)
+
+# Auto-deploys the site to the live cPanel web root on every push to the
+# deploy branch. Replaces the manual "Update from Remote -> Deploy HEAD Commit"
+# step in cPanel Git Version Control.
+#
+# REQUIRED GitHub repo secrets (Settings -> Secrets and variables -> Actions):
+#   FTP_SERVER      - FTP host, e.g. ftp.braidedbyagb.co.uk (or the server IP)
+#   FTP_USERNAME    - an FTP account username (create one in cPanel -> FTP Accounts)
+#   FTP_PASSWORD    - that FTP account's password
+#   FTP_SERVER_DIR  - target dir WITH a trailing slash. For a dedicated FTP
+#                     account jailed to the site root use "/". For the main
+#                     account it is usually "/braidedbyagb.co.uk/".
+#
+# Server-only files are excluded below and are NEVER uploaded or deleted:
+#   config/  (secrets)   uploads/ (customer receipts)   .htaccess   mobile/  vendor/
+
+on:
+  push:
+    branches: [ session-improvements ]
+  workflow_dispatch:
+
+concurrency:
+  group: cpanel-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Incremental sync (only changed files). Server-only paths are excluded
+          # so the action never uploads OR deletes them.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            config/**
+            uploads/**
+            mobile/**
+            vendor/**
+            node_modules/**
+            **/*.md
+            **/.DS_Store
+            .gitignore
+            .cpanel.yml
+            .htaccess
