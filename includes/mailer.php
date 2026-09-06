@@ -1258,14 +1258,36 @@ HTML;
 HTML;
         }
 
-        // Reveal the exact address only once the deposit is actually paid (card).
-        // Bank-transfer carts are still "held" pending payment, so no address yet.
-        $locationBlock = $paymentMethod === 'bank_transfer' ? '' : appointmentLocationBlock();
+        // Home service (mobile) — whole-booking choice; read from the first item.
+        $isHome    = (($items[0]['service_location'] ?? 'salon') === 'home');
+        $travelFee = array_sum(array_map(fn($it) => (float)($it['travel_fee'] ?? 0), $items));
+        $homeBlock = '';
+        if ($isHome) {
+            $areaLabel = ucwords(str_replace('_', ' / ', (string)($items[0]['travel_area'] ?? '')));
+            $addrHtml  = nl2br(htmlspecialchars((string)($items[0]['service_address'] ?? ''), ENT_QUOTES, 'UTF-8'));
+            $feeStr    = formatPrice($travelFee);
+            $feeNote   = $paymentMethod === 'bank_transfer' ? '(included in your transfer)' : '✓ paid';
+            $homeBlock = <<<HTML
+<div class="detail-box">
+  <p style="margin:0 0 8px;font-weight:700;font-size:14px;color:#4B0082;text-transform:uppercase;letter-spacing:0.05em">🚗 Home service</p>
+  <table>
+    <tr><td>Area:</td><td><strong>{$areaLabel}</strong></td></tr>
+    <tr><td>Your address:</td><td>{$addrHtml}</td></tr>
+    <tr><td>Travel fee:</td><td class="gold-text">{$feeStr} {$feeNote}</td></tr>
+  </table>
+  <p style="margin:8px 0 0;font-size:13px;color:#6B5575">We'll come to you at the address above — please have a comfortable, well-lit space ready.</p>
+</div>
+HTML;
+        }
+
+        // Salon "where to find us" — only for salon bookings (home visits come to you).
+        $locationBlock = ($isHome || $paymentMethod === 'bank_transfer') ? '' : appointmentLocationBlock();
 
         $content = <<<HTML
 <h2>You're all booked in! 💜</h2>
 <p>Hi {$name}, thank you for booking with BraidedbyAGB. Here {$isAre} your {$count} confirmed appointment{$countS}:</p>
 {$summaryBox}
+{$homeBlock}
 {$cards}
 {$bankNote}
 {$locationBlock}
@@ -1309,11 +1331,35 @@ function emailAdminNewCartBooking(array $payer, array $items, string $groupRef):
             $date    = formatDate($it['booked_date']);
             $time    = formatTime($it['booked_time']);
             $who     = !empty($it['guest_name']) ? sanitize($it['guest_name']) : $name;
-            $rows .= "<tr><td style='padding:6px 0'><strong>{$time}</strong> · {$date}</td><td style='padding:6px 0'>{$who}<br><span style='color:#6B5575;font-size:13px'>{$svc}{$variant} · {$ref}</span></td></tr>";
+            $mc      = $it['media_consent'] ?? 'none';
+            $mcTag   = $mc === 'hair_face' ? "<span style='color:#1d9e75'>📸 photos OK — hair &amp; face</span>"
+                     : ($mc === 'hair' ? "<span style='color:#1d9e75'>📸 photos OK — hair only</span>"
+                     : "<span style='color:#c0392b'>🚫 no photos/videos</span>");
+            $rows .= "<tr><td style='padding:6px 0'><strong>{$time}</strong> · {$date}</td><td style='padding:6px 0'>{$who}<br><span style='color:#6B5575;font-size:13px'>{$svc}{$variant} · {$ref}</span><br><span style='font-size:12px'>{$mcTag}</span></td></tr>";
+        }
+
+        // Home service (mobile) — read from the first item; travel fee is on the first row.
+        $isHome    = (($items[0]['service_location'] ?? 'salon') === 'home');
+        $homeBlock = '';
+        if ($isHome) {
+            $areaLabel = ucwords(str_replace('_', ' / ', (string)($items[0]['travel_area'] ?? '')));
+            $addrHtml  = nl2br(htmlspecialchars((string)($items[0]['service_address'] ?? ''), ENT_QUOTES, 'UTF-8'));
+            $feeStr    = formatPrice(array_sum(array_map(fn($it) => (float)($it['travel_fee'] ?? 0), $items)));
+            $homeBlock = <<<HTML
+<div class="detail-box" style="border-left-color:#8e2de2">
+  <p style="margin:0 0 8px;font-weight:700;font-size:14px;color:#8e2de2;text-transform:uppercase;letter-spacing:0.05em">🚗 Home service — travel to client</p>
+  <table>
+    <tr><td>Area:</td><td><strong>{$areaLabel}</strong></td></tr>
+    <tr><td>Address:</td><td><strong>{$addrHtml}</strong></td></tr>
+    <tr><td>Travel fee:</td><td>{$feeStr}</td></tr>
+  </table>
+</div>
+HTML;
         }
 
         $content = <<<HTML
 <h2>New Group Booking Received</h2>
+{$homeBlock}
 <div class="detail-box">
   <table>
     <tr><td>Payer:</td><td>{$name}</td></tr>

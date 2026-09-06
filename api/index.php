@@ -1060,6 +1060,7 @@ switch ($endpoint) {
                 $eStmt = $db->prepare("
                     SELECT b.booking_ref, b.guest_name, b.booked_date, b.booked_time,
                            b.total_price, b.deposit_amount, b.remaining_balance,
+                           b.service_location, b.travel_area, b.travel_fee, b.service_address, b.media_consent,
                            s.name AS service_name, sv.variant_name
                     FROM bookings b
                     JOIN services s ON s.id = b.service_id
