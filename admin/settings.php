@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
             'auto_cancel_bank_transfer_hours',
             'loyalty_earn_rate', 'loyalty_redeem_rate', 'loyalty_min_redeem',
+            'home_service_min', 'travel_fee_farnborough', 'travel_fee_camberley_aldershot', 'travel_fee_further',
         ];
         foreach ($fields as $key) {
             $val = sanitize($_POST[$key] ?? '');
@@ -137,6 +138,7 @@ $isError = str_starts_with($msg, 'ERROR:');
     <a href="#general"        class="settings-nav-link active">General</a>
     <a href="#banking"        class="settings-nav-link">Banking</a>
     <a href="#bookings"       class="settings-nav-link">Bookings</a>
+    <a href="#homeservice"    class="settings-nav-link">Home Service</a>
     <a href="#loyalty"        class="settings-nav-link">Loyalty</a>
     <a href="#email"          class="settings-nav-link">Email / SMTP</a>
     <a href="#reviews"        class="settings-nav-link">Reviews</a>
@@ -175,10 +177,10 @@ $isError = str_starts_with($msg, 'ERROR:');
         </div>
         <div class="admin-form-row">
           <div class="admin-form-group" style="flex:1">
-            <label class="admin-label">Full Business Address (sent in confirmation emails after payment)</label>
+            <label class="admin-label">Full Salon Address (shown publicly across the site)</label>
             <textarea class="admin-input admin-textarea" name="business_address" rows="3"
-                      placeholder="e.g. 12 Example Road, Farnborough, Hampshire, GU14 0AA"><?= htmlspecialchars($g('business_address','')) ?></textarea>
-            <small style="color:var(--admin-muted);font-size:0.72rem">Only included in paid/confirmed booking emails — never shown before a deposit is paid.</small>
+                      placeholder="Unit 4, Selnews Business Centre, Peabody Road, Farnborough, GU14 6GX"><?= htmlspecialchars($g('business_address','Unit 4, Selnews Business Centre, Peabody Road, Farnborough, GU14 6GX')) ?></textarea>
+            <small style="color:var(--admin-muted);font-size:0.72rem">Shown in the footer, contact page, chat and confirmation emails. Edit here to change it everywhere.</small>
           </div>
         </div>
       </div>
@@ -226,6 +228,34 @@ $isError = str_starts_with($msg, 'ERROR:');
           <label class="admin-label">Auto-cancel unpaid bank transfer bookings after (hours)</label>
           <input class="admin-input" type="number" name="auto_cancel_bank_transfer_hours" value="<?= htmlspecialchars($g('auto_cancel_bank_transfer_hours','24')) ?>" min="1" max="72" style="max-width:120px">
         </div>
+      </div>
+
+      <!-- Home Service -->
+      <div class="settings-section admin-form-card" id="homeservice">
+        <div class="settings-section-title">🚗 Home Service (Mobile)</div>
+        <p style="font-size:0.78rem;color:var(--admin-muted);margin-bottom:14px">
+          Clients can choose a home visit only when their combined booking total meets the minimum below.
+          The travel fee is paid in full online, on top of the deposit.
+        </p>
+        <div class="admin-form-group" style="max-width:280px">
+          <label class="admin-label">Minimum booking total for home service (£)</label>
+          <input class="admin-input" type="number" name="home_service_min" value="<?= htmlspecialchars($g('home_service_min','70')) ?>" min="0" step="1">
+        </div>
+        <div class="admin-form-row" style="margin-top:12px">
+          <div class="admin-form-group">
+            <label class="admin-label">Farnborough — travel fee (£)</label>
+            <input class="admin-input" type="number" name="travel_fee_farnborough" value="<?= htmlspecialchars($g('travel_fee_farnborough','25')) ?>" min="0" step="0.01">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-label">Camberley / Aldershot — travel fee (£)</label>
+            <input class="admin-input" type="number" name="travel_fee_camberley_aldershot" value="<?= htmlspecialchars($g('travel_fee_camberley_aldershot','30')) ?>" min="0" step="0.01">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-label">Further locations — travel fee (£)</label>
+            <input class="admin-input" type="number" name="travel_fee_further" value="<?= htmlspecialchars($g('travel_fee_further','45')) ?>" min="0" step="0.01">
+          </div>
+        </div>
+        <small style="color:var(--admin-muted);font-size:0.72rem">These update the booking page and are re-checked when a client pays, so they can't be bypassed.</small>
       </div>
 
       <!-- SMTP -->
