@@ -80,7 +80,7 @@
           <ul class="footer-links">
             <li><a href="tel:07769064971">07769 064 971</a></li>
             <li><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a></li>
-            <li><span>Farnborough, Hampshire, UK</span></li>
+            <li><a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode(salonAddress()) ?>" target="_blank" rel="noopener"><?= htmlspecialchars(salonAddress()) ?></a></li>
           </ul>
         </div>
 

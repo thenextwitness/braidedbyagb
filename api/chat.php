@@ -66,7 +66,7 @@ $deposit  = $cfg['deposit_percent']            ?? '30';
 $cancel   = $cfg['cancellation_hours']         ?? '48';
 $late     = $cfg['late_arrival_mins']          ?? '20';
 $bankHrs  = $cfg['bank_transfer_hold_hours']   ?? '24';
-$address  = $cfg['site_address']               ?? 'Farnborough, Hampshire, UK';
+$address  = salonAddress();
 $bankName = $cfg['bank_account_name']          ?? 'BraidedbyAGB';
 $bankSort = $cfg['bank_sort_code']             ?? '';
 $bankAcc  = $cfg['bank_account_number']        ?? '';
@@ -218,7 +218,7 @@ if (has('^(hi|hello|hey|hiya|good (morning|afternoon|evening)|howdy|sup|yo)\b', 
 
 // LOCATION
 } elseif (has('\b(where|location|address|based|find you|directions?|farnborough|hampshire)\b', $q)) {
-    $reply = "We are based in {$address}.\n\nThe exact address is shared after booking confirmation. WhatsApp us on {$phone} for specific directions!";
+    $reply = "You'll find us at:\n{$address}\n\nWhatsApp us on {$phone} if you need directions!";
     $wa = true;
     $qr = ['How do I book?', 'How do I contact you?'];
 

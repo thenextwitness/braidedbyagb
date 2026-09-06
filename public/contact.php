@@ -123,7 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="contact-info-icon">📍</div>
             <div>
               <p class="contact-info-title">Location</p>
-              <p class="contact-info-value">Farnborough, Hampshire, UK<br><em>Private home studio — address provided upon booking confirmation.</em></p>
+              <p class="contact-info-value"><?= nl2br(htmlspecialchars(salonAddress())) ?><br>
+                <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode(salonAddress()) ?>" target="_blank" rel="noopener" style="color:var(--color-primary)">View on map →</a></p>
             </div>
           </div>
 

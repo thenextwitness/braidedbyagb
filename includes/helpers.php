@@ -152,6 +152,15 @@ function calculateRemainingBalance(float $total, float $deposit): float {
 }
 
 /**
+ * salonAddress — the public salon address, shown across the site.
+ * Editable via the `business_address` setting; falls back to the studio address.
+ */
+function salonAddress(): string {
+    $a = trim(getSetting('business_address', ''));
+    return $a !== '' ? $a : 'Unit 4, Selnews Business Centre, Peabody Road, Farnborough, GU14 6GX';
+}
+
+/**
  * decrementProductStock — reduce stock for a purchased line item.
  *
  * Stock lives only on product_variants.stock_qty, so it must be decremented by

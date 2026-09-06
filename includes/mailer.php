@@ -123,7 +123,7 @@ function createMailer(): MailShim {
  * unconditionally. The exact address is only included in PAID/confirmed emails.
  */
 function appointmentLocationBlock(): string {
-    $addr = trim(getSetting('business_address', ''));
+    $addr = salonAddress();
     if ($addr === '') return '';
     $addrHtml = nl2br(htmlspecialchars($addr, ENT_QUOTES, 'UTF-8'));
     return <<<HTML
