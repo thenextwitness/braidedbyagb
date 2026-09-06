@@ -240,6 +240,19 @@ ALTER TABLE bookings
     ADD COLUMN IF NOT EXISTS guest_name     VARCHAR(120) DEFAULT NULL AFTER customer_id,
     ADD COLUMN IF NOT EXISTS cart_group_ref VARCHAR(24)  DEFAULT NULL AFTER booking_ref;
 
+-- ── Home service (mobile) booking fields ─────────────────────
+-- service_location: 'salon' (default) or 'home'. For a home visit the whole
+-- cart shares one location/area/address; the travel_fee (paid in full online)
+-- is stored on the FIRST booking of the cart only, so it is never double-counted.
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS service_location VARCHAR(20)  NOT NULL DEFAULT 'salon' AFTER status,
+    ADD COLUMN IF NOT EXISTS travel_area      VARCHAR(80)  DEFAULT NULL             AFTER service_location,
+    ADD COLUMN IF NOT EXISTS travel_fee       DECIMAL(8,2) NOT NULL DEFAULT 0.00    AFTER travel_area,
+    ADD COLUMN IF NOT EXISTS service_address  TEXT         DEFAULT NULL             AFTER travel_fee,
+    -- media_consent: per-appointment photo/video consent for social content
+    -- 'none' | 'hair' (hair only, no face) | 'hair_face' (hair + face)
+    ADD COLUMN IF NOT EXISTS media_consent    VARCHAR(20)  NOT NULL DEFAULT 'none'  AFTER service_address;
+
 -- Index for grouping lookups (safe to re-run: ignore "Duplicate key name" error).
 -- ALTER TABLE bookings ADD INDEX idx_cart_group (cart_group_ref);
 

@@ -316,6 +316,15 @@ function copyPayLink() {
     <div class="detail-row"><span class="dl">For</span><span class="dv"><strong><?= htmlspecialchars($bk['guest_name']) ?></strong></span></div>
     <?php endif; ?>
     <div class="detail-row"><span class="dl">Service</span><span class="dv"><?= htmlspecialchars($bk['s_name']) ?><?= $bk['variant_name'] ? ' — ' . $bk['variant_name'] : '' ?></span></div>
+    <?php if (($bk['service_location'] ?? 'salon') === 'home'): ?>
+    <div class="detail-row"><span class="dl">📍 Location</span><span class="dv"><strong style="color:#8e2de2">Home service</strong><?= $bk['travel_area'] ? ' — ' . htmlspecialchars(ucwords(str_replace('_', ' / ', $bk['travel_area']))) : '' ?></span></div>
+    <?php if (!empty($bk['service_address'])): ?>
+    <div class="detail-row"><span class="dl">Address</span><span class="dv"><?= nl2br(htmlspecialchars($bk['service_address'])) ?></span></div>
+    <?php endif; ?>
+    <?php if ((float)($bk['travel_fee'] ?? 0) > 0): ?>
+    <div class="detail-row"><span class="dl">Travel fee (paid)</span><span class="dv"><?= formatPrice($bk['travel_fee']) ?></span></div>
+    <?php endif; ?>
+    <?php endif; ?>
     <div class="detail-row"><span class="dl">Date</span><span class="dv"><?= formatDate($bk['booked_date'], 'l, j F Y') ?></span></div>
     <div class="detail-row"><span class="dl">Time</span><span class="dv"><?= formatTime($bk['booked_time']) ?></span></div>
     <?php if (!empty($addons)): ?>
@@ -327,6 +336,12 @@ function copyPayLink() {
     <?php if ($bk['client_notes']): ?>
     <div class="detail-row"><span class="dl">Client notes</span><span class="dv"><?= htmlspecialchars($bk['client_notes']) ?></span></div>
     <?php endif; ?>
+    <?php
+      $mc = $bk['media_consent'] ?? 'none';
+      $mcLabel = $mc === 'hair_face' ? '✅ Yes — hair & face' : ($mc === 'hair' ? '✅ Hair only (no face)' : '⛔ No — do not post');
+      $mcColor = $mc === 'none' ? '#c0392b' : '#1d9e75';
+    ?>
+    <div class="detail-row"><span class="dl">📸 Social media</span><span class="dv" style="color:<?= $mcColor ?>;font-weight:600"><?= $mcLabel ?></span></div>
     <div class="detail-row"><span class="dl">Booked on</span><span class="dv td-muted"><?= date('j M Y', strtotime($bk['created_at'])) ?></span></div>
   </div>
 

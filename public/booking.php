@@ -376,6 +376,25 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
                       placeholder="Hair length, specific style preferences, any allergies..."></textarea>
           </div>
 
+          <!-- Media consent (per appointment) -->
+          <div class="form-group">
+            <label class="form-label">📸 Photos &amp; videos</label>
+            <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin:0 0 var(--space-3)">
+              We love sharing our work on social media. Are you happy for us to take photos/videos during or after this appointment?
+            </p>
+            <div class="media-consent-options" style="display:flex;flex-direction:column;gap:var(--space-2)">
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="hair_face" style="accent-color:var(--color-primary);width:16px;height:16px"> Yes — hair &amp; me (my face may be shown)
+              </label>
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="hair" style="accent-color:var(--color-primary);width:16px;height:16px"> Yes — hair only (no face)
+              </label>
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="none" checked style="accent-color:var(--color-primary);width:16px;height:16px"> No, please don't
+              </label>
+            </div>
+          </div>
+
           <div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
             <button class="btn btn-outline-primary" onclick="goToStep(2)">← Back</button>
             <button class="btn btn-primary btn-lg flex-1" onclick="validateStep3()">
@@ -423,6 +442,38 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
           <button class="btn btn-outline-primary w-full" style="margin-bottom:var(--space-5)" onclick="addAnotherPerson()">
             ＋ Add another person / appointment
           </button>
+
+          <!-- Where? Salon vs Home service -->
+          <div class="location-section" style="margin-bottom:var(--space-5)">
+            <h4 style="margin:0 0 var(--space-3);color:var(--color-deep-purple);font-size:var(--text-md)">Where would you like your appointment?</h4>
+            <div class="location-tabs" style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+              <button type="button" class="location-tab active" id="loc-salon" onclick="selectLocationType('salon')"
+                      style="flex:1;min-width:140px;padding:var(--space-4);border:2px solid var(--color-primary);border-radius:var(--border-radius-lg,8px);background:var(--color-primary);color:#fff;cursor:pointer;font-weight:600">
+                🏠 At the salon<br><span style="font-weight:400;font-size:var(--text-xs)">Farnborough — free</span>
+              </button>
+              <button type="button" class="location-tab" id="loc-home" onclick="selectLocationType('home')"
+                      style="flex:1;min-width:140px;padding:var(--space-4);border:2px solid var(--color-border,#E8D8EE);border-radius:var(--border-radius-lg,8px);background:#fff;color:var(--color-text);cursor:pointer;font-weight:600">
+                🚗 Home service<br><span id="home-tab-note" style="font-weight:400;font-size:var(--text-xs);color:var(--color-text-muted)">Bookings £<span id="home-min-label"></span>+</span>
+              </button>
+            </div>
+
+            <!-- Home service details (shown when Home is chosen) -->
+            <div id="home-service-details" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-radius:var(--border-radius-lg,8px)">
+              <div class="form-group">
+                <label class="form-label" for="travel-area">Your area *</label>
+                <select class="form-control" id="travel-area" onchange="onTravelAreaChange()">
+                  <option value="">Select your area…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="service-address">Full address (incl. postcode) *</label>
+                <textarea class="form-control" id="service-address" rows="3" placeholder="House number and street, town, postcode" oninput="updatePayButtonState()"></textarea>
+                <span style="font-size:var(--text-xs);color:var(--color-text-muted);display:block;margin-top:4px">
+                  The travel fee is paid in full now, on top of your deposit.
+                </span>
+              </div>
+            </div>
+          </div>
 
           <!-- Booking summary review (cart) -->
           <div class="booking-review-table" id="booking-review-table"></div>
@@ -598,6 +649,14 @@ const BANK_NAME   = '<?= htmlspecialchars(getSetting('bank_account_name', 'Braid
 const BANK_SORT   = '<?= htmlspecialchars(getSetting('bank_sort_code', 'XX-XX-XX')) ?>';
 const BANK_ACC    = '<?= htmlspecialchars(getSetting('bank_account_number', 'XXXXXXXX')) ?>';
 
+// Home-service (mobile) config — editable via settings
+const HOME_SERVICE_MIN = <?= (float)getSetting('home_service_min', '70') ?>;
+const TRAVEL_FEES = <?= json_encode([
+  ['key' => 'farnborough',         'label' => 'Farnborough',           'fee' => (float)getSetting('travel_fee_farnborough', '25')],
+  ['key' => 'camberley_aldershot', 'label' => 'Camberley / Aldershot', 'fee' => (float)getSetting('travel_fee_camberley_aldershot', '30')],
+  ['key' => 'further',             'label' => 'Further locations',     'fee' => (float)getSetting('travel_fee_further', '45')],
+]) ?>;
+
 // ═══ State: payer + cart + draft (current appointment) ═══
 // The draft is the appointment currently being configured. When the customer
 // taps "Add to Cart" it is pushed into `cart`. Contact details belong to the
@@ -607,6 +666,7 @@ function freshDraft() {
     serviceId: null, variantId: null, serviceName: '', variantName: '',
     servicePrice: 0, durationMins: 0,
     addons: [], date: '', time: '', guestName: '', notes: '',
+    mediaConsent: 'none',
     pipelineProducts: [],
   };
 }
@@ -971,8 +1031,9 @@ function validateStep3() {
     payer.set        = true;
   }
 
-  draft.guestName = guest;
-  draft.notes     = document.getElementById('client-notes').value.trim();
+  draft.guestName    = guest;
+  draft.notes        = document.getElementById('client-notes').value.trim();
+  draft.mediaConsent = document.querySelector('input[name="media-consent"]:checked')?.value || 'none';
   goToStep(4);
 }
 
@@ -1092,6 +1153,8 @@ function resetDraftUI() {
   document.getElementById('booking-time').value = '';
   document.getElementById('guest-name').value   = '';
   document.getElementById('client-notes').value = '';
+  const mcNone = document.querySelector('input[name="media-consent"][value="none"]');
+  if (mcNone) mcNone.checked = true;
   document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
 }
 
@@ -1117,6 +1180,82 @@ function itemDeposit(it) { return getDeposit(itemTotal(it)); }
 function draftTotal()    { return draft.serviceId ? itemTotal(draft) : 0; }
 function cartTotal()     { return cart.reduce((s, it) => s + itemTotal(it), 0); }
 function cartDeposit()   { return cart.reduce((s, it) => s + itemDeposit(it), 0); }
+
+// ── Home service (mobile) location ───────────────────────
+// Home service is a whole-booking choice (one visit, one travel fee), available
+// only when the combined booking total is >= HOME_SERVICE_MIN. The travel fee is
+// paid in full now, on top of the deposit.
+let locationType  = 'salon';   // 'salon' | 'home'
+let travelAreaKey = '';
+
+function homeEligible()      { return cartTotal() >= HOME_SERVICE_MIN; }
+function currentTravelFee()  {
+  if (locationType !== 'home' || !travelAreaKey) return 0;
+  const a = TRAVEL_FEES.find(f => f.key === travelAreaKey);
+  return a ? a.fee : 0;
+}
+function amountDueNow()      { return cartDeposit() + currentTravelFee(); }
+function homeReady() {
+  if (locationType !== 'home') return true;
+  return !!travelAreaKey && document.getElementById('service-address').value.trim().length > 5;
+}
+function homePayload() {
+  return {
+    service_location: locationType,
+    travel_area:      locationType === 'home' ? travelAreaKey : null,
+    travel_fee:       currentTravelFee(),
+    service_address:  locationType === 'home' ? document.getElementById('service-address').value.trim() : null,
+  };
+}
+
+function populateTravelAreas() {
+  const sel = document.getElementById('travel-area');
+  if (!sel || sel.options.length > 1) return;
+  TRAVEL_FEES.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.key;
+    o.textContent = `${f.label} — £${f.fee.toFixed(0)}`;
+    sel.appendChild(o);
+  });
+}
+
+function selectLocationType(type) {
+  if (type === 'home' && !homeEligible()) {
+    showToast(`Home service is available on bookings £${HOME_SERVICE_MIN.toFixed(0)} and above.`, 'error');
+    return;
+  }
+  locationType = type;
+  const salonBtn = document.getElementById('loc-salon');
+  const homeBtn  = document.getElementById('loc-home');
+  const on  = b => { b.style.background='var(--color-primary)'; b.style.color='#fff';               b.style.borderColor='var(--color-primary)';       b.classList.add('active'); };
+  const off = b => { b.style.background='#fff';                 b.style.color='var(--color-text)';   b.style.borderColor='var(--color-border,#E8D8EE)'; b.classList.remove('active'); };
+  if (type === 'home') { on(homeBtn); off(salonBtn); }
+  else {
+    on(salonBtn); off(homeBtn);
+    travelAreaKey = '';
+    const s = document.getElementById('travel-area'); if (s) s.value = '';
+  }
+  document.getElementById('home-service-details').style.display = type === 'home' ? 'block' : 'none';
+  refreshPaymentAmount();
+}
+
+function onTravelAreaChange() {
+  travelAreaKey = document.getElementById('travel-area').value;
+  refreshPaymentAmount();
+}
+
+// Re-render the review + payment amount when the location/fee changes.
+function refreshPaymentAmount() { renderPaymentStep(); }
+
+function updatePayButtonState() {
+  const policy = document.getElementById('policy-checkbox');
+  const ready  = policy && policy.checked && homeReady();
+  const payBtn = document.getElementById('stripe-pay-btn');
+  if (payBtn) payBtn.disabled = !ready;
+  const bankChk = document.getElementById('bank-confirm-checkbox');
+  const bankBtn = document.getElementById('bank-submit-btn');
+  if (bankBtn) bankBtn.disabled = !(ready && bankChk && bankChk.checked);
+}
 
 // ── Payment step ─────────────────────────────────────────
 let stripe, elements, paymentElement, paymentHandlersBound = false;
@@ -1154,19 +1293,48 @@ function renderPaymentStep() {
       </div>`;
   });
 
+  // ── Home service gate + travel fee ──────────────────────
+  const travelFee = currentTravelFee();
+  const amountNow = deposit + travelFee;   // deposit + full travel, paid now
+  const dueLater  = total - deposit;       // services balance (travel prepaid)
+
+  const homeMinLabel = document.getElementById('home-min-label');
+  if (homeMinLabel) homeMinLabel.textContent = HOME_SERVICE_MIN.toFixed(0);
+  populateTravelAreas();
+  const homeBtnEl = document.getElementById('loc-home');
+  if (homeBtnEl) {
+    const eligible = homeEligible();
+    homeBtnEl.disabled     = !eligible;
+    homeBtnEl.style.opacity = eligible ? '1' : '0.5';
+    homeBtnEl.style.cursor  = eligible ? 'pointer' : 'not-allowed';
+    // If the cart dropped below the threshold after a home selection, revert to salon.
+    if (!eligible && locationType === 'home') {
+      locationType = 'salon'; travelAreaKey = '';
+      document.getElementById('home-service-details').style.display = 'none';
+      const salonBtnEl = document.getElementById('loc-salon');
+      salonBtnEl.style.background = 'var(--color-primary)'; salonBtnEl.style.color = '#fff'; salonBtnEl.classList.add('active');
+      homeBtnEl.style.background = '#fff'; homeBtnEl.style.color = 'var(--color-text)'; homeBtnEl.classList.remove('active');
+    }
+  }
+
+  const travelRow = travelFee > 0
+    ? `<div class="summary-row"><span class="label">Home service travel (paid now)</span><span class="value">£${travelFee.toFixed(2)}</span></div>` : '';
+
   document.getElementById('booking-review-table').innerHTML = `
     ${rows}
     <div class="booking-summary" style="margin-bottom:var(--space-6);border:2px solid var(--color-primary)">
-      <div class="booking-summary-header">Combined Total — ${cart.length} appointment${cart.length !== 1 ? 's' : ''}</div>
+      <div class="booking-summary-header">Combined Total — ${cart.length} appointment${cart.length !== 1 ? 's' : ''}${travelFee > 0 ? ' + home service' : ''}</div>
       <div class="booking-summary-body">
-        <div class="summary-row total"><span class="label">Total</span><span class="value">£${total.toFixed(2)}</span></div>
-        <div class="summary-row deposit"><span class="label">Deposit Due Now (${DEPOSIT_PCT}%)</span><span class="value">£${deposit.toFixed(2)}</span></div>
-        <div class="summary-row"><span class="label">Balance on Days</span><span class="value">£${balance.toFixed(2)}</span></div>
+        <div class="summary-row"><span class="label">Services</span><span class="value">£${total.toFixed(2)}</span></div>
+        ${travelRow}
+        <div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>
+        <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? ' (deposit + travel)' : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
+        <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}</span></div>
       </div>
     </div>`;
 
-  document.getElementById('stripe-deposit-amount').textContent = '£' + deposit.toFixed(2);
-  document.getElementById('bank-deposit-label').textContent    = '£' + deposit.toFixed(2);
+  document.getElementById('stripe-deposit-amount').textContent = '£' + amountNow.toFixed(2);
+  document.getElementById('bank-deposit-label').textContent    = '£' + amountNow.toFixed(2);
 
   // Bank details — reference uses the payer's first name + first appointment date
   const firstDate = cart.length ? cart[0].date : '';
@@ -1177,7 +1345,7 @@ function renderPaymentStep() {
     <div class="bank-detail-row"><span>Sort Code:</span><strong>${BANK_SORT}</strong></div>
     <div class="bank-detail-row"><span>Account Number:</span><strong>${BANK_ACC}</strong></div>
     <div class="bank-detail-row"><span>Reference:</span><strong>${payerFirst}-${firstDate.replace(/-/g,'')}</strong></div>
-    <div class="bank-detail-row total"><span>Amount to Transfer:</span><strong style="color:var(--color-primary)">£${deposit.toFixed(2)}</strong></div>
+    <div class="bank-detail-row total"><span>Amount to Transfer:</span><strong style="color:var(--color-primary)">£${amountNow.toFixed(2)}</strong></div>
     <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-4)">
       ⚠️ Please use your name as the payment reference. Your booking will be held for 24 hours pending confirmation of payment.
     </p>`;
@@ -1186,7 +1354,7 @@ function renderPaymentStep() {
   // mounted now with the deposit amount, and the PaymentIntent is created only
   // when the customer clicks Pay. Cards confirm inline; Klarna/Clearpay/PayPal
   // redirect out and return to the confirmation page.
-  const depositPence = Math.max(30, Math.round(deposit * 100));
+  const depositPence = Math.max(30, Math.round(amountNow * 100));
   if (!stripe) {
     stripe = Stripe(STRIPE_KEY);
     elements = stripe.elements({ mode: 'payment', amount: depositPence, currency: 'gbp', locale: 'en-GB' });
@@ -1195,17 +1363,12 @@ function renderPaymentStep() {
   } else {
     elements.update({ amount: depositPence });
   }
+  updatePayButtonState();
 
   // Bind policy/bank checkbox handlers once
   if (!paymentHandlersBound) {
-    document.getElementById('policy-checkbox').addEventListener('change', function() {
-      document.getElementById('stripe-pay-btn').disabled   = !this.checked;
-      document.getElementById('bank-submit-btn').disabled  = !(this.checked && document.getElementById('bank-confirm-checkbox').checked);
-    });
-    document.getElementById('bank-confirm-checkbox').addEventListener('change', function() {
-      const policyTicked = document.getElementById('policy-checkbox').checked;
-      document.getElementById('bank-submit-btn').disabled = !(this.checked && policyTicked);
-    });
+    document.getElementById('policy-checkbox').addEventListener('change', updatePayButtonState);
+    document.getElementById('bank-confirm-checkbox').addEventListener('change', updatePayButtonState);
     paymentHandlersBound = true;
   }
 }
@@ -1222,7 +1385,8 @@ function selectPaymentMethod(method, btn) {
 async function submitStripePayment() {
   const btn   = document.getElementById('stripe-pay-btn');
   const errEl = document.getElementById('stripe-card-errors');
-  const depositLabel = '£' + cartDeposit().toFixed(2);
+  const payLabel = '£' + amountDueNow().toFixed(2);
+  if (!homeReady()) { showToast('Please select your area and enter your full address for home service.', 'error'); return; }
   btn.disabled = true;
   btn.textContent = 'Processing...';
   errEl.textContent = '';
@@ -1230,7 +1394,7 @@ async function submitStripePayment() {
   try {
     // 1. Validate the details entered in the Payment Element
     const { error: submitError } = await elements.submit();
-    if (submitError) { errEl.textContent = submitError.message || 'Please check your payment details.'; resetStripeBtn(depositLabel); return; }
+    if (submitError) { errEl.textContent = submitError.message || 'Please check your payment details.'; resetStripeBtn(payLabel); return; }
 
     // 2. Create the pending booking(s) + PaymentIntent server-side
     const res = await fetch('/api/cart-intent', {
@@ -1239,7 +1403,8 @@ async function submitStripePayment() {
       body: JSON.stringify({
         payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
         payment_method: 'stripe',
-        items: buildCartItems()
+        items: buildCartItems(),
+        ...homePayload()
       })
     });
     const data = await res.json();
@@ -1253,7 +1418,7 @@ async function submitStripePayment() {
       confirmParams: { return_url: returnUrl },
       redirect: 'if_required'
     });
-    if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetStripeBtn(depositLabel); return; }
+    if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetStripeBtn(payLabel); return; }
 
     // No redirect required (e.g. card) — go to the confirmation page, which finalizes.
     let url = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
@@ -1261,7 +1426,7 @@ async function submitStripePayment() {
     window.location.href = url;
   } catch(e) {
     showToast(e.message || 'Payment failed. Please try again.', 'error');
-    resetStripeBtn(depositLabel);
+    resetStripeBtn(payLabel);
   }
 }
 
@@ -1286,13 +1451,15 @@ async function submitBankTransfer() {
 }
 
 async function confirmCart(method) {
+  if (!homeReady()) { throw new Error('Please select your area and enter your full address for home service.'); }
   const res = await fetch('/api/cart-intent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
       payment_method: method,
-      items: buildCartItems()
+      items: buildCartItems(),
+      ...homePayload()
     })
   });
   const data = await res.json();
@@ -1312,6 +1479,7 @@ function buildCartItems() {
     notes:             it.notes,
     addons:            (it.addons || []).map(a => a.id),
     pipeline_products: (it.pipelineProducts || []).map(p => ({ id: p.id, price: p.price })),
+    media_consent:     it.mediaConsent || 'none',
     total:             itemTotal(it),
     deposit:           itemDeposit(it)
   }));

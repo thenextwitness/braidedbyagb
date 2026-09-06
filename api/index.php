@@ -863,13 +863,44 @@ switch ($endpoint) {
             jsonResponse(['error' => 'Card payment is not configured. Please use bank transfer.'], 500);
         }
 
-        // Authoritative deposit total (pence). Matches the amount the Payment
-        // Element was mounted with client-side, so confirmPayment() won't reject.
+        // ── Home service (mobile) — validated server-side, never trust client ──
+        $svcLocation   = (($data['service_location'] ?? 'salon') === 'home') ? 'home' : 'salon';
+        $travelAreaKey = $svcLocation === 'home' ? sanitize($data['travel_area'] ?? '') : '';
+        $svcAddress    = $svcLocation === 'home' ? trim((string)($data['service_address'] ?? '')) : '';
+
+        $travelFeeTable = [
+            'farnborough'         => (float)getSetting('travel_fee_farnborough', '25'),
+            'camberley_aldershot' => (float)getSetting('travel_fee_camberley_aldershot', '30'),
+            'further'             => (float)getSetting('travel_fee_further', '45'),
+        ];
+        $homeMin   = (float)getSetting('home_service_min', '70');
+        $travelFee = 0.0;
+
+        if ($svcLocation === 'home') {
+            if (!isset($travelFeeTable[$travelAreaKey])) {
+                jsonResponse(['error' => 'Please choose a valid home-service area.'], 400);
+            }
+            if ($svcAddress === '' || mb_strlen($svcAddress) < 6) {
+                jsonResponse(['error' => 'Please provide your full address for home service.'], 400);
+            }
+            // £70+ gate measured against the combined services total (client item totals,
+            // consistent with how the deposit is computed).
+            $servicesTotal = 0.0;
+            foreach ($items as $it) $servicesTotal += (float)($it['total'] ?? 0);
+            if ($servicesTotal < $homeMin) {
+                jsonResponse(['error' => 'Home service is available on bookings £' . number_format($homeMin, 0) . ' and above.'], 400);
+            }
+            $travelFee = $travelFeeTable[$travelAreaKey];
+        }
+
+        // Authoritative amount charged now (pence) = deposit + full travel fee.
+        // Matches the amount the Payment Element was mounted with client-side.
         $depositTotal = 0.0;
         foreach ($items as $it) $depositTotal += (float)($it['deposit'] ?? 0);
-        $depositPence = (int) round($depositTotal * 100);
+        $chargeTotal  = $depositTotal + $travelFee;
+        $depositPence = (int) round($chargeTotal * 100);
         if ($method === 'stripe' && $depositPence < 30) {
-            jsonResponse(['error' => 'Deposit amount is too small to charge by card.'], 400);
+            jsonResponse(['error' => 'Amount is too small to charge by card.'], 400);
         }
 
         // Shared group reference (created up-front so it can be stamped into the
@@ -927,8 +958,9 @@ switch ($endpoint) {
                 INSERT INTO bookings
                     (booking_ref, cart_group_ref, customer_id, guest_name, service_id, variant_id,
                      booked_date, booked_time, payment_method, deposit_amount, deposit_paid,
-                     total_price, remaining_balance, client_notes, policy_accepted, status)
-                VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,1,'pending')
+                     total_price, remaining_balance, client_notes, policy_accepted, status,
+                     service_location, travel_area, travel_fee, service_address, media_consent)
+                VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,1,'pending', ?,?,?,?,?)
             ");
             $insAddon   = $db->prepare("INSERT INTO booking_addons (booking_id, addon_id, price_charged) SELECT ?, id, price FROM service_addons WHERE id=?");
             $insPayment = $db->prepare("
@@ -968,10 +1000,23 @@ switch ($endpoint) {
                 $itDeposit = (float)($it['deposit'] ?? 0);
                 $itBalance = round($itTotal - $itDeposit, 2);
 
+                // Travel fee is a per-visit charge — record it on the FIRST booking
+                // of the cart only, so it is never double-counted across appointments.
+                $travelFeeForRow = ($idx === 0) ? $travelFee : 0.0;
+
+                // Per-appointment photo/video consent
+                $mediaConsent = in_array(($it['media_consent'] ?? 'none'), ['none', 'hair', 'hair_face'], true)
+                    ? $it['media_consent'] : 'none';
+
                 $ref = generateBookingRef();
                 $insBooking->execute([
                     $ref, $groupRef, $customerId, $guest, $serviceId, $variantId,
                     $date, $time, $method, $itDeposit, $itTotal, $itBalance, sanitize($it['notes'] ?? ''),
+                    $svcLocation,
+                    $svcLocation === 'home' ? $travelAreaKey : null,
+                    $travelFeeForRow,
+                    $svcLocation === 'home' ? $svcAddress : null,
+                    $mediaConsent,
                 ]);
                 $bookingId = (int)$db->lastInsertId();
 
