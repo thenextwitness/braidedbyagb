@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
 $db = getDB();
 try { $services = $db->query("SELECT s.*, MIN(sv.price) as min_price FROM services s LEFT JOIN service_variants sv ON sv.service_id = s.id WHERE s.is_active = 1 GROUP BY s.id ORDER BY s.display_order ASC LIMIT 9")->fetchAll(); } catch(Exception $e) { $services = []; }
-try { $reviews = $db->query("SELECT r.*, c.name as client_name, s.name as service_name FROM reviews r JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id WHERE r.status = 'approved' ORDER BY r.is_featured DESC, r.approved_at DESC LIMIT 6")->fetchAll(); } catch(Exception $e) { $reviews = []; }
+try { $reviews = $db->query("SELECT r.*, c.name as client_name, s.name as service_name FROM reviews r JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id WHERE r.status = 'approved' ORDER BY r.is_featured DESC, r.approved_at DESC LIMIT 12")->fetchAll(); } catch(Exception $e) { $reviews = []; }
 try { $rating = getAverageRating(); } catch(Exception $e) { $rating = ['average'=>0,'total'=>0]; }
 $placeholderReviews = [
     ['name'=>'Adaeze O.','service'=>'Knotless Braids','rating'=>5,'text'=>'Absolutely incredible work! My knotless braids are so neat and natural-looking. I\'ve had so many compliments. Will definitely be coming back!'],
@@ -267,23 +267,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     <p class="sp-label dark">Testimonials</p>
     <h2 class="sp-title dark">What Our Clients Say</h2>
     <p class="sp-lead dark">Don't just take our word for it. Here's what our satisfied clients have to say about their experience with us.</p>
-    <div class="sp-reviews-grid">
-      <?php foreach ($displayReviews as $r):
-        $rName=$reviewsAreReal?$r['client_name']:$r['name'];
-        $rText=$reviewsAreReal?$r['review_text']:$r['text'];
-        $rSvc=$reviewsAreReal?($r['service_name']??''):$r['service'];
-        $rStars=$reviewsAreReal?(int)$r['rating']:$r['rating'];
-      ?>
-      <div class="sp-review">
-        <div class="sp-stars"><?php for($i=1;$i<=5;$i++): ?><span class="<?= $i<=$rStars?'on':'' ?>">★</span><?php endfor; ?></div>
-        <blockquote>"<?= htmlspecialchars($rText) ?>"</blockquote>
-        <div class="sp-review-meta"><strong><?= htmlspecialchars($rName) ?></strong><?php if($rSvc): ?><span><?= htmlspecialchars($rSvc) ?></span><?php endif; ?></div>
+    <div class="sp-reviews-carousel" data-reviews-carousel>
+      <div class="sp-reviews-track" data-track>
+        <?php foreach ($displayReviews as $r):
+          $rName=$reviewsAreReal?$r['client_name']:$r['name'];
+          $rText=$reviewsAreReal?$r['review_text']:$r['text'];
+          $rSvc=$reviewsAreReal?($r['service_name']??''):$r['service'];
+          $rStars=$reviewsAreReal?(int)$r['rating']:$r['rating'];
+        ?>
+        <div class="sp-review">
+          <div class="sp-stars"><?php for($i=1;$i<=5;$i++): ?><span class="<?= $i<=$rStars?'on':'' ?>">★</span><?php endfor; ?></div>
+          <blockquote>"<?= htmlspecialchars($rText) ?>"</blockquote>
+          <div class="sp-review-meta"><strong><?= htmlspecialchars($rName) ?></strong><?php if($rSvc): ?><span><?= htmlspecialchars($rSvc) ?></span><?php endif; ?></div>
+        </div>
+        <?php endforeach; ?>
       </div>
-      <?php endforeach; ?>
+      <div class="sp-carousel-nav" data-nav hidden>
+        <button type="button" class="sp-carousel-btn" data-prev aria-label="Previous testimonials">&lsaquo;</button>
+        <div class="sp-carousel-dots" data-dots></div>
+        <button type="button" class="sp-carousel-btn" data-next aria-label="Next testimonials">&rsaquo;</button>
+      </div>
     </div>
     <div style="text-align:center;margin-top:40px"><a href="/review" class="btn btn-gold">Leave a Review ★</a></div>
   </div>
 </section>
+<script>
+(function(){
+  var root = document.querySelector('[data-reviews-carousel]');
+  if (!root) return;
+  var track = root.querySelector('[data-track]');
+  var nav   = root.querySelector('[data-nav]');
+  var dotsC = root.querySelector('[data-dots]');
+  var prev  = root.querySelector('[data-prev]');
+  var next  = root.querySelector('[data-next]');
+  var dots  = [];
+  function pageW(){ return track.clientWidth || 1; }
+  function pages(){ return Math.max(1, Math.round(track.scrollWidth / pageW())); }
+  function page(){ return Math.round(track.scrollLeft / pageW()); }
+  function refresh(){
+    dots.forEach(function(d,i){ d.classList.toggle('on', i === page()); });
+    prev.disabled = page() <= 0;
+    next.disabled = page() >= pages() - 1;
+  }
+  function build(){
+    if (track.scrollWidth <= track.clientWidth + 4){ nav.hidden = true; return; }
+    nav.hidden = false;
+    dotsC.innerHTML = ''; dots = [];
+    for (var i = 0; i < pages(); i++){
+      var b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('aria-label', 'Go to testimonials page ' + (i + 1));
+      (function(idx){ b.addEventListener('click', function(){ track.scrollTo({ left: idx * pageW(), behavior: 'smooth' }); }); })(i);
+      dotsC.appendChild(b); dots.push(b);
+    }
+    refresh();
+  }
+  prev.addEventListener('click', function(){ track.scrollBy({ left: -pageW(), behavior: 'smooth' }); });
+  next.addEventListener('click', function(){ track.scrollBy({ left:  pageW(), behavior: 'smooth' }); });
+  var st; track.addEventListener('scroll', function(){ clearTimeout(st); st = setTimeout(refresh, 60); });
+  var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(build, 150); });
+  build();
+})();
+</script>
 
 <!-- CONTACT -->
 <section class="sp-section sp-contact" id="contact">
@@ -295,7 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
         <h3>Get In Touch</h3>
         <p>We're here to help you achieve your perfect hairstyle. Reach out and let's create something beautiful together.</p>
         <div class="sp-contact-items">
-          <div class="sp-ci"><span>📍</span><div><strong>Location</strong><em>Farnborough, Hampshire, UK</em><small>Serving Hampshire &amp; Surrey</small></div></div>
+          <div class="sp-ci"><span>📍</span><div><strong>Location</strong><em><?= htmlspecialchars(salonAddress()) ?></em><small>Serving Hampshire &amp; Surrey</small></div></div>
           <div class="sp-ci"><span>📞</span><div><strong>Phone / WhatsApp</strong><a href="tel:07769064971">07769 064 971</a></div></div>
           <div class="sp-ci"><span>✉️</span><div><strong>Email</strong><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a><small>We'll respond within 24 hours</small></div></div>
         </div>
