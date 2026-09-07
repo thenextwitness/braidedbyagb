@@ -70,6 +70,18 @@ function enumHasValue(PDO $db, string $schema, string $table, string $col, strin
     $type = (string)$s->fetchColumn();
     return stripos($type, "'" . $value . "'") !== false;
 }
+function columnType(PDO $db, string $schema, string $table, string $col): string {
+    $s = $db->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+                       WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?");
+    $s->execute([$schema, $table, $col]);
+    return strtolower((string)$s->fetchColumn());
+}
+function isNullable(PDO $db, string $schema, string $table, string $col): bool {
+    $s = $db->prepare("SELECT IS_NULLABLE FROM information_schema.COLUMNS
+                       WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?");
+    $s->execute([$schema, $table, $col]);
+    return strtoupper((string)$s->fetchColumn()) === 'YES';
+}
 
 $report = [];
 function step(string $label, callable $alreadyApplied, callable $apply, array &$report): void {
@@ -84,7 +96,255 @@ function step(string $label, callable $alreadyApplied, callable $apply, array &$
 
 // ============================================================
 // MIGRATIONS  (add new steps to the bottom over time)
+//
+// This runner is the SINGLE SOURCE OF TRUTH for schema changes. Every step
+// is guarded so it is safe to re-run; on an up-to-date database each one
+// reports SKIP. The historical section below was ported from the old
+// hand-run migrations.sql so this file alone can bring a fresh database
+// (built from schema.sql) fully up to date.
 // ============================================================
+
+// ── Historical schema (ported from migrations.sql) ────────
+// Cron/reminder tracking flags.
+step('bookings.reminder_24_sent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'reminder_24_sent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN reminder_24_sent TINYINT(1) DEFAULT 0"),
+    $report);
+step('bookings.reminder_2_sent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'reminder_2_sent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN reminder_2_sent TINYINT(1) DEFAULT 0"),
+    $report);
+step('bookings.review_request_sent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'review_request_sent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN review_request_sent TINYINT(1) DEFAULT 0"),
+    $report);
+step('bookings.admin_reminder_30_sent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'admin_reminder_30_sent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN admin_reminder_30_sent TINYINT(1) DEFAULT 0"),
+    $report);
+step('orders.review_request_sent column',
+    fn() => columnExists($db, $dbName, 'orders', 'review_request_sent'),
+    fn() => $db->exec("ALTER TABLE orders ADD COLUMN review_request_sent TINYINT(1) DEFAULT 0"),
+    $report);
+step('orders.from_pipeline column',
+    fn() => columnExists($db, $dbName, 'orders', 'from_pipeline'),
+    fn() => $db->exec("ALTER TABLE orders ADD COLUMN from_pipeline TINYINT(1) DEFAULT 0"),
+    $report);
+step('product_variants.low_stock_alerted_at column',
+    fn() => columnExists($db, $dbName, 'product_variants', 'low_stock_alerted_at'),
+    fn() => $db->exec("ALTER TABLE product_variants ADD COLUMN low_stock_alerted_at DATETIME DEFAULT NULL"),
+    $report);
+
+// Receipt + admin payment-link columns.
+step('bookings.receipt_url column',
+    fn() => columnExists($db, $dbName, 'bookings', 'receipt_url'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN receipt_url VARCHAR(255) DEFAULT NULL"),
+    $report);
+step('bookings.payment_token column',
+    fn() => columnExists($db, $dbName, 'bookings', 'payment_token'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN payment_token VARCHAR(64) DEFAULT NULL"),
+    $report);
+step('bookings.payment_method_allowed column',
+    fn() => columnExists($db, $dbName, 'bookings', 'payment_method_allowed'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN payment_method_allowed ENUM('stripe','bank_transfer','both') DEFAULT 'both'"),
+    $report);
+
+// booking_ref widened to VARCHAR(20); availability.time_slot made nullable.
+step('bookings.booking_ref widened to VARCHAR(20)',
+    fn() => str_starts_with(columnType($db, $dbName, 'bookings', 'booking_ref'), 'varchar(20)'),
+    fn() => $db->exec("ALTER TABLE bookings MODIFY COLUMN booking_ref VARCHAR(20) NOT NULL"),
+    $report);
+step('availability.time_slot nullable',
+    fn() => isNullable($db, $dbName, 'availability', 'time_slot'),
+    fn() => $db->exec("ALTER TABLE availability MODIFY COLUMN time_slot TIME DEFAULT NULL"),
+    $report);
+
+// Booking duration override + custom-style bookings.
+step('bookings.duration_mins column',
+    fn() => columnExists($db, $dbName, 'bookings', 'duration_mins'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN duration_mins INT DEFAULT NULL"),
+    $report);
+step('bookings.custom_style_name column',
+    fn() => columnExists($db, $dbName, 'bookings', 'custom_style_name'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN custom_style_name VARCHAR(255) DEFAULT NULL"),
+    $report);
+step('bookings.custom_style_desc column',
+    fn() => columnExists($db, $dbName, 'bookings', 'custom_style_desc'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN custom_style_desc TEXT DEFAULT NULL"),
+    $report);
+step('services "Custom Style" sentinel row',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM services WHERE name='Custom Style'")->fetchColumn() > 0,
+    fn() => $db->exec("INSERT INTO services (name, slug, description, price_from, duration_mins, is_active, display_order)
+                       VALUES ('Custom Style','custom-style','Admin-created custom style booking',0,60,0,9999)"),
+    $report);
+
+// CRM columns on customers.
+step('customers.loyalty_points column',
+    fn() => columnExists($db, $dbName, 'customers', 'loyalty_points'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN loyalty_points INT DEFAULT 0"),
+    $report);
+step('customers.tags column',
+    fn() => columnExists($db, $dbName, 'customers', 'tags'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN tags VARCHAR(255) DEFAULT NULL"),
+    $report);
+step('customers.is_blocked column',
+    fn() => columnExists($db, $dbName, 'customers', 'is_blocked'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN is_blocked TINYINT(1) DEFAULT 0"),
+    $report);
+step('customers.block_reason column',
+    fn() => columnExists($db, $dbName, 'customers', 'block_reason'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN block_reason TEXT DEFAULT NULL"),
+    $report);
+step('customers.blocked_at column',
+    fn() => columnExists($db, $dbName, 'customers', 'blocked_at'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN blocked_at DATETIME DEFAULT NULL"),
+    $report);
+step('customers.hair_notes column',
+    fn() => columnExists($db, $dbName, 'customers', 'hair_notes'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN hair_notes TEXT DEFAULT NULL"),
+    $report);
+
+// Loyalty / archive columns on bookings.
+step('bookings.loyalty_points_redeemed column',
+    fn() => columnExists($db, $dbName, 'bookings', 'loyalty_points_redeemed'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN loyalty_points_redeemed INT DEFAULT 0"),
+    $report);
+step('bookings.loyalty_discount column',
+    fn() => columnExists($db, $dbName, 'bookings', 'loyalty_discount'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN loyalty_discount DECIMAL(10,2) DEFAULT 0.00"),
+    $report);
+step('bookings.is_archived column',
+    fn() => columnExists($db, $dbName, 'bookings', 'is_archived'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN is_archived TINYINT(1) DEFAULT 0"),
+    $report);
+
+// Auth + CRM + accounting tables (order matters for foreign keys).
+step('admin_tokens table',
+    fn() => tableExists($db, $dbName, 'admin_tokens'),
+    fn() => $db->exec("CREATE TABLE admin_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        admin_id INT NOT NULL,
+        token VARCHAR(64) NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )"),
+    $report);
+step('loyalty_transactions table',
+    fn() => tableExists($db, $dbName, 'loyalty_transactions'),
+    fn() => $db->exec("CREATE TABLE loyalty_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        booking_id INT DEFAULT NULL,
+        type ENUM('earn','redeem','manual_add','manual_remove','expire') NOT NULL,
+        points INT NOT NULL,
+        description VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
+    )"),
+    $report);
+step('customer_notes table',
+    fn() => tableExists($db, $dbName, 'customer_notes'),
+    fn() => $db->exec("CREATE TABLE customer_notes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        note TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    )"),
+    $report);
+step('accounts table',
+    fn() => tableExists($db, $dbName, 'accounts'),
+    fn() => $db->exec("CREATE TABLE accounts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(10) NOT NULL UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        type ENUM('asset','liability','equity','income','expense') NOT NULL,
+        is_active TINYINT(1) DEFAULT 1
+    )"),
+    $report);
+step('accounts chart-of-accounts seed',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM accounts")->fetchColumn() > 0,
+    fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES
+        ('1000','Stripe Account','asset'),
+        ('1020','Bank Account','asset'),
+        ('2000','Customer Deposits Held','liability'),
+        ('4000','Service Revenue','income'),
+        ('4020','Late Cancellation Fees','income'),
+        ('5000','Cost of Sales','expense'),
+        ('5100','Business Expenses','expense'),
+        ('5200','Owner''s Draw','expense')"),
+    $report);
+step('journal_entries table',
+    fn() => tableExists($db, $dbName, 'journal_entries'),
+    fn() => $db->exec("CREATE TABLE journal_entries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        entry_date DATE NOT NULL,
+        description VARCHAR(255) NOT NULL,
+        reference VARCHAR(50) DEFAULT NULL,
+        source ENUM('booking_payment','expense','owner_draw','manual') NOT NULL,
+        source_id INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )"),
+    $report);
+step('journal_entry_lines table',
+    fn() => tableExists($db, $dbName, 'journal_entry_lines'),
+    fn() => $db->exec("CREATE TABLE journal_entry_lines (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        journal_entry_id INT NOT NULL,
+        account_id INT NOT NULL,
+        debit DECIMAL(10,2) DEFAULT 0.00,
+        credit DECIMAL(10,2) DEFAULT 0.00,
+        memo VARCHAR(255) DEFAULT NULL,
+        FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
+        FOREIGN KEY (account_id) REFERENCES accounts(id)
+    )"),
+    $report);
+step('expenses table',
+    fn() => tableExists($db, $dbName, 'expenses'),
+    fn() => $db->exec("CREATE TABLE expenses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expense_date DATE NOT NULL,
+        description VARCHAR(255) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        category VARCHAR(100) DEFAULT 'Business Expenses',
+        notes TEXT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )"),
+    $report);
+step('owner_draws table',
+    fn() => tableExists($db, $dbName, 'owner_draws'),
+    fn() => $db->exec("CREATE TABLE owner_draws (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        draw_date DATE NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )"),
+    $report);
+
+// Loyalty settings seed.
+step('settings loyalty rows',
+    fn() => (function() use ($db) {
+        $s = $db->prepare("SELECT COUNT(*) FROM settings WHERE setting_key='loyalty_enabled'");
+        $s->execute();
+        return (int)$s->fetchColumn() > 0;
+    })(),
+    fn() => $db->exec("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+        ('loyalty_enabled','1'),
+        ('loyalty_earn_rate','1'),
+        ('loyalty_redeem_rate','100'),
+        ('loyalty_min_redeem','500')"),
+    $report);
+
+// One-off backfill: complete bookings whose date has already passed.
+// Guard skips once none remain, so re-running is a no-op.
+step('backfill past bookings to completed',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM bookings
+                             WHERE status IN ('confirmed','pending') AND booked_date < CURDATE()")->fetchColumn() === 0,
+    fn() => $db->exec("UPDATE bookings SET status='completed'
+                       WHERE status IN ('confirmed','pending') AND booked_date < CURDATE()"),
+    $report);
 
 // ── Multi-booking cart ────────────────────────────────────
 step('bookings.guest_name column',
