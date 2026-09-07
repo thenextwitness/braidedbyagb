@@ -211,6 +211,55 @@ step('discount_codes.uses_count column (ensure exists)',
     },
     $report);
 
+// ── Home service + media consent columns on bookings ──────
+// These back the home-visit booking flow (location, travel area/fee,
+// address) and the per-appointment photo/video consent captured at
+// checkout. WITHOUT them the cart booking INSERT (api/index.php) writes to
+// columns that don't exist, so EVERY booking is rejected with
+// "Your booking could not be saved" — on every bank and payment method.
+// Column position is irrelevant to the app, so no AFTER clause is used
+// (keeps each step independent of the others' order).
+step('bookings.service_location column',
+    fn() => columnExists($db, $dbName, 'bookings', 'service_location'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN service_location VARCHAR(20) NOT NULL DEFAULT 'salon'"),
+    $report);
+
+step('bookings.travel_area column',
+    fn() => columnExists($db, $dbName, 'bookings', 'travel_area'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN travel_area VARCHAR(80) DEFAULT NULL"),
+    $report);
+
+step('bookings.travel_fee column',
+    fn() => columnExists($db, $dbName, 'bookings', 'travel_fee'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN travel_fee DECIMAL(8,2) NOT NULL DEFAULT 0.00"),
+    $report);
+
+step('bookings.service_address column',
+    fn() => columnExists($db, $dbName, 'bookings', 'service_address'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN service_address TEXT DEFAULT NULL"),
+    $report);
+
+step('bookings.media_consent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'media_consent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN media_consent VARCHAR(20) NOT NULL DEFAULT 'none'"),
+    $report);
+
+// ── Home service settings (seed defaults if missing) ──────
+// So the admin Home Service panel and the server-side travel-fee/£70-gate
+// validation read real values instead of relying only on code fallbacks.
+step('settings home-service rows',
+    fn() => (function() use ($db) {
+        $s = $db->prepare("SELECT COUNT(*) FROM settings WHERE setting_key='home_service_min'");
+        $s->execute();
+        return (int)$s->fetchColumn() > 0;
+    })(),
+    fn() => $db->exec("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+        ('home_service_min','70'),
+        ('travel_fee_farnborough','25'),
+        ('travel_fee_camberley_aldershot','30'),
+        ('travel_fee_further','45')"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
