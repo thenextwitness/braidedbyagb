@@ -86,7 +86,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
       <?php foreach ($recentBookings as $b):
         $date = date('D j M Y', strtotime($b['booked_date']));
         $time = substr((string)$b['booked_time'], 0, 5);
-        $link = '/booking/confirmation?ref=' . urlencode($b['booking_ref']) . '&t=' . urlencode((string)$b['confirm_token']); ?>
+        $link = '/account/bookings/' . urlencode($b['booking_ref']); ?>
         <a class="account-row" style="text-decoration:none" href="<?= htmlspecialchars($link) ?>">
           <div>
             <div class="title"><?= htmlspecialchars($b['service_name']) ?></div>

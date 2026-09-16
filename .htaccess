@@ -42,6 +42,8 @@ RewriteRule ^verify/?$ public/verify.php [L,QSA]
 RewriteRule ^logout/?$ public/logout.php [L]
 RewriteRule ^app/?$ public/app.php [L]
 # Multi-segment account rules MUST precede the single-segment /account rule.
+# The {ref} detail rule must precede the plain bookings-list rule.
+RewriteRule ^account/bookings/([A-Za-z0-9-]+)/?$ public/account/booking.php?ref=$1 [L,QSA]
 RewriteRule ^account/bookings/?$ public/account/bookings.php [L,QSA]
 RewriteRule ^account/orders/?$ public/account/orders.php [L,QSA]
 RewriteRule ^account/payments/?$ public/account/payments.php [L,QSA]
