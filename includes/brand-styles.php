@@ -4,6 +4,10 @@
 // FILE: /includes/brand-styles.php
 // Include in <head> AFTER brand.css to override CSS vars.
 // ============================================================
+
+// PWA / theme <head> tags for every page (needs no DB; emit before the guard).
+include __DIR__ . '/head-meta.php';
+
 if (!function_exists('getDB')) {
     // Graceful no-op if included before DB is available
     return;

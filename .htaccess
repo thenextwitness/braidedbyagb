@@ -48,6 +48,10 @@ RewriteRule ^account/payments/?$ public/account/payments.php [L,QSA]
 RewriteRule ^account/profile/?$ public/account/profile.php [L,QSA]
 RewriteRule ^account/?$ public/account/index.php [L,QSA]
 
+# PWA — service worker at root scope, and the offline fallback page
+RewriteRule ^sw\.js$ public/sw.php [L]
+RewriteRule ^offline/?$ public/offline.php [L]
+
 # Sitemap
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 

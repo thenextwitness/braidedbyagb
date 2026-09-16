@@ -1,7 +1,26 @@
 {
   "name": "BraidedbyAGB",
   "short_name": "BraidedbyAGB",
+  "id": "/app",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#CC1A8A",
+  "background_color": "#7A0050",
+  "description": "African Hair Braiding Specialist — Farnborough, UK. Book appointments, view your history and manage your account.",
   "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
@@ -14,10 +33,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "theme_color": "#4B0082",
-  "background_color": "#0f0020",
-  "display": "standalone",
-  "description": "African Hair Braiding Specialist \u2014 Farnborough, UK",
-  "start_url": "/"
+  ]
 }

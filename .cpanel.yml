@@ -34,3 +34,4 @@ deployment:
     - /bin/mkdir -p $DEPLOYPATH/database && /bin/cp -Rf database/. $DEPLOYPATH/database/
     - /bin/mkdir -p $DEPLOYPATH/assets   && /bin/cp -Rf assets/.   $DEPLOYPATH/assets/
     - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
+    - /bin/cp -f site.webmanifest $DEPLOYPATH/site.webmanifest
