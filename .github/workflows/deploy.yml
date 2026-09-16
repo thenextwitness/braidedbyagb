@@ -13,7 +13,9 @@ name: Deploy to cPanel (FTPS)
 #                     account it is usually "/braidedbyagb.co.uk/".
 #
 # Server-only files are excluded below and are NEVER uploaded or deleted:
-#   config/  (secrets)   uploads/ (customer receipts)   .htaccess   mobile/  vendor/
+#   config/  (secrets)   uploads/ (customer receipts)   mobile/  vendor/
+# The root .htaccess IS deployed (repo is the source of truth for routing);
+# keep any host-injected blocks — e.g. cPanel/LiteSpeed — in the repo copy.
 
 on:
   push:
@@ -55,4 +57,3 @@ jobs:
             **/.DS_Store
             .gitignore
             .cpanel.yml
-            .htaccess
