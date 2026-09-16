@@ -331,6 +331,7 @@ button { cursor: pointer; font-family: inherit; }
 .status-pending    { background: #fef3c7; color: #92400e; }
 .status-confirmed  { background: #d1fae5; color: #065f46; }
 .status-completed  { background: #ede9fe; color: #4c1d95; }
+.status-incomplete { background: #e2e8f0; color: #475569; }
 .status-cancelled  { background: #fee2e2; color: #991b1b; }
 .status-dispatched { background: #dbeafe; color: #1e40af; }
 .status-delivered  { background: #d1fae5; color: #065f46; }

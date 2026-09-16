@@ -188,6 +188,15 @@ function finalizeCartPayment(PDO $db, string $piId, array $meta, string $confirm
         throw $e;
     }
 
+    // Record each paid deposit as a held liability (CR 2000). Idempotent, and
+    // outside the transaction so a ledger hiccup never unwinds a captured payment.
+    if ($transitioned) {
+        foreach ($rows as $r) {
+            try { journalBookingDeposit($db, (int) $r['id']); }
+            catch (Throwable $e) { error_log('finalizeCartPayment deposit journal: ' . $e->getMessage()); }
+        }
+    }
+
     $refs = [];
     if ($transitioned) {
         // Emails — non-fatal; money is already captured and rows are committed.
@@ -277,6 +286,12 @@ function finalizePayBookingPayment(PDO $db, string $piId, array $meta, string $c
         if ($db->inTransaction()) $db->rollBack();
         error_log('finalizePayBookingPayment error: ' . $e->getMessage());
         throw $e;
+    }
+
+    // Record the paid deposit as a held liability (CR 2000). Idempotent.
+    if ($transitioned) {
+        try { journalBookingDeposit($db, $bookingId); }
+        catch (Throwable $e) { error_log('finalizePayBookingPayment deposit journal: ' . $e->getMessage()); }
     }
 
     if ($transitioned) {

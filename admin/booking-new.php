@@ -157,6 +157,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO payments (booking_id, amount, currency, type, method, status, confirmed_by, confirmed_at)
                 VALUES (?,?,'GBP','deposit',?,  'succeeded','admin',NOW())
             ")->execute([$bookingId, $depositAmount, $paymentMethod]);
+            // Record the deposit as a held liability (CR 2000). Idempotent.
+            try { journalBookingDeposit($db, $bookingId); }
+            catch (Throwable $e) { error_log('booking-new deposit journal: ' . $e->getMessage()); }
+        }
+
+        // If created directly as completed, recognise revenue + loyalty now.
+        if ($status === 'completed') {
+            try { onBookingStatusChanged($db, $bookingId, 'completed'); }
+            catch (Throwable $e) { error_log('booking-new completion hook: ' . $e->getMessage()); }
         }
 
         // -- Send confirmation email if status confirmed --

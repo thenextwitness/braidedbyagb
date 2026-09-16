@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $newStatus = $statusMap[$action];
         $db->prepare("UPDATE bookings SET status=? WHERE id=?")->execute([$newStatus, $id]);
 
+        // Money + loyalty through the one canonical hook — this quick-action
+        // list previously completed a booking without journalling or loyalty.
+        try { onBookingStatusChanged($db, $id, $newStatus); }
+        catch (Throwable $e) { error_log('onBookingStatusChanged (list quick-action): ' . $e->getMessage()); }
+
         if ($action === 'confirm') {
             try {
                 require_once __DIR__ . '/../includes/mailer.php';
@@ -58,7 +63,7 @@ $offset       = ($page - 1) * $perPage;
 
 $where  = ['1=1'];
 $params = [];
-if ($statusFilter && in_array($statusFilter, ['pending','confirmed','completed','cancelled'])) {
+if ($statusFilter && in_array($statusFilter, ['pending','confirmed','completed','incomplete','cancelled'])) {
     $where[] = 'b.status = ?'; $params[] = $statusFilter;
 }
 if ($search) {
@@ -117,7 +122,7 @@ $msg = sanitize($_GET['msg'] ?? '');
            value="<?= htmlspecialchars($search) ?>" style="max-width:220px">
     <select name="status" class="admin-input admin-select" style="width:150px" onchange="this.form.submit()">
       <option value="">All statuses</option>
-      <?php foreach (['pending','confirmed','completed','cancelled'] as $s): ?>
+      <?php foreach (['pending','confirmed','completed','incomplete','cancelled'] as $s): ?>
         <option value="<?= $s ?>" <?= $statusFilter===$s?'selected':'' ?>><?= ucfirst($s) ?></option>
       <?php endforeach; ?>
     </select>

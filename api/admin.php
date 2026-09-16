@@ -198,37 +198,16 @@ switch ($endpoint) {
 
         if ($method === 'POST' && $id && $action === 'status') {
             $newStatus = sanitize($body['status'] ?? '');
-            if (!in_array($newStatus, ['pending','confirmed','completed','cancelled','no_show','late_cancelled'])) {
+            if (!in_array($newStatus, ['pending','confirmed','completed','cancelled','no_show','late_cancelled','incomplete'])) {
                 http_response_code(400); echo json_encode(['error' => 'Invalid status']); exit;
             }
             $db->prepare("UPDATE bookings SET status=? WHERE id=?")->execute([$newStatus, $id]);
 
-            // ── COMPLETED: award loyalty points + journal entry ───────
-            if ($newStatus === 'completed') {
-                try { awardLoyaltyPoints($id); } catch (Throwable $e) { error_log('loyalty award: '.$e->getMessage()); }
-                try {
-                    $bkJ = $db->prepare("SELECT total_price, deposit_amount, deposit_paid, booking_ref FROM bookings WHERE id=?");
-                    $bkJ->execute([$id]); $bkData = $bkJ->fetch();
-                    if ($bkData) {
-                        $total   = (float)$bkData['total_price'];
-                        $deposit = (float)$bkData['deposit_amount'];
-                        $balance = round($total - $deposit, 2);
-                        $today   = date('Y-m-d');
-                        $ref     = $bkData['booking_ref'];
-                        $lines   = [];
-                        if ((int)$bkData['deposit_paid'] && $deposit > 0) {
-                            $lines[] = ['account_code' => '2000', 'debit' => $deposit, 'credit' => 0,     'memo' => 'Deposit released'];
-                        }
-                        if ($balance > 0) {
-                            $lines[] = ['account_code' => '1010', 'debit' => $balance, 'credit' => 0,     'memo' => 'Balance collected (cash)'];
-                        } elseif ($total > 0 && !(int)$bkData['deposit_paid']) {
-                            $lines[] = ['account_code' => '1010', 'debit' => $total,   'credit' => 0,     'memo' => 'Full payment (cash)'];
-                        }
-                        $lines[] = ['account_code' => '4000', 'debit' => 0, 'credit' => $total, 'memo' => 'Service revenue: '.$ref];
-                        if (!empty($lines)) createJournalEntry($today, 'Booking completed: '.$ref, 'booking_payment', $id, $lines, $ref);
-                    }
-                } catch (Throwable $e) { error_log('completion journal: '.$e->getMessage()); }
-            }
+            // Money + loyalty side-effects (recognise/reverse revenue, forfeit
+            // deposit, award/reverse loyalty) run through the one canonical hook
+            // so this path and the web admin path can never drift apart again.
+            try { onBookingStatusChanged($db, (int)$id, $newStatus); }
+            catch (Throwable $e) { error_log('onBookingStatusChanged (api status): '.$e->getMessage()); }
 
             // ── CONFIRMED: send approval email ────────────────────────
             if ($newStatus === 'confirmed') {
@@ -359,6 +338,9 @@ switch ($endpoint) {
             $db->prepare("UPDATE bookings SET deposit_paid=1 WHERE id=?")->execute([$id]);
             $db->prepare("UPDATE payments SET status='succeeded', confirmed_by='admin', confirmed_at=NOW() WHERE booking_id=? AND type='deposit'")->execute([$id]);
             $db->prepare("UPDATE bookings SET status='confirmed' WHERE id=? AND status='pending'")->execute([$id]);
+            // Record the confirmed deposit as a held liability (CR 2000). Idempotent.
+            try { journalBookingDeposit($db, (int)$id); }
+            catch (Throwable $e) { error_log('Admin API deposit journal: ' . $e->getMessage()); }
             try {
                 require_once __DIR__ . '/../includes/mailer.php';
                 $bk = $db->query("SELECT b.*, s.name as s_name, c.name as c_name, c.email as c_email FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers c ON c.id=b.customer_id WHERE b.id=$id")->fetch();
@@ -468,32 +450,25 @@ switch ($endpoint) {
                           VALUES (?,?,?,'GBP','stripe_terminal','succeeded',?,?,NOW())")
                ->execute([$id, $type, $amountGbp, $piId, 'stripe_terminal']);
 
-            // Update booking state
+            // Update booking state. Money + loyalty run through the canonical
+            // hook (onBookingStatusChanged / journalBookingDeposit) so the
+            // Terminal path uses the same self-healing ledger as every other
+            // path — payment_method='stripe' makes the balance land in the
+            // Stripe account (1000). (Edge: a bank-transfer deposit followed by
+            // a Terminal balance would classify that balance under the deposit's
+            // method; revenue recognition is unaffected.)
             if (in_array($type, ['deposit', 'full'])) {
                 $db->prepare("UPDATE bookings SET deposit_paid=1, payment_method='stripe' WHERE id=?")->execute([$id]);
                 $db->prepare("UPDATE bookings SET status='confirmed' WHERE id=? AND status='pending'")->execute([$id]);
+                if ($type === 'deposit') {
+                    try { journalBookingDeposit($db, (int)$id); }
+                    catch (Throwable $e) { error_log('terminal deposit journal: '.$e->getMessage()); }
+                }
             }
             if (in_array($type, ['balance', 'full'])) {
                 $db->prepare("UPDATE bookings SET status='completed' WHERE id=?")->execute([$id]);
-                // Award loyalty points
-                try { awardLoyaltyPoints($id); } catch (Throwable $e) { error_log('terminal loyalty: '.$e->getMessage()); }
-                // Journal entry — DR 1000 Stripe Account (not cash)
-                try {
-                    $bkJ = $db->prepare("SELECT total_price, deposit_amount, deposit_paid, booking_ref FROM bookings WHERE id=?");
-                    $bkJ->execute([$id]); $bkData = $bkJ->fetch();
-                    if ($bkData) {
-                        $total   = (float)$bkData['total_price'];
-                        $deposit = (float)$bkData['deposit_amount'];
-                        $today   = date('Y-m-d'); $ref = $bkData['booking_ref'];
-                        $lines   = [];
-                        if ((int)$bkData['deposit_paid'] && $deposit > 0 && $type === 'balance') {
-                            $lines[] = ['account_code' => '2000', 'debit' => $deposit,    'credit' => 0,     'memo' => 'Deposit released'];
-                        }
-                        $lines[] = ['account_code' => '1000', 'debit' => $amountGbp, 'credit' => 0,         'memo' => 'Card payment (Terminal)'];
-                        $lines[] = ['account_code' => '4000', 'debit' => 0,          'credit' => $total,    'memo' => 'Service revenue: '.$ref];
-                        createJournalEntry($today, 'Card payment (Terminal): '.$ref, 'booking_payment', $id, $lines, $ref);
-                    }
-                } catch (Throwable $e) { error_log('terminal journal: '.$e->getMessage()); }
+                try { onBookingStatusChanged($db, (int)$id, 'completed'); }
+                catch (Throwable $e) { error_log('terminal completion hook: '.$e->getMessage()); }
             }
             echo json_encode(['success' => true]); exit;
         }
@@ -1319,15 +1294,25 @@ switch ($endpoint) {
         $act = sanitize($body['action'] ?? '');
 
         if ($act === 'run_all') {
-            // 1. Auto-complete all past bookings that were never manually completed
+            // 1. Auto-INCOMPLETE past bookings the owner never marked (Phase R).
+            //    Revenue is recognised only on completion; anything left 48h
+            //    after its appointment is 'incomplete' (not fulfilled). Mirrors
+            //    cron/scheduler.php §8 — done per-row so deposits forfeit and
+            //    loyalty reverses through the one canonical hook.
+            $cutoff = date('Y-m-d H:i:s', strtotime('-48 hours'));
             $stmt = $db->prepare("
-                UPDATE bookings
-                SET status = 'completed'
+                SELECT id FROM bookings
                 WHERE status IN ('confirmed', 'pending')
-                  AND booked_date < CURDATE()
+                  AND TIMESTAMP(booked_date, booked_time) < ?
             ");
-            $stmt->execute();
-            $completedCount = $stmt->rowCount();
+            $stmt->execute([$cutoff]);
+            $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $upd = $db->prepare("UPDATE bookings SET status = 'incomplete' WHERE id = ?");
+            foreach ($ids as $bid) {
+                $upd->execute([$bid]);
+                onBookingStatusChanged($db, (int)$bid, 'incomplete');
+            }
+            $incompleteCount = count($ids);
 
             // NOTE: add-ons are per-service. Maintenance must NOT touch service_addons —
             // a previous version globalised them here on every run, which broke
@@ -1335,7 +1320,8 @@ switch ($endpoint) {
 
             echo json_encode([
                 'success'          => true,
-                'completed'        => $completedCount,
+                'completed'        => 0,               // nothing is auto-completed any more
+                'incompleted'      => $incompleteCount,
                 'addons_converted' => 0
             ]);
         } else {

@@ -449,6 +449,20 @@ function createJournalEntry(string $date, string $description, string $source, ?
         ];
     }
 
+    // Refuse an unbalanced entry outright. Double-entry only holds if debits
+    // equal credits; a mismatch means a caller built the lines wrong, and a
+    // silently unbalanced ledger is far worse than a loud failure. (The old
+    // booking-completion journals that debited the un-seeded '1010' were exactly
+    // this: they dropped a leg and left the books out by the deposit amount.)
+    $totalDebit = $totalCredit = 0.0;
+    foreach ($resolved as [$aid, $debit, $credit]) { $totalDebit += $debit; $totalCredit += $credit; }
+    if (abs($totalDebit - $totalCredit) > 0.005) {
+        throw new RuntimeException(sprintf(
+            'createJournalEntry: unbalanced entry (DR %.2f ≠ CR %.2f) — refused (%s)',
+            $totalDebit, $totalCredit, $description
+        ));
+    }
+
     $db->prepare("
         INSERT INTO journal_entries (entry_date, description, reference, source, source_id)
         VALUES (?, ?, ?, ?, ?)
@@ -508,3 +522,10 @@ function uploadImage(array $file, string $folder): string|false {
     }
     return false;
 }
+
+// ── Booking lifecycle (status → money + loyalty) ──────────
+// Loaded here, at the foot of helpers, so every entry point that already
+// requires helpers.php gets onBookingStatusChanged()/journalBookingDeposit()
+// with no extra require and no risk of a page missing one. Placed last so all
+// the helpers it depends on (createJournalEntry, loyalty) are already defined.
+require_once __DIR__ . '/bookings.php';

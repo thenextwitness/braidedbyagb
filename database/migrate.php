@@ -531,6 +531,29 @@ step('accounts 1010 Cash on Hand',
     fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES ('1010','Cash on Hand','asset')"),
     $report);
 
+// ── Phase R: booking completion & revenue recognition ─────
+// A booking is income only once the owner marks it completed. Anything left
+// unmarked is auto-marked 'incomplete' (not successful, fees not taken).
+step("bookings.status ENUM includes 'incomplete'",
+    fn() => enumHasValue($db, $dbName, 'bookings', 'status', 'incomplete'),
+    fn() => $db->exec("ALTER TABLE bookings MODIFY COLUMN status
+                       ENUM('pending','confirmed','cancelled','rejected','completed','no_show','late_cancelled','incomplete')
+                       DEFAULT 'pending'"),
+    $report);
+
+// Distinct journal sources for the booking money lifecycle, so each event is
+// idempotent (query by source+source_id) and reversible without deleting rows:
+//   booking_deposit  — deposit received, held as a liability (CR 2000)
+//   booking_payment  — revenue recognised on completion (CR 4000)
+//   booking_forfeit  — deposit forfeited on incomplete (CR 4020)
+//   booking_reversal — mirror entry backing out a prior booking entry
+step("journal_entries.source includes booking lifecycle values",
+    fn() => enumHasValue($db, $dbName, 'journal_entries', 'source', 'booking_deposit'),
+    fn() => $db->exec("ALTER TABLE journal_entries MODIFY COLUMN source
+                       ENUM('booking_payment','expense','owner_draw','manual',
+                            'booking_deposit','booking_forfeit','booking_reversal') NOT NULL"),
+    $report);
+
 // ── payments.method must allow 'stripe_terminal' (bug B5) ──
 // api/admin.php records Tap-to-Pay takings with method='stripe_terminal',
 // a value the ENUM never contained — it throws under strict mode and

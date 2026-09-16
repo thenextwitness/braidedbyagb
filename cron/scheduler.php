@@ -407,40 +407,40 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
-// 8. AUTO-COMPLETE PAST BOOKINGS
-//    confirmed/pending bookings whose date has passed are
-//    automatically marked completed every cron run.
+// 8. AUTO-INCOMPLETE PAST BOOKINGS  (Phase R)
+//    A booking is income ONLY once the owner marks it completed. Anything
+//    still pending/confirmed 48h after its appointment is auto-marked
+//    'incomplete' — it was not fulfilled, so no revenue and no loyalty. Any
+//    paid deposit is forfeited to income (owner's decision). Fully reversible:
+//    if the owner later marks it completed, revenue and loyalty are restored.
+//    The 48h grace far exceeds any appointment length, so measuring from the
+//    start time rather than the end is immaterial and never marks one early.
 // ─────────────────────────────────────────────────────────
 try {
-    $today = $now->format('Y-m-d');
+    $cutoff = (clone $now)->modify('-48 hours')->format('Y-m-d H:i:s');
 
-    // Fetch them so we can award loyalty points per booking
     $stmt = $db->prepare("
-        SELECT b.id, b.booking_ref, b.total_price, b.customer_id
+        SELECT b.id, b.booking_ref
         FROM bookings b
         WHERE b.status IN ('confirmed', 'pending')
-          AND b.booked_date < ?
+          AND TIMESTAMP(b.booked_date, b.booked_time) < ?
     ");
-    $stmt->execute([$today]);
-    $toComplete = $stmt->fetchAll();
+    $stmt->execute([$cutoff]);
+    $toIncomplete = $stmt->fetchAll();
 
-    foreach ($toComplete as $b) {
-        $db->prepare("UPDATE bookings SET status = 'completed' WHERE id = ?")
+    foreach ($toIncomplete as $b) {
+        $db->prepare("UPDATE bookings SET status = 'incomplete' WHERE id = ?")
            ->execute([$b['id']]);
-
-        // Award loyalty points if the helper function exists
-        if (function_exists('awardLoyaltyPoints')) {
-            awardLoyaltyPoints((int)$b['id'], $db);
-        }
-
-        cronLog("[auto-complete] {$b['booking_ref']} marked completed");
+        // Forfeit any paid deposit to income; reverse loyalty if somehow present.
+        onBookingStatusChanged($db, (int)$b['id'], 'incomplete');
+        cronLog("[auto-incomplete] {$b['booking_ref']} marked incomplete (never completed)");
     }
 
-    if (!empty($toComplete)) {
-        cronLog('[auto-complete] ' . count($toComplete) . ' booking(s) completed');
+    if (!empty($toIncomplete)) {
+        cronLog('[auto-incomplete] ' . count($toIncomplete) . ' booking(s) marked incomplete');
     }
 } catch (Exception $e) {
-    cronLog('[ERROR] Auto-complete: ' . $e->getMessage());
+    cronLog('[ERROR] Auto-incomplete: ' . $e->getMessage());
 }
 
 cronLog('Cron completed');

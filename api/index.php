@@ -789,6 +789,10 @@ switch ($endpoint) {
 
             $db->commit();
 
+            // Record the paid deposit as a held liability (CR 2000). Idempotent.
+            try { journalBookingDeposit($db, (int)$bk['id']); }
+            catch (Throwable $e) { error_log('pay-booking deposit journal: ' . $e->getMessage()); }
+
             // Emails (non-fatal — payment is already confirmed, emails must never block)
             try {
                 if (is_readable(__DIR__ . '/../includes/mailer.php')) {

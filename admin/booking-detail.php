@@ -47,11 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update_status') {
         $status = sanitize($_POST['status'] ?? '');
-        if (in_array($status, ['pending','confirmed','completed','cancelled'])) {
-            // Auto-archive when cancelled
+        if (in_array($status, ['pending','confirmed','completed','cancelled','incomplete'])) {
+            // Auto-archive when cancelled. 'incomplete' is left un-archived so the
+            // owner can still see it in the list and correct it to completed.
             $isArchived = $status === 'cancelled' ? 1 : 0;
             $db->prepare("UPDATE bookings SET status=?, is_archived=? WHERE id=?")
                ->execute([$status, $isArchived, $bookingId]);
+
+            // Recognise/reverse revenue, forfeit deposit, award/reverse loyalty —
+            // through the one canonical hook. This web path previously awarded
+            // loyalty but never journalled revenue; routing it here fixes that.
+            try { onBookingStatusChanged($db, (int)$bookingId, $status); }
+            catch (Throwable $e) { error_log('onBookingStatusChanged (web status): ' . $e->getMessage()); }
 
             if ($status === 'confirmed') {
                 try {
@@ -67,13 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            if ($status === 'completed') {
-                try {
-                    awardLoyaltyPoints($bookingId);
-                } catch (Throwable $e) {
-                    error_log('Loyalty award error: ' . $e->getMessage());
-                }
-            }
+            // (loyalty + revenue for 'completed' are handled by onBookingStatusChanged above)
 
             if ($status === 'cancelled') {
                 try {
@@ -95,6 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->prepare("UPDATE bookings SET deposit_paid=1 WHERE id=?")->execute([$bookingId]);
         $db->prepare("UPDATE payments SET status='succeeded', confirmed_by='admin', confirmed_at=NOW() WHERE booking_id=? AND type='deposit'")->execute([$bookingId]);
         $db->prepare("UPDATE bookings SET status='confirmed' WHERE id=? AND status='pending'")->execute([$bookingId]);
+        // Record the confirmed deposit as a held liability (CR 2000). Idempotent.
+        try { journalBookingDeposit($db, (int)$bookingId); }
+        catch (Throwable $e) { error_log('confirm_deposit journal: ' . $e->getMessage()); }
         try {
             require_once __DIR__ . '/../includes/mailer.php';
             $freshBk = $db->query("SELECT b.*, s.name as s_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.id=$bookingId")->fetch();
@@ -248,7 +252,7 @@ function copyPayLink() {
   <form method="POST" style="display:flex;gap:6px;margin-left:auto">
     <input type="hidden" name="action" value="update_status">
     <select name="status" class="admin-input admin-select" style="width:140px">
-      <?php foreach (['pending','confirmed','completed','cancelled'] as $s): ?>
+      <?php foreach (['pending','confirmed','completed','incomplete','cancelled'] as $s): ?>
         <option value="<?= $s ?>" <?= $bk['status']===$s?'selected':'' ?>><?= ucfirst($s) ?></option>
       <?php endforeach; ?>
     </select>
