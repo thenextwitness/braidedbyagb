@@ -17,9 +17,12 @@ name: Deploy to cPanel (FTPS)
 # The root .htaccess IS deployed (repo is the source of truth for routing);
 # keep any host-injected blocks — e.g. cPanel/LiteSpeed — in the repo copy.
 
+# DISABLED on push: this FTPS path fails auth (530) and is not how the site is
+# deployed — the live deploy is cPanel Git Version Control via .cpanel.yml. Left
+# as manual-only (workflow_dispatch) so it stops red-failing on every push; to
+# revive it, fix the FTP_USERNAME/FTP_PASSWORD repo secrets and restore the push
+# trigger.
 on:
-  push:
-    branches: [ session-improvements ]
   workflow_dispatch:
 
 concurrency:

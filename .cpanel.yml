@@ -18,6 +18,10 @@
 #     (vendor/ is no longer used by the email system; deploy once by hand if ever needed.)
 #   • Using `dir/.` copies the *contents* of each folder so existing files are
 #     merged/overwritten rather than nested (avoids the classic cp -R gotcha).
+#   • The root .htaccess IS deployed (last task) — it carries the site's routing
+#     (/login, /account, /app …). The repo copy is the source of truth; keep any
+#     host-injected blocks (cPanel PHP handler, LiteSpeed cache) in it so a
+#     deploy never drops them. This removes the old manual .htaccess upload step.
 # ============================================================
 deployment:
   tasks:
@@ -29,3 +33,4 @@ deployment:
     - /bin/mkdir -p $DEPLOYPATH/cron     && /bin/cp -Rf cron/.     $DEPLOYPATH/cron/
     - /bin/mkdir -p $DEPLOYPATH/database && /bin/cp -Rf database/. $DEPLOYPATH/database/
     - /bin/mkdir -p $DEPLOYPATH/assets   && /bin/cp -Rf assets/.   $DEPLOYPATH/assets/
+    - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
