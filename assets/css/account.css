@@ -1,0 +1,124 @@
+/* ============================================================
+   BraidedbyAGB — Customer account / auth pages
+   Uses the brand tokens from brand.css (--color-primary #CC1A8A,
+   --color-deep-purple #7A0050, --color-gold #F0C030).
+   ============================================================ */
+
+.account-wrap {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 56px) 16px 72px;
+}
+
+/* ── Centered auth card (login / verify) ─────────────────── */
+.auth-shell {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: clamp(24px, 6vw, 64px) 16px 72px;
+}
+.auth-card {
+  background: #fff;
+  border: 1px solid #EADCF0;
+  border-radius: 16px;
+  padding: clamp(24px, 5vw, 40px);
+  box-shadow: 0 12px 40px rgba(122, 0, 80, 0.08);
+}
+.auth-card h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  color: var(--color-deep-purple, #7A0050);
+  margin: 0 0 6px;
+}
+.auth-sub { color: #6B5575; font-size: 0.92rem; margin: 0 0 24px; line-height: 1.5; }
+
+.auth-field { margin-bottom: 16px; }
+.auth-field label {
+  display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em;
+  color: #4A3A54; margin-bottom: 6px; text-transform: uppercase;
+}
+.auth-input {
+  width: 100%; box-sizing: border-box;
+  padding: 13px 15px; font-size: 1rem;
+  border: 1.5px solid #E2D3EA; border-radius: 10px; background: #FCFAFE;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.auth-input:focus {
+  outline: none; border-color: var(--color-primary, #CC1A8A);
+  box-shadow: 0 0 0 3px rgba(204, 26, 138, 0.12);
+}
+.auth-code-input {
+  text-align: center; letter-spacing: 12px; font-size: 1.7rem;
+  font-weight: 800; font-variant-numeric: tabular-nums;
+}
+
+.auth-btn {
+  width: 100%; box-sizing: border-box; cursor: pointer;
+  padding: 14px 18px; font-size: 1rem; font-weight: 700;
+  color: #fff; background: var(--color-primary, #CC1A8A);
+  border: none; border-radius: 10px; margin-top: 4px;
+  transition: filter 0.15s, transform 0.05s;
+}
+.auth-btn:hover { filter: brightness(1.06); }
+.auth-btn:active { transform: translateY(1px); }
+.auth-btn.secondary { background: #F3E9F7; color: var(--color-deep-purple, #7A0050); }
+
+.auth-alt { text-align: center; margin-top: 18px; font-size: 0.9rem; }
+.auth-alt a, .auth-link { color: var(--color-primary, #CC1A8A); text-decoration: none; font-weight: 600; cursor: pointer; }
+.auth-alt a:hover, .auth-link:hover { text-decoration: underline; }
+
+.auth-msg { border-radius: 10px; padding: 12px 15px; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.45; }
+.auth-msg.error { background: #FDECEF; color: #9B1B3A; border: 1px solid #F5C2CE; }
+.auth-msg.info  { background: #EAF4FF; color: #1E4E79; border: 1px solid #C2DDF5; }
+.auth-msg.ok    { background: #E9F8EE; color: #1E6B3A; border: 1px solid #BFE6CC; }
+
+.role-choice {
+  display: flex; gap: 12px; flex-direction: column; margin-top: 8px;
+}
+.role-choice button {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 16px; border: 1.5px solid #E2D3EA; border-radius: 12px;
+  background: #FCFAFE; cursor: pointer; font-size: 1rem; font-weight: 700;
+  color: var(--color-deep-purple, #7A0050);
+}
+.role-choice button:hover { border-color: var(--color-primary, #CC1A8A); }
+
+/* ── Account dashboard ───────────────────────────────────── */
+.account-head { margin-bottom: 28px; }
+.account-head h1 {
+  font-family: 'Montserrat', sans-serif; font-size: clamp(1.5rem, 4vw, 2rem);
+  color: var(--color-deep-purple, #7A0050); margin: 0 0 4px;
+}
+.account-head p { color: #6B5575; margin: 0; }
+
+.account-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 30px; }
+.account-tab {
+  padding: 9px 16px; border-radius: 999px; font-size: 0.9rem; font-weight: 600;
+  color: #6B5575; background: #F3E9F7; text-decoration: none;
+}
+.account-tab.active { background: var(--color-primary, #CC1A8A); color: #fff; }
+
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.account-card {
+  background: #fff; border: 1px solid #EADCF0; border-radius: 14px; padding: 22px;
+}
+.account-card h3 { margin: 0 0 10px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #8A7595; }
+.account-stat { font-size: 1.9rem; font-weight: 800; color: var(--color-deep-purple, #7A0050); font-family: 'Montserrat', sans-serif; }
+
+.account-list { display: flex; flex-direction: column; gap: 10px; }
+.account-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 14px 16px; background: #fff; border: 1px solid #EADCF0; border-radius: 12px;
+}
+.account-row .meta { font-size: 0.82rem; color: #8A7595; }
+.account-row .title { font-weight: 700; color: #3A2A44; }
+
+.account-pill { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: capitalize; }
+.pill-completed  { background: #ede9fe; color: #4c1d95; }
+.pill-confirmed  { background: #d1fae5; color: #065f46; }
+.pill-pending    { background: #fef3c7; color: #92400e; }
+.pill-incomplete { background: #e2e8f0; color: #475569; }
+.pill-cancelled  { background: #fee2e2; color: #991b1b; }
+
+.account-empty { text-align: center; color: #8A7595; padding: 40px 16px; }
+
+.account-signout { color: var(--color-primary, #CC1A8A); font-weight: 600; text-decoration: none; }

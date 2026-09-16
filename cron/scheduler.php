@@ -443,4 +443,15 @@ try {
     cronLog('[ERROR] Auto-incomplete: ' . $e->getMessage());
 }
 
+// ─────────────────────────────────────────────────────────
+// 9. PORTAL AUTH CLEANUP  (Phase A)
+//    Purge expired login codes and remember-me tokens.
+// ─────────────────────────────────────────────────────────
+try {
+    require_once __DIR__ . '/../includes/portal-auth.php';
+    portalAuthCleanup($db);
+} catch (Throwable $e) {
+    cronLog('[ERROR] Portal auth cleanup: ' . $e->getMessage());
+}
+
 cronLog('Cron completed');

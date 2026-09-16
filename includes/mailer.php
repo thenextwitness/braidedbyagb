@@ -1455,3 +1455,81 @@ HTML;
         return false;
     }
 }
+
+// ── Portal: emailed login code ────────────────────────────
+// The 6-digit code must appear ONLY in the body — never the subject or the
+// preheader — so it isn't exposed in a notification preview.
+function emailPortalLoginCode(string $email, string $name, string $code): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($email, $name ?: '');
+        $mail->Subject = 'Your BraidedbyAGB sign-in code';
+        $greeting = $name ? 'Hi ' . sanitize($name) . ',' : 'Hi,';
+        $digits   = htmlspecialchars($code);
+        $content  = <<<HTML
+<h2>Your sign-in code</h2>
+<p>{$greeting}</p>
+<p>Use this code to sign in to your BraidedbyAGB account. It expires in 10 minutes and can be used once.</p>
+<div style="text-align:center;margin:28px 0;">
+  <div style="display:inline-block;background:#F9EEF9;border:2px solid #CC1A8A;border-radius:10px;
+              padding:18px 34px;font-size:32px;font-weight:800;letter-spacing:10px;color:#7A0050;">
+    {$digits}
+  </div>
+</div>
+<p style="font-size:13px;color:#7A4A70;">If you didn't try to sign in, you can ignore this email — nobody can access your account without this code.</p>
+HTML;
+        $mail->Body    = emailWrapper($content, 'Your sign-in code');
+        $mail->AltBody = "{$greeting}\n\nYour BraidedbyAGB sign-in code is: {$code}\nIt expires in 10 minutes and can be used once.\n\nIf you didn't try to sign in, you can ignore this email.";
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (portalLoginCode): ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Portal: sign-in attempt for an address with no account ────
+// Sent instead of a code when someone enters an unknown email, so the sign-in
+// screen can show an identical response either way (no account enumeration).
+function emailPortalNoAccount(string $email): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($email);
+        $mail->Subject = 'About your BraidedbyAGB sign-in';
+        $bookUrl = SITE_URL . '/booking';
+        $content = <<<HTML
+<h2>No account yet</h2>
+<p>Someone (hopefully you) tried to sign in to a BraidedbyAGB account with this email address, but we don't have one on file for it yet.</p>
+<p>Your account is created automatically the first time you book with us — there's nothing to set up in advance.</p>
+<p style="text-align:center;margin-top:28px;">
+  <a href="{$bookUrl}" class="cta-btn">Book an appointment</a>
+</p>
+<p style="font-size:13px;color:#9B8BA5;margin-top:20px;">If you didn't try to sign in, you can safely ignore this email.</p>
+HTML;
+        $mail->Body = emailWrapper($content, 'About your sign-in');
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (portalNoAccount): ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Portal: password was set/changed (security alert) ─────
+function emailPortalPasswordChanged(string $email, string $name): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($email, $name ?: '');
+        $mail->Subject = 'Your BraidedbyAGB password was changed';
+        $greeting = $name ? 'Hi ' . sanitize($name) . ',' : 'Hi,';
+        $content  = <<<HTML
+<h2>Password changed</h2>
+<p>{$greeting}</p>
+<p>The password on your BraidedbyAGB account was just set or changed. If this was you, no action is needed.</p>
+<p style="font-size:13px;color:#7A4A70;">If this <strong>wasn't</strong> you, please WhatsApp us on 07769064971 straight away — and remember you can always sign in with a one-time emailed code instead of a password.</p>
+HTML;
+        $mail->Body = emailWrapper($content, 'Password changed');
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (portalPasswordChanged): ' . $e->getMessage());
+        return false;
+    }
+}

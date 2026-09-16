@@ -565,6 +565,101 @@ step("payments.method ENUM includes 'stripe_terminal'",
                        ENUM('stripe','bank_transfer','stripe_terminal') NOT NULL"),
     $report);
 
+// ── Phase A: customer accounts / one login ────────────────
+// Auth + profile columns on customers. password_hash NULL = passwordless
+// (emailed-code) account until the customer opts into a password.
+step('customers.password_hash column',
+    fn() => columnExists($db, $dbName, 'customers', 'password_hash'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN password_hash VARCHAR(255) DEFAULT NULL"),
+    $report);
+step('customers.email_verified column',
+    fn() => columnExists($db, $dbName, 'customers', 'email_verified'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN email_verified TINYINT(1) NOT NULL DEFAULT 0"),
+    $report);
+step('customers.last_login_at column',
+    fn() => columnExists($db, $dbName, 'customers', 'last_login_at'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN last_login_at DATETIME DEFAULT NULL"),
+    $report);
+step('customers.login_attempts column',
+    fn() => columnExists($db, $dbName, 'customers', 'login_attempts'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN login_attempts INT UNSIGNED NOT NULL DEFAULT 0"),
+    $report);
+step('customers.locked_until column',
+    fn() => columnExists($db, $dbName, 'customers', 'locked_until'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN locked_until DATETIME DEFAULT NULL"),
+    $report);
+// Saved address, so a logged-in client never re-types it. Flat columns (one
+// address per client) — a separate table would be over-engineering here.
+foreach ([
+    'address_line1' => "VARCHAR(160) DEFAULT NULL",
+    'address_line2' => "VARCHAR(160) DEFAULT NULL",
+    'address_city'  => "VARCHAR(80)  DEFAULT NULL",
+    'address_postcode' => "VARCHAR(16) DEFAULT NULL",
+] as $col => $def) {
+    step("customers.$col column",
+        fn() => columnExists($db, $dbName, 'customers', $col),
+        fn() => $db->exec("ALTER TABLE customers ADD COLUMN $col $def"),
+        $report);
+}
+
+// Emailed one-time login codes. Polymorphic (user_type/user_id) so the same
+// table serves stylists in Phase C — hence NO foreign key on user_id. The code
+// itself is never stored: only its HMAC-SHA256 (64 hex) is kept, short-lived,
+// single-use and attempt-capped.
+step('portal_auth_codes table',
+    fn() => tableExists($db, $dbName, 'portal_auth_codes'),
+    fn() => $db->exec("CREATE TABLE portal_auth_codes (
+        id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_type   ENUM('client','stylist') NOT NULL DEFAULT 'client',
+        user_id     INT UNSIGNED NOT NULL,
+        email       VARCHAR(180) NOT NULL,
+        code_hash   CHAR(64)     NOT NULL,
+        expires_at  DATETIME     NOT NULL,
+        consumed_at DATETIME     DEFAULT NULL,
+        attempts    INT UNSIGNED NOT NULL DEFAULT 0,
+        ip          VARCHAR(45)  DEFAULT NULL,
+        created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_email_type (email, user_type),
+        KEY idx_expires (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Split-token 'remember me'. Cookie carries selector + validator; only the
+// validator's hash is stored, so a DB leak cannot forge a session. Required,
+// not optional: shared-hosting session GC (~24 min idle) would otherwise log a
+// PWA user out constantly.
+step('portal_remember_tokens table',
+    fn() => tableExists($db, $dbName, 'portal_remember_tokens'),
+    fn() => $db->exec("CREATE TABLE portal_remember_tokens (
+        id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_type      ENUM('client','stylist') NOT NULL DEFAULT 'client',
+        user_id        INT UNSIGNED NOT NULL,
+        selector       CHAR(32)     NOT NULL UNIQUE,
+        validator_hash CHAR(64)     NOT NULL,
+        expires_at     DATETIME     NOT NULL,
+        created_at     DATETIME     DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_user (user_type, user_id),
+        KEY idx_expires (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Secret token on a booking so the public confirmation page can prove the
+// viewer owns it, instead of leaking name/email/phone to anyone with a ref
+// (bug B6). Backfilled for existing bookings so their in-flight links keep
+// working; the confirmation page also accepts a logged-in owner.
+step('bookings.confirm_token column',
+    fn() => columnExists($db, $dbName, 'bookings', 'confirm_token'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN confirm_token CHAR(64) DEFAULT NULL"),
+    $report);
+step('bookings.confirm_token backfill',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM bookings WHERE confirm_token IS NULL")->fetchColumn() === 0,
+    function() use ($db) {
+        $rows = $db->query("SELECT id FROM bookings WHERE confirm_token IS NULL")->fetchAll(PDO::FETCH_COLUMN);
+        $upd  = $db->prepare("UPDATE bookings SET confirm_token = ? WHERE id = ?");
+        foreach ($rows as $bid) { $upd->execute([bin2hex(random_bytes(32)), $bid]); }
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

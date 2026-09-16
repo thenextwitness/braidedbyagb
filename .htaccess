@@ -35,6 +35,17 @@ RewriteRule ^order-confirmation/?$ public/order-confirmation.php [L,QSA]
 RewriteRule ^shop/?$ public/shop.php [L]
 RewriteRule ^shop/([a-z0-9-]+)/?$ public/product.php?slug=$1 [L,QSA]
 
+# Customer account & portal sign-in (Phase A)
+# NOTE: this root .htaccess is deployed by NEITHER pipeline — upload it by hand.
+RewriteRule ^login/?$ public/login.php [L,QSA]
+RewriteRule ^verify/?$ public/verify.php [L,QSA]
+RewriteRule ^logout/?$ public/logout.php [L]
+RewriteRule ^app/?$ public/app.php [L]
+# Multi-segment account rules MUST precede the single-segment /account rule.
+RewriteRule ^account/bookings/?$ public/account/bookings.php [L,QSA]
+RewriteRule ^account/profile/?$ public/account/profile.php [L,QSA]
+RewriteRule ^account/?$ public/account/index.php [L,QSA]
+
 # Sitemap
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 

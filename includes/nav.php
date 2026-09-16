@@ -35,6 +35,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         <li><a href="/shop" class="nav-link <?= $currentPage === 'shop' ? 'active' : '' ?>">Shop</a></li>
         <li><a href="/about" class="nav-link <?= $currentPage === 'about' ? 'active' : '' ?>">About</a></li>
         <li><a href="/contact" class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>">Contact</a></li>
+        <li><a href="/app" class="nav-link">Account</a></li>
       </ul>
     </nav>
 
@@ -60,6 +61,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
       <li><a href="/shop" class="mobile-nav-link">Shop Extensions</a></li>
       <li><a href="/about" class="mobile-nav-link">About</a></li>
       <li><a href="/contact" class="mobile-nav-link">Contact</a></li>
+      <li><a href="/app" class="mobile-nav-link">My Account</a></li>
       <li><a href="/booking" class="mobile-nav-link mobile-cta">Book Your Appointment</a></li>
     </ul>
     <div class="mobile-socials">
