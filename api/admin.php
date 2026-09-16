@@ -511,16 +511,9 @@ switch ($endpoint) {
                 if (!$newName || !$newEmail) {
                     http_response_code(400); echo json_encode(['error' => 'Name and email required for new client']); exit;
                 }
-                $existStmt = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $existStmt->execute([$newEmail]);
-                $existRow = $existStmt->fetch();
-                if ($existRow) {
-                    $customerId = (int)$existRow['id'];
-                    if ($newPhone) $db->prepare("UPDATE customers SET phone=? WHERE id=?")->execute([$newPhone, $customerId]);
-                } else {
-                    $db->prepare("INSERT INTO customers (name, email, phone) VALUES (?,?,?)")->execute([$newName, $newEmail, $newPhone ?: null]);
-                    $customerId = (int)$db->lastInsertId();
-                }
+                // Find or create by email. NULL optin: creating a booking on a
+                // client's behalf must never change their email preference.
+                $customerId = findOrCreateCustomer($db, $newName, $newEmail, $newPhone);
             }
             if (!$customerId) { http_response_code(400); echo json_encode(['error' => 'Customer required']); exit; }
 

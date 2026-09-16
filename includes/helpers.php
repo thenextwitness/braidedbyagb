@@ -357,36 +357,110 @@ function awardLoyaltyPoints(int $bookingId): void {
     );
 }
 
+// ── Customer identity ─────────────────────────────────────
+
+/**
+ * Find an existing customer by email, or create one, and return the id.
+ *
+ * This is the ONE place a customer row is created or refreshed from a public
+ * or admin form. It replaces eight near-identical copies that each carried
+ * the same bugs:
+ *
+ *  1. lastInsertId() is NOT reset by the UPDATE branch of ON DUPLICATE KEY
+ *     UPDATE, so for a returning customer it returned whatever the previous
+ *     INSERT on that connection returned. Inside the cart transaction — which
+ *     inserts bookings and payments on the same connection — that could attach
+ *     a booking to the WRONG client. `id = LAST_INSERT_ID(id)` makes the update
+ *     branch publish the existing row's id, so the value is always correct.
+ *
+ *  2. `email_optin = VALUES(email_optin)` silently re-subscribed anyone who had
+ *     opted out, every single time they booked. Opt-out is now sticky: LEAST()
+ *     lets a customer opt OUT here but never back IN. Re-subscribing must be a
+ *     deliberate act on the account profile, not a side effect of booking.
+ *
+ *  3. `name`/`phone` were overwritten unconditionally, so a form that omitted
+ *     the phone erased a good stored number. Empty values are now ignored.
+ *
+ * Returns 0 only when no usable email was supplied.
+ */
+function findOrCreateCustomer(PDO $db, string $name, string $email, ?string $phone = null, ?int $optin = null): int {
+    $email = strtolower(trim($email));
+    if ($email === '') return 0;
+
+    $name  = trim($name);
+    $phone = $phone !== null ? trim($phone) : '';
+
+    $db->prepare("
+        INSERT INTO customers (name, email, phone, email_optin)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            id          = LAST_INSERT_ID(id),
+            name        = IF(VALUES(name)  <> '', VALUES(name),  name),
+            phone       = IF(VALUES(phone) <> '', VALUES(phone), phone),
+            email_optin = LEAST(email_optin, VALUES(email_optin))
+    ")->execute([$name, $email, ($phone !== '' ? $phone : null), $optin ?? 1]);
+
+    return (int)$db->lastInsertId();
+}
+
+/** True if this customer has been blocked from booking. */
+function isCustomerBlocked(PDO $db, int $customerId): bool {
+    if ($customerId <= 0) return false;
+    $s = $db->prepare("SELECT is_blocked FROM customers WHERE id=?");
+    $s->execute([$customerId]);
+    return (bool)$s->fetchColumn();
+}
+
 // ── Accounting helpers ────────────────────────────────────
 
 /**
- * Create a balanced journal entry with one or more debit/credit lines.
+ * Create a journal entry with one or more debit/credit lines.
  * $lines: [['account_code' => '5100', 'debit' => 50.00, 'credit' => 0, 'memo' => ''], ...]
+ *
+ * Every account code is resolved BEFORE anything is written. An unknown code
+ * used to be skipped silently (`continue`), which wrote a header plus the
+ * remaining lines — that is exactly how every cash-completed booking came to
+ * post an entry missing its debit leg, against the un-seeded code '1010'. A
+ * silently dropped line is worse than a loud failure, so an unknown code now
+ * throws and nothing is written.
+ *
+ * @throws RuntimeException if any account_code does not exist.
  */
 function createJournalEntry(string $date, string $description, string $source, ?int $sourceId, array $lines, string $reference = ''): int {
     $db = getDB();
+
+    // Resolve first — write only once every line is known to be postable.
+    $acctStmt = $db->prepare("SELECT id FROM accounts WHERE code=? LIMIT 1");
+    $resolved = [];
+    foreach ($lines as $line) {
+        $code = (string)($line['account_code'] ?? '');
+        $acctStmt->execute([$code]);
+        $accountId = (int)($acctStmt->fetchColumn() ?: 0);
+        if (!$accountId) {
+            throw new RuntimeException(
+                "createJournalEntry: unknown account code '{$code}' — entry refused ({$description})"
+            );
+        }
+        $resolved[] = [
+            $accountId,
+            round((float)($line['debit']  ?? 0), 2),
+            round((float)($line['credit'] ?? 0), 2),
+            $line['memo'] ?? '',
+        ];
+    }
+
     $db->prepare("
         INSERT INTO journal_entries (entry_date, description, reference, source, source_id)
         VALUES (?, ?, ?, ?, ?)
     ")->execute([$date, $description, $reference, $source, $sourceId]);
     $entryId = (int)$db->lastInsertId();
 
-    $acctStmt = $db->prepare("SELECT id FROM accounts WHERE code=? LIMIT 1");
-    $lineStmt  = $db->prepare("
+    $lineStmt = $db->prepare("
         INSERT INTO journal_entry_lines (journal_entry_id, account_id, debit, credit, memo)
         VALUES (?, ?, ?, ?, ?)
     ");
-    foreach ($lines as $line) {
-        $acctStmt->execute([$line['account_code']]);
-        $accountId = (int)($acctStmt->fetchColumn() ?: 0);
-        if (!$accountId) continue;
-        $lineStmt->execute([
-            $entryId,
-            $accountId,
-            (float)($line['debit']  ?? 0),
-            (float)($line['credit'] ?? 0),
-            $line['memo'] ?? '',
-        ]);
+    foreach ($resolved as [$accountId, $debit, $credit, $memo]) {
+        $lineStmt->execute([$entryId, $accountId, $debit, $credit, $memo]);
     }
     return $entryId;
 }

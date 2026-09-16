@@ -69,12 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $bookingId  = $request['booking_id'];
                 $reviewType = $request['review_type'];
             } else {
-                // Walk-in: upsert customer
-                $db->prepare("INSERT INTO customers (name, email) VALUES (?,?) ON DUPLICATE KEY UPDATE name=VALUES(name)")
-                   ->execute([$name, $email]);
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([$email]);
-                $customerId = (int)$r->fetchColumn();
+                // Walk-in: upsert customer. NULL phone/optin so leaving a review
+                // never erases a stored number or changes an email preference.
+                $customerId = findOrCreateCustomer($db, $name, $email);
             }
 
             // Save review

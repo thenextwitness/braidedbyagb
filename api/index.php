@@ -209,24 +209,18 @@ switch ($endpoint) {
         $db->beginTransaction();
         try {
             // Upsert customer
-            $stmt = $db->prepare("INSERT INTO customers (name, email, phone, email_optin) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), email_optin=VALUES(email_optin)");
-            $stmt->execute([sanitize($data['name']), sanitizeEmail($data['email']), sanitize($data['phone']), (int)($data['email_optin'] ?? 1)]);
-            $customerId = (int)$db->lastInsertId();
-            if (!$customerId) {
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([sanitizeEmail($data['email'])]);
-                $customerId = (int)$r->fetchColumn();
-            }
+            $customerId = findOrCreateCustomer(
+                $db,
+                sanitize($data['name']),
+                sanitizeEmail($data['email']),
+                sanitize($data['phone']),
+                (int)($data['email_optin'] ?? 1)
+            );
 
             // Block check — prevent blocked customers from booking
-            if ($customerId) {
-                $blk = $db->prepare("SELECT is_blocked FROM customers WHERE id=?");
-                $blk->execute([$customerId]);
-                $blkRow = $blk->fetch();
-                if ($blkRow && $blkRow['is_blocked']) {
-                    $db->rollBack();
-                    jsonResponse(['error' => 'We are unable to accept your booking at this time. Please contact us directly.'], 403);
-                }
+            if (isCustomerBlocked($db, $customerId)) {
+                $db->rollBack();
+                jsonResponse(['error' => 'We are unable to accept your booking at this time. Please contact us directly.'], 403);
             }
 
             // Check slot still available — pass actual service duration so the overlap
@@ -369,29 +363,20 @@ switch ($endpoint) {
         $db->beginTransaction();
         try {
             // 1. Upsert payer customer
-            $stmt = $db->prepare("INSERT INTO customers (name, email, phone, email_optin) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), email_optin=VALUES(email_optin)");
-            $stmt->execute([
+            $customerId = findOrCreateCustomer(
+                $db,
                 sanitize($payer['name']),
                 sanitizeEmail($payer['email']),
                 sanitize($payer['phone']),
-                (int)($payer['email_optin'] ?? 1),
-            ]);
-            $customerId = (int)$db->lastInsertId();
-            if (!$customerId) {
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([sanitizeEmail($payer['email'])]);
-                $customerId = (int)$r->fetchColumn();
-            }
+                (int)($payer['email_optin'] ?? 1)
+            );
             if (!$customerId) {
                 $db->rollBack();
                 jsonResponse(['error' => 'Could not create your customer record.'], 500);
             }
 
             // Block check
-            $blk = $db->prepare("SELECT is_blocked FROM customers WHERE id=?");
-            $blk->execute([$customerId]);
-            $blkRow = $blk->fetch();
-            if ($blkRow && $blkRow['is_blocked']) {
+            if (isCustomerBlocked($db, $customerId)) {
                 $db->rollBack();
                 jsonResponse(['error' => 'We are unable to accept your booking at this time. Please contact us directly.'], 403);
             }
@@ -601,14 +586,13 @@ switch ($endpoint) {
         $db = getDB();
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("INSERT INTO customers (name, email, phone) VALUES (?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone)");
-            $stmt->execute([sanitize($data['name']), sanitizeEmail($data['email']), sanitize($data['phone'])]);
-            $customerId = (int)$db->lastInsertId();
-            if (!$customerId) {
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([sanitizeEmail($data['email'])]);
-                $customerId = (int)$r->fetchColumn();
-            }
+            // NULL optin: a shop order must never change an email preference.
+            $customerId = findOrCreateCustomer(
+                $db,
+                sanitize($data['name']),
+                sanitizeEmail($data['email']),
+                sanitize($data['phone'])
+            );
 
             $discountAmount = 0; $discountCodeId = null;
             if (!empty($data['discount_code'])) {
@@ -929,23 +913,16 @@ switch ($endpoint) {
         $db = getDB();
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("INSERT INTO customers (name, email, phone, email_optin) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), email_optin=VALUES(email_optin)");
-            $stmt->execute([
-                sanitize($payer['name']), sanitizeEmail($payer['email']),
-                sanitize($payer['phone']), (int)($payer['email_optin'] ?? 1),
-            ]);
-            $customerId = (int)$db->lastInsertId();
-            if (!$customerId) {
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([sanitizeEmail($payer['email'])]);
-                $customerId = (int)$r->fetchColumn();
-            }
+            $customerId = findOrCreateCustomer(
+                $db,
+                sanitize($payer['name']),
+                sanitizeEmail($payer['email']),
+                sanitize($payer['phone']),
+                (int)($payer['email_optin'] ?? 1)
+            );
             if (!$customerId) { $db->rollBack(); jsonResponse(['error' => 'Could not create your customer record.'], 500); }
 
-            $blk = $db->prepare("SELECT is_blocked FROM customers WHERE id=?");
-            $blk->execute([$customerId]);
-            $blkRow = $blk->fetch();
-            if ($blkRow && $blkRow['is_blocked']) {
+            if (isCustomerBlocked($db, $customerId)) {
                 $db->rollBack();
                 jsonResponse(['error' => 'We are unable to accept your booking at this time. Please contact us directly.'], 403);
             }
@@ -1101,14 +1078,13 @@ switch ($endpoint) {
         $db = getDB();
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("INSERT INTO customers (name, email, phone) VALUES (?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone)");
-            $stmt->execute([sanitize($data['name']), sanitizeEmail($data['email']), sanitize($data['phone'])]);
-            $customerId = (int)$db->lastInsertId();
-            if (!$customerId) {
-                $r = $db->prepare("SELECT id FROM customers WHERE email=?");
-                $r->execute([sanitizeEmail($data['email'])]);
-                $customerId = (int)$r->fetchColumn();
-            }
+            // NULL optin: a shop order must never change an email preference.
+            $customerId = findOrCreateCustomer(
+                $db,
+                sanitize($data['name']),
+                sanitizeEmail($data['email']),
+                sanitize($data['phone'])
+            );
 
             $discountAmount = 0; $discountCodeId = null;
             if (!empty($data['discount_code'])) {

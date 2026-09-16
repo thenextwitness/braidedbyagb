@@ -520,6 +520,28 @@ step('settings home-service rows',
         ('travel_fee_further','45')"),
     $report);
 
+// ── Missing cash account code (Phase 0 / bug B3) ──────────
+// api/admin.php posts booking completions and Terminal payments to code
+// '1010', which was never in the chart-of-accounts seed. createJournalEntry()
+// silently skipped the unknown code, so every cash-completed booking wrote an
+// entry with its debit leg missing. Seed the code; the helper now throws on an
+// unknown code instead of dropping the line.
+step('accounts 1010 Cash on Hand',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM accounts WHERE code='1010'")->fetchColumn() > 0,
+    fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES ('1010','Cash on Hand','asset')"),
+    $report);
+
+// ── payments.method must allow 'stripe_terminal' (bug B5) ──
+// api/admin.php records Tap-to-Pay takings with method='stripe_terminal',
+// a value the ENUM never contained — it throws under strict mode and
+// silently coerces to '' otherwise. Keeping it distinct from 'stripe' is
+// worth it: card-present and online takings reconcile separately.
+step("payments.method ENUM includes 'stripe_terminal'",
+    fn() => enumHasValue($db, $dbName, 'payments', 'method', 'stripe_terminal'),
+    fn() => $db->exec("ALTER TABLE payments MODIFY COLUMN method
+                       ENUM('stripe','bank_transfer','stripe_terminal') NOT NULL"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

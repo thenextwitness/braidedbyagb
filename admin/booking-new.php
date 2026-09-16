@@ -51,7 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$serviceId) $errors[] = 'Please select a service.';
     if (!$bookedDate) $errors[] = 'Please select a date.';
     if (!$bookedTime) $errors[] = 'Please select a time.';
-    if (!in_array($paymentMethod, ['stripe','bank_transfer','cash'])) $errors[] = 'Invalid payment method.';
+    // Must match the bookings.payment_method ENUM exactly — 'cash' was accepted
+    // here but is not a valid column value, so a direct POST hit a DB error.
+    if (!in_array($paymentMethod, ['stripe','bank_transfer'], true)) $errors[] = 'Invalid payment method.';
     if (!in_array($paymentMethodAllowed, ['stripe','bank_transfer','both'])) $paymentMethodAllowed = 'both';
     if (!in_array($status, ['pending','confirmed','completed','cancelled'])) $errors[] = 'Invalid status.';
 
@@ -61,24 +63,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$newEmail || !validateEmail($newEmail)) $errors[] = 'A valid client email is required.';
 
         if (empty($errors)) {
-            // Check if customer already exists by email
-            $existing = $db->prepare("SELECT id FROM customers WHERE email = ?");
-            $existing->execute([$newEmail]);
-            $existingRow = $existing->fetch();
-            if ($existingRow) {
-                $customerId = (int)$existingRow['id'];
-                // Update phone if provided
-                if ($newPhone) {
-                    $db->prepare("UPDATE customers SET phone=? WHERE id=?")->execute([$newPhone, $customerId]);
-                }
-            } else {
-                $db->prepare("INSERT INTO customers (name, email, phone) VALUES (?,?,?)")
-                   ->execute([$newName, $newEmail, $newPhone ?: null]);
-                $customerId = (int)$db->lastInsertId();
-            }
+            // Find or create by email. NULL optin: creating a booking on a
+            // client's behalf must never change their email preference.
+            $customerId = findOrCreateCustomer($db, $newName, $newEmail, $newPhone);
         }
     } else {
         if (!$customerId) $errors[] = 'Please select an existing client or create a new one.';
+    }
+
+    // -- Slot availability (bug B4) --
+    // This page performed NO overlap check at all, so an admin could silently
+    // double-book a slot the public booking form would have refused. Only
+    // statuses that actually occupy the chair are checked — a booking recorded
+    // retrospectively as completed or cancelled must not be blocked.
+    if (empty($errors) && in_array($status, ['pending', 'confirmed'], true)) {
+        $durStmt = $db->prepare("
+            SELECT COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
+            FROM services s
+            LEFT JOIN service_variants sv ON sv.id = ?
+            WHERE s.id = ?
+        ");
+        $durStmt->execute([$variantId, $serviceId]);
+        $durMins = (int)($durStmt->fetchColumn() ?: 60);
+
+        if (!isSlotAvailable($bookedDate, $bookedTime, $durMins)) {
+            $errors[] = 'That time clashes with an existing booking or a blocked period. Please pick another slot.';
+        }
     }
 
     // -- Calculate price --

@@ -134,7 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Only allow deletion of cancelled/archived bookings
         if (in_array($bk['status'], ['cancelled','rejected']) || $bk['is_archived']) {
             // Check for paid payments — block deletion if money was collected
-            $paidCount = (int)$db->prepare("SELECT COUNT(*) FROM payments WHERE booking_id=? AND status='succeeded'")->query([$bookingId])?->fetchColumn();
             $paidStmt = $db->prepare("SELECT COUNT(*) FROM payments WHERE booking_id=? AND status='succeeded'");
             $paidStmt->execute([$bookingId]);
             if ((int)$paidStmt->fetchColumn() > 0) {
