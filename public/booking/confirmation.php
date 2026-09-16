@@ -82,8 +82,6 @@ $isGroup = count($groupBookings) > 1;
   <link rel="stylesheet" href="/assets/css/global.css">
   <link rel="stylesheet" href="/assets/css/pages.css">
 <?php include __DIR__ . '/../../includes/gtag.php'; ?>
-<!-- Event snippet for booking conversion -->
-<script>gtag('event', 'conversion', {'send_to': 'AW-17943670219/k6cyCKr-5sYcEMvbmuxC'});</script>
 </head>
 <body>
 <?php include __DIR__ . '/../../includes/nav.php'; ?>
