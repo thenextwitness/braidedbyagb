@@ -5,8 +5,26 @@
 // ============================================================
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/portal-auth.php';
 
 $db = getDB();
+
+// Prefill the payer contact details for a signed-in client, so returning
+// clients never re-type their name, email and phone. Guests see empty fields.
+portalResumeFromRemember();
+$prefill = ['name' => '', 'email' => '', 'phone' => '', 'optin' => true];
+if (isClient()) {
+    $pc = $db->prepare("SELECT name, email, phone, email_optin FROM customers WHERE id = ?");
+    $pc->execute([currentClientId()]);
+    if ($row = $pc->fetch()) {
+        $prefill = [
+            'name'  => (string)$row['name'],
+            'email' => (string)$row['email'],
+            'phone' => (string)($row['phone'] ?? ''),
+            'optin' => (int)$row['email_optin'] === 1,
+        ];
+    }
+}
 
 // Pre-select service from URL slug e.g. /booking/box-braids
 $serviceSlug = sanitize($_GET['service'] ?? '');
@@ -339,25 +357,28 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="client-name">Full Name *</label>
-                <input class="form-control" type="text" id="client-name" placeholder="Your full name" required>
+                <input class="form-control" type="text" id="client-name" placeholder="Your full name" required
+                       value="<?= htmlspecialchars($prefill['name']) ?>">
                 <span class="field-error">Please enter your name.</span>
               </div>
               <div class="form-group">
                 <label class="form-label" for="client-phone">Phone Number *</label>
-                <input class="form-control" type="tel" id="client-phone" placeholder="07700 000000" required>
+                <input class="form-control" type="tel" id="client-phone" placeholder="07700 000000" required
+                       value="<?= htmlspecialchars($prefill['phone']) ?>">
                 <span class="field-error">Please enter your phone number.</span>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="client-email">Email Address *</label>
-              <input class="form-control" type="email" id="client-email" placeholder="your@email.com" required>
+              <input class="form-control" type="email" id="client-email" placeholder="your@email.com" required
+                     value="<?= htmlspecialchars($prefill['email']) ?>">
               <span class="field-error">Please enter a valid email.</span>
             </div>
 
             <div class="form-group">
               <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer">
-                <input type="checkbox" id="email-optin" checked style="accent-color:var(--color-primary);width:16px;height:16px">
+                <input type="checkbox" id="email-optin" <?= $prefill['optin'] ? 'checked' : '' ?> style="accent-color:var(--color-primary);width:16px;height:16px">
                 <span style="font-size:var(--text-sm);color:var(--color-text-muted)">
                   I'd like to receive appointment reminders and updates by email
                 </span>

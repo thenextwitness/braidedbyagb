@@ -5,6 +5,7 @@
 // ============================================================
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/portal-auth.php';
 
 $db  = getDB();
 $ref = sanitize($_GET['ref'] ?? '');
@@ -14,15 +15,18 @@ $ref = sanitize($_GET['ref'] ?? '');
 // This is the fast path; the Stripe webhook is the authoritative backstop. Both
 // call the same idempotent finalizer, so running here is safe even if the
 // webhook already fired.
+$piMeta = [];
 if (!empty($_GET['payment_intent'])) {
     try {
         require_once __DIR__ . '/../../includes/stripe.php';
         $pi = stripeRetrievePaymentIntent(sanitize($_GET['payment_intent']));
+        $piMeta = $pi['metadata'] ?? [];
         finalizeStripePayment($db, $pi, 'return_page');
     } catch (Throwable $e) {
         error_log('booking confirmation finalize error: ' . $e->getMessage());
     }
 }
+portalResumeFromRemember();
 
 $booking = null;
 if ($ref) {
@@ -43,6 +47,41 @@ if (!$booking) {
     header('Location: /booking');
     exit;
 }
+
+// ── B6: authorize before showing personal data ────────────
+// The page is reachable by booking_ref alone, so name/email are gated. A viewer
+// sees personal details only if they own the booking (signed in), hold its
+// confirm_token, or just paid for it (arrived from the Stripe return with a
+// PaymentIntent whose metadata maps to this booking). Everyone else still gets
+// a working acknowledgement — just without the personal fields.
+$providedToken = (string)($_GET['t'] ?? '');
+$ownsViaLogin  = isClient() && currentClientId() === (int)$booking['customer_id'];
+$ownsViaToken  = !empty($booking['confirm_token']) && is_string($providedToken) && $providedToken !== ''
+                 && hash_equals((string)$booking['confirm_token'], $providedToken);
+$ownsViaPayment = (
+    (!empty($piMeta['group_ref']) && !empty($booking['cart_group_ref']) && $piMeta['group_ref'] === $booking['cart_group_ref'])
+ || (!empty($piMeta['booking_id']) && (int)$piMeta['booking_id'] === (int)$booking['id'])
+);
+$authorized = $ownsViaLogin || $ownsViaToken || $ownsViaPayment;
+
+// Give a brand-new booking a confirm_token so its future account/email links can
+// prove ownership without exposing anything.
+if (empty($booking['confirm_token'])) {
+    try {
+        $newTok = bin2hex(random_bytes(32));
+        $db->prepare("UPDATE bookings SET confirm_token = ? WHERE id = ?")->execute([$newTok, (int)$booking['id']]);
+        $booking['confirm_token'] = $newTok;
+    } catch (Throwable $e) { /* non-fatal */ }
+}
+// Hide the contactable PII (email, phone) from anyone not authorized. The
+// first name is kept: it is the only name ever shown, it is needed for the
+// bank-transfer reference, and it is far less sensitive than an email address.
+if (!$authorized) {
+    $booking['c_email'] = '';
+    $booking['c_phone'] = '';
+}
+// Safe first name for greetings ('' when absent).
+$greetName = trim((string)$booking['c_name']) !== '' ? htmlspecialchars(explode(' ', $booking['c_name'])[0]) : '';
 
 // If this booking was part of a multi-appointment (family) checkout, load its
 // siblings so we can acknowledge the whole group. Defensive: cart_group_ref may
@@ -98,11 +137,11 @@ $isGroup = count($groupBookings) > 1;
       </h1>
       <?php if ($booking['payment_method'] === 'stripe'): ?>
         <p style="color:var(--color-text-muted);font-size:var(--text-md);line-height:1.7">
-          Thank you, <strong><?= htmlspecialchars(explode(' ', $booking['c_name'])[0]) ?></strong>! Your deposit has been paid and your booking is pending confirmation. We'll be in touch shortly.
+          Thank you<?= $greetName ? ', <strong>' . $greetName . '</strong>' : '' ?>! Your deposit has been paid and your booking is pending confirmation. We'll be in touch shortly.
         </p>
       <?php else: ?>
         <p style="color:var(--color-text-muted);font-size:var(--text-md);line-height:1.7">
-          Thank you, <strong><?= htmlspecialchars(explode(' ', $booking['c_name'])[0]) ?></strong>! Your booking is being held while we await your bank transfer. Please transfer your deposit within <strong>24 hours</strong> to confirm your appointment.
+          Thank you<?= $greetName ? ', <strong>' . $greetName . '</strong>' : '' ?>! Your booking is being held while we await your bank transfer. Please transfer your deposit within <strong>24 hours</strong> to confirm your appointment.
         </p>
       <?php endif; ?>
     </div>
@@ -117,7 +156,7 @@ $isGroup = count($groupBookings) > 1;
           foreach ($groupBookings as $g):
             $grpTotal   += (float)$g['total_price'];
             $grpDeposit += (float)$g['deposit_amount'];
-            $who = !empty($g['guest_name']) ? $g['guest_name'] : explode(' ', $booking['c_name'])[0];
+            $who = !empty($g['guest_name']) ? $g['guest_name'] : ($greetName ?: 'You');
         ?>
         <div class="summary-row" style="align-items:flex-start">
           <span class="label" style="flex:1">
@@ -216,13 +255,13 @@ $isGroup = count($groupBookings) > 1;
         <?php
         $steps = $booking['payment_method'] === 'stripe'
           ? [
-              ['✉️', 'Confirmation email sent to ' . htmlspecialchars($booking['c_email'])],
+              ['✉️', $booking['c_email'] ? 'Confirmation email sent to ' . htmlspecialchars($booking['c_email']) : 'A confirmation email is on its way to you'],
               ['✅', 'We\'ll review and confirm your booking (usually within a few hours)'],
               ['📅', 'Reminder email 24 hours before your appointment'],
               ['⏰', 'Final reminder 2 hours before your appointment'],
             ]
           : [
-              ['✉️', 'Confirmation email sent to ' . htmlspecialchars($booking['c_email'])],
+              ['✉️', $booking['c_email'] ? 'Confirmation email sent to ' . htmlspecialchars($booking['c_email']) : 'A confirmation email is on its way to you'],
               ['🏦', 'Transfer your deposit of ' . formatPrice((float)$booking['deposit_amount']) . ' within 24 hours'],
               ['✅', 'Once payment is received, we\'ll confirm your booking'],
               ['📅', 'Reminder emails 24 hours and 2 hours before your appointment'],

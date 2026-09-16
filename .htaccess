@@ -43,6 +43,8 @@ RewriteRule ^logout/?$ public/logout.php [L]
 RewriteRule ^app/?$ public/app.php [L]
 # Multi-segment account rules MUST precede the single-segment /account rule.
 RewriteRule ^account/bookings/?$ public/account/bookings.php [L,QSA]
+RewriteRule ^account/orders/?$ public/account/orders.php [L,QSA]
+RewriteRule ^account/payments/?$ public/account/payments.php [L,QSA]
 RewriteRule ^account/profile/?$ public/account/profile.php [L,QSA]
 RewriteRule ^account/?$ public/account/index.php [L,QSA]
 

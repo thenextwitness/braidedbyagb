@@ -5,10 +5,30 @@
 // ============================================================
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/portal-auth.php';
 $stripePublicKey = STRIPE_PUBLIC_KEY;
 $bankName = getSetting('bank_account_name', 'BraidedbyAGB');
 $bankSort = getSetting('bank_sort_code', '');
 $bankAcc  = getSetting('bank_account_number', '');
+
+// Prefill contact + delivery address for a signed-in client (guests see blanks).
+portalResumeFromRemember();
+$pf = ['name'=>'','email'=>'','phone'=>'','addr1'=>'','addr2'=>'','city'=>'','postcode'=>''];
+if (isClient()) {
+    $pc = getDB()->prepare("SELECT name, email, phone, address_line1, address_line2, address_city, address_postcode FROM customers WHERE id = ?");
+    $pc->execute([currentClientId()]);
+    if ($row = $pc->fetch()) {
+        $pf = [
+            'name'     => (string)$row['name'],
+            'email'    => (string)$row['email'],
+            'phone'    => (string)($row['phone'] ?? ''),
+            'addr1'    => (string)($row['address_line1'] ?? ''),
+            'addr2'    => (string)($row['address_line2'] ?? ''),
+            'city'     => (string)($row['address_city'] ?? ''),
+            'postcode' => (string)($row['address_postcode'] ?? ''),
+        ];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -47,16 +67,16 @@ $bankAcc  = getSetting('bank_account_number', '');
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Full Name *</label>
-              <input class="form-control" type="text" id="co-name" placeholder="Full name" required>
+              <input class="form-control" type="text" id="co-name" placeholder="Full name" required value="<?= htmlspecialchars($pf['name']) ?>">
             </div>
             <div class="form-group">
               <label class="form-label">Email Address *</label>
-              <input class="form-control" type="email" id="co-email" placeholder="your@email.com" required>
+              <input class="form-control" type="email" id="co-email" placeholder="your@email.com" required value="<?= htmlspecialchars($pf['email']) ?>">
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Phone Number *</label>
-            <input class="form-control" type="tel" id="co-phone" placeholder="07700 000000" required>
+            <input class="form-control" type="tel" id="co-phone" placeholder="07700 000000" required value="<?= htmlspecialchars($pf['phone']) ?>">
           </div>
         </div>
 
@@ -89,20 +109,20 @@ $bankAcc  = getSetting('bank_account_number', '');
             <h4 style="color:var(--color-deep-purple);margin-bottom:var(--space-4)">Delivery Address</h4>
             <div class="form-group">
               <label class="form-label">Address Line 1 *</label>
-              <input class="form-control" type="text" id="co-addr1" placeholder="House number and street" required>
+              <input class="form-control" type="text" id="co-addr1" placeholder="House number and street" required value="<?= htmlspecialchars($pf['addr1']) ?>">
             </div>
             <div class="form-group">
               <label class="form-label">Address Line 2</label>
-              <input class="form-control" type="text" id="co-addr2" placeholder="Flat, unit, etc. (optional)">
+              <input class="form-control" type="text" id="co-addr2" placeholder="Flat, unit, etc. (optional)" value="<?= htmlspecialchars($pf['addr2']) ?>">
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Town / City *</label>
-                <input class="form-control" type="text" id="co-city" placeholder="City" required>
+                <input class="form-control" type="text" id="co-city" placeholder="City" required value="<?= htmlspecialchars($pf['city']) ?>">
               </div>
               <div class="form-group">
                 <label class="form-label">Postcode *</label>
-                <input class="form-control" type="text" id="co-postcode" placeholder="GU11 1AA" required>
+                <input class="form-control" type="text" id="co-postcode" placeholder="GU11 1AA" required value="<?= htmlspecialchars($pf['postcode']) ?>">
               </div>
             </div>
           </div>

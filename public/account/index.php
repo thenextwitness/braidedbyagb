@@ -55,12 +55,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
     <p>Welcome back to your BraidedbyAGB account.</p>
   </div>
 
-  <nav class="account-tabs">
-    <a class="account-tab active" href="/account">Dashboard</a>
-    <a class="account-tab" href="/account/bookings">Bookings</a>
-    <a class="account-tab" href="/account/profile">Profile</a>
-    <a class="account-tab" href="/logout">Sign out</a>
-  </nav>
+  <?php $activeTab = '/account'; require __DIR__ . '/../../includes/account-tabs.php'; ?>
 
   <div class="account-grid" style="margin-bottom:30px;">
     <div class="account-card">

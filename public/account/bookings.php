@@ -35,12 +35,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
 <div class="account-wrap">
   <div class="account-head"><h1>My bookings</h1><p>Every appointment you've made with us.</p></div>
 
-  <nav class="account-tabs">
-    <a class="account-tab" href="/account">Dashboard</a>
-    <a class="account-tab active" href="/account/bookings">Bookings</a>
-    <a class="account-tab" href="/account/profile">Profile</a>
-    <a class="account-tab" href="/logout">Sign out</a>
-  </nav>
+  <?php $activeTab = '/account/bookings'; require __DIR__ . '/../../includes/account-tabs.php'; ?>
 
   <?php if (!$bookings): ?>
     <div class="account-card account-empty">No bookings yet. <a class="auth-link" href="/booking">Book your first appointment »</a></div>

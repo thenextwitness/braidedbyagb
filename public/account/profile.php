@@ -57,12 +57,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
 <div class="account-wrap">
   <div class="account-head"><h1>My profile</h1><p>Keep your details up to date so booking is quicker next time.</p></div>
 
-  <nav class="account-tabs">
-    <a class="account-tab" href="/account">Dashboard</a>
-    <a class="account-tab" href="/account/bookings">Bookings</a>
-    <a class="account-tab active" href="/account/profile">Profile</a>
-    <a class="account-tab" href="/logout">Sign out</a>
-  </nav>
+  <?php $activeTab = '/account/profile'; require __DIR__ . '/../../includes/account-tabs.php'; ?>
 
   <div class="account-grid" style="grid-template-columns:1fr;gap:20px;max-width:560px;">
     <div class="account-card">
