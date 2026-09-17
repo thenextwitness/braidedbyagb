@@ -54,6 +54,12 @@ RewriteRule ^account/?$ public/account/index.php [L,QSA]
 RewriteRule ^sw\.js$ public/sw.php [L]
 RewriteRule ^offline/?$ public/offline.php [L]
 
+# Serve the manifest with the correct type (the host defaults .webmanifest to
+# application/octet-stream, which makes browsers download rather than install it).
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
 # Sitemap
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 
