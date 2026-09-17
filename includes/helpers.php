@@ -196,69 +196,9 @@ function decrementProductStock(PDO $db, int $productId, ?int $variantId, int $qt
  * @param string $time        'H:i' or 'H:i:s'
  * @param int    $newDurMins  Duration of the NEW booking (defaults to 60 if 0)
  */
-function isSlotAvailable(string $date, string $time, int $newDurMins = 60): bool {
-    $db = getDB();
-    if ($newDurMins < 1) $newDurMins = 60;
-
-    // 1. Full-day block
-    $stmt = $db->prepare("
-        SELECT COUNT(*) FROM availability
-        WHERE avail_date = ? AND is_blocked = 1 AND time_slot IS NULL
-    ");
-    $stmt->execute([$date]);
-    if ((int)$stmt->fetchColumn() > 0) return false;
-
-    // 2. Specific time-slot block
-    $timeH = substr($time, 0, 5); // normalise to HH:MM
-    $stmt  = $db->prepare("
-        SELECT COUNT(*) FROM availability
-        WHERE avail_date = ? AND is_blocked = 1
-          AND TIME_FORMAT(time_slot,'%H:%i') = ?
-    ");
-    $stmt->execute([$date, $timeH]);
-    if ((int)$stmt->fetchColumn() > 0) return false;
-
-    // 3. Duration-aware overlap against existing bookings
-    //    New window: [newStart, newStart + newDurMins)
-    //    Existing:   [bs,       bs + existDurMins)
-    //    Overlap if: newStart < bs + existDurMins  AND  newStart + newDurMins > bs
-    $newStart    = strtotime($date . ' ' . $time);
-    $newEnd      = $newStart + $newDurMins * 60;
-
-    // Defensive try-catch: if duration_mins column hasn't been migrated yet on live DB,
-    // fall back to variant/service duration so existing bookings still block slots.
-    try {
-        $stmt = $db->prepare("
-            SELECT b.booked_time,
-                   COALESCE(NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
-            FROM bookings b
-            JOIN services s ON s.id = b.service_id
-            LEFT JOIN service_variants sv ON sv.id = b.variant_id
-            WHERE b.booked_date = ? AND b.status IN ('pending','confirmed')
-        ");
-        $stmt->execute([$date]);
-        $rows = $stmt->fetchAll();
-    } catch (Throwable $e) {
-        // duration_mins column not yet added — fall back to variant/service duration only
-        $stmt = $db->prepare("
-            SELECT b.booked_time,
-                   COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
-            FROM bookings b
-            JOIN services s ON s.id = b.service_id
-            LEFT JOIN service_variants sv ON sv.id = b.variant_id
-            WHERE b.booked_date = ? AND b.status IN ('pending','confirmed')
-        ");
-        $stmt->execute([$date]);
-        $rows = $stmt->fetchAll();
-    }
-    foreach ($rows as $row) {
-        $bs  = strtotime($date . ' ' . $row['booked_time']);
-        $be  = $bs + (int)$row['dur'] * 60;
-        if ($newStart < $be && $newEnd > $bs) return false;
-    }
-
-    return true;
-}
+// isSlotAvailable() now lives in includes/scheduling.php (the single source of
+// truth for availability), which is required at the foot of this file. It keeps
+// the same signature plus an optional 4th arg to exclude a booking (reschedule).
 
 // ── Pipeline helpers ──────────────────────────────────────
 function getLinkedProducts(int $serviceId): array {
@@ -522,6 +462,12 @@ function uploadImage(array $file, string $folder): string|false {
     }
     return false;
 }
+
+// ── Scheduling / availability (single source of truth) ────
+// Defines isSlotAvailable() (+ the capacity-aware slot helpers). Loaded here so
+// every entry point that already requires helpers.php gets it with no extra
+// require. Placed after helpers' own functions (getSetting etc.) are defined.
+require_once __DIR__ . '/scheduling.php';
 
 // ── Booking lifecycle (status → money + loyalty) ──────────
 // Loaded here, at the foot of helpers, so every entry point that already

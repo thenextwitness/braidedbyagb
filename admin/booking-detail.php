@@ -115,11 +115,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newTime = sanitize($_POST['new_time'] ?? '');
         if ($newDate && $newTime && preg_match('/^\d{4}-\d{2}-\d{2}$/', $newDate) && preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $newTime)) {
             $newTime = strlen($newTime) === 5 ? $newTime . ':00' : $newTime;
-            // Check slot is not already booked (exclude current booking)
-            $clash = $db->prepare("SELECT COUNT(*) FROM bookings WHERE booked_date=? AND booked_time=? AND status IN ('pending','confirmed') AND id != ?");
-            $clash->execute([$newDate, $newTime, $bookingId]);
-            if ((int)$clash->fetchColumn() > 0) {
-                header("Location: /admin/bookings/$bookingId?msg=That+slot+is+already+booked.+Choose+another+time.");
+            // Duration-aware clash check via the consolidated primitives (excludes
+            // this booking). Previously an exact date+time match that ignored
+            // duration — so a longer service could be rescheduled to overlap the
+            // one before it. Now consistent with the app's reschedule.
+            $newStart = strtotime($newDate . ' ' . $newTime);
+            $durStmt = $db->prepare(
+                "SELECT COALESCE(NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
+                 FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
+                 WHERE b.id=?"
+            );
+            $durStmt->execute([$bookingId]);
+            $thisDur = (int)($durStmt->fetchColumn() ?: 60);
+            $others  = loadDayBookings($newDate, (int)$bookingId);
+            if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
+                header("Location: /admin/bookings/$bookingId?msg=That+slot+clashes+with+another+booking.+Choose+another+time.");
                 exit;
             }
             $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, status=IF(status='cancelled','confirmed',status) WHERE id=?")

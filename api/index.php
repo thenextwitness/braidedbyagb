@@ -24,106 +24,22 @@ $endpoint = sanitize($_GET['endpoint'] ?? '');
 switch ($endpoint) {
 
     // ── SLOTS ─────────────────────────────────────────────
+    // Availability now comes from the one canonical builder in
+    // includes/scheduling.php (availableSlotsForDay), which honours day/slot
+    // blocks, the booking buffer, the 08:00–20:30 grid and duration-aware
+    // capacity. Behaviour is identical at capacity 1 (the default).
     case 'slots':
         $date      = sanitize($_GET['date'] ?? '');
         $serviceId = (int)($_GET['service_id'] ?? 0);
         if (!$date || !$serviceId) jsonResponse(['error' => 'Missing parameters'], 400);
         $db   = getDB();
 
-        // Duration of the service being requested (new booking)
         $stmt = $db->prepare("SELECT duration_mins FROM services WHERE id=?");
         $stmt->execute([$serviceId]);
-        $svc         = $stmt->fetch();
-        $rawDurMins  = $svc ? (int)$svc['duration_mins'] : 0;
-        $newDurMins  = $rawDurMins > 0 ? $rawDurMins : 60;
-        $newDurSecs  = $newDurMins * 60;
+        $svc        = $stmt->fetch();
+        $newDurMins = ($svc && (int)$svc['duration_mins'] > 0) ? (int)$svc['duration_mins'] : 60;
 
-        // Existing bookings with their actual durations.
-        // Priority: admin override (b.duration_mins) → variant → service → 60 min default
-        // Defensive try-catch: if the duration_mins column hasn't been added to live DB yet,
-        // fall back to variant/service duration so bookings still block slots correctly.
-        try {
-            $stmt = $db->prepare("
-                SELECT b.booked_time,
-                       COALESCE(NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS duration_mins
-                FROM bookings b
-                JOIN services s ON s.id = b.service_id
-                LEFT JOIN service_variants sv ON sv.id = b.variant_id
-                WHERE b.booked_date = ? AND b.status IN ('pending','confirmed')
-            ");
-            $stmt->execute([$date]);
-            $booked = $stmt->fetchAll();
-        } catch (Throwable $e) {
-            // duration_mins column not yet migrated — use variant/service duration only
-            $stmt = $db->prepare("
-                SELECT b.booked_time,
-                       COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS duration_mins
-                FROM bookings b
-                JOIN services s ON s.id = b.service_id
-                LEFT JOIN service_variants sv ON sv.id = b.variant_id
-                WHERE b.booked_date = ? AND b.status IN ('pending','confirmed')
-            ");
-            $stmt->execute([$date]);
-            $booked = $stmt->fetchAll();
-        }
-
-        // Full-day block check
-        $stmt = $db->prepare("SELECT COUNT(*) FROM availability WHERE avail_date=? AND is_blocked=1 AND time_slot IS NULL");
-        $stmt->execute([$date]);
-        $fullDayBlocked = (int)$stmt->fetchColumn() > 0;
-
-        // Specific time-slot blocks
-        $stmt = $db->prepare("SELECT time_slot FROM availability WHERE avail_date=? AND is_blocked=1 AND time_slot IS NOT NULL");
-        $stmt->execute([$date]);
-        $blockedSlots = array_column($stmt->fetchAll(), 'time_slot');
-
-        $dayStart = strtotime($date . ' 08:00:00');
-        $dayEnd   = strtotime($date . ' 20:30:00');
-
-        // Booking buffer — how many hours in advance a client must book.
-        // Only applied when the requested date is today; future dates are always fully open.
-        $bufferHours = (int)getSetting('booking_buffer_hours', '0');
-        // Always block past times for today; buffer (if set) adds extra forward time on top.
-        // cutoffTime is always at least time() so slots before NOW are always unavailable today.
-        $cutoffTime  = time() + $bufferHours * 3600;
-
-        $slots    = [];
-
-        for ($t = $dayStart; $t < $dayEnd; $t += 30 * 60) {
-            $ts = date('H:i:s', $t);
-
-            // New service must finish by 20:30 (last slot starts at 8pm)
-            if ($t + $newDurSecs > $dayEnd) {
-                $slots[] = ['time' => $ts, 'label' => date('g:i A', $t), 'available' => false];
-                continue;
-            }
-
-            // Block past and too-soon slots (today only)
-            if ($date === date('Y-m-d') && $t < $cutoffTime) {
-                $slots[] = ['time' => $ts, 'label' => date('g:i A', $t), 'available' => false];
-                continue;
-            }
-
-            if ($fullDayBlocked || in_array($ts, $blockedSlots)) {
-                $slots[] = ['time' => $ts, 'label' => date('g:i A', $t), 'available' => false];
-                continue;
-            }
-
-            // Duration-aware overlap: new window [t, t+newDur) vs existing [bs, bs+existingDur)
-            // Overlap if:  t < bs + existingDur   AND   t + newDur > bs
-            $conflict = false;
-            foreach ($booked as $row) {
-                $bs          = strtotime($date . ' ' . $row['booked_time']);
-                $existDurSec = (int)$row['duration_mins'] * 60;
-                if ($t < $bs + $existDurSec && $t + $newDurSecs > $bs) {
-                    $conflict = true;
-                    break;
-                }
-            }
-
-            $slots[] = ['time' => $ts, 'label' => date('g:i A', $t), 'available' => !$conflict];
-        }
-        jsonResponse(['slots' => $slots]);
+        jsonResponse(['slots' => availableSlotsForDay($date, $newDurMins)]);
         break;
 
     // ── AVAILABILITY ──────────────────────────────────────

@@ -253,44 +253,23 @@ switch ($endpoint) {
                 http_response_code(400); echo json_encode(['error' => 'Invalid date or time']); exit;
             }
             $newTime = substr($newTime, 0, 5) . ':00'; // normalise to HH:MM:SS
-            // Duration-aware clash check (exclude this booking itself)
-            require_once __DIR__ . '/../includes/helpers.php';
+            // Duration-aware clash check (overlap-only, excludes this booking),
+            // via the consolidated scheduling primitives. This booking's duration
+            // prefers the admin override, then its stored/variant/service value.
             $newStart = strtotime($newDate . ' ' . $newTime);
-            // Get duration for THIS booking after potential override.
-            // Defensive: if duration_mins column not yet migrated, fall back without it.
-            try {
-                $thisBk = $db->prepare("SELECT COALESCE(NULLIF(?,0),NULLIF(b.duration_mins,0),NULLIF(sv.duration_mins,0),NULLIF(s.duration_mins,0),60) AS dur
-                    FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
-                    WHERE b.id=?");
-                $thisBk->execute([$newDurMins, $id]);
-            } catch (Throwable $e) {
-                $thisBk = $db->prepare("SELECT COALESCE(NULLIF(?,0),NULLIF(sv.duration_mins,0),NULLIF(s.duration_mins,0),60) AS dur
-                    FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
-                    WHERE b.id=?");
-                $thisBk->execute([$newDurMins, $id]);
-            }
+            $thisBk = $db->prepare(
+                "SELECT COALESCE(NULLIF(?,0), NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS dur
+                 FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
+                 WHERE b.id=?"
+            );
+            $thisBk->execute([$newDurMins, $id]);
             $thisDur = (int)($thisBk->fetchColumn() ?: 60);
-            $newEnd  = $newStart + $thisDur * 60;
-            // Get all other bookings on that date for overlap check.
-            try {
-                $others = $db->prepare("SELECT b.booked_time, COALESCE(NULLIF(b.duration_mins,0),NULLIF(sv.duration_mins,0),NULLIF(s.duration_mins,0),60) AS dur
-                    FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
-                    WHERE b.booked_date=? AND b.status IN ('pending','confirmed') AND b.id != ?");
-                $others->execute([$newDate, $id]);
-            } catch (Throwable $e) {
-                $others = $db->prepare("SELECT b.booked_time, COALESCE(NULLIF(sv.duration_mins,0),NULLIF(s.duration_mins,0),60) AS dur
-                    FROM bookings b JOIN services s ON s.id=b.service_id LEFT JOIN service_variants sv ON sv.id=b.variant_id
-                    WHERE b.booked_date=? AND b.status IN ('pending','confirmed') AND b.id != ?");
-                $others->execute([$newDate, $id]);
-            }
-            foreach ($others->fetchAll() as $row) {
-                $bs = strtotime($newDate . ' ' . $row['booked_time']);
-                $be = $bs + (int)$row['dur'] * 60;
-                if ($newStart < $be && $newEnd > $bs) {
-                    http_response_code(409);
-                    echo json_encode(['error' => 'That time slot overlaps an existing booking. Choose another time.']);
-                    exit;
-                }
+
+            $others = loadDayBookings($newDate, (int)$id);
+            if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
+                http_response_code(409);
+                echo json_encode(['error' => 'That time slot overlaps an existing booking. Choose another time.']);
+                exit;
             }
             if ($newDurMins !== null) {
                 $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, duration_mins=? WHERE id=?")->execute([$newDate, $newTime, $newDurMins, $id]);
