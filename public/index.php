@@ -163,6 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
       <a href="/booking" class="btn btn-gold btn-lg">Book Appointment</a>
       <a href="#policy" class="btn btn-outline btn-lg">View Policy</a>
     </div>
+    <a href="#" data-agb-install style="display:inline-flex;align-items:center;gap:6px;margin-top:18px;color:#F0C030;font-weight:700;text-decoration:none;font-size:0.92rem">
+      📲 Install our app for one-tap booking
+    </a>
   </div>
   <div class="sp-hero-aside">
     <img src="/assets/images/homeimg.png" alt="BraidedbyAGB styles" onerror="this.parentElement.classList.add('no-img')">

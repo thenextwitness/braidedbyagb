@@ -211,6 +211,13 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
   </div>
   <?php endif; ?>
 
+  <!-- Install-app link (hidden by pwa.js once installed) -->
+  <div class="container" style="margin-bottom:var(--space-4);text-align:center">
+    <a href="#" data-agb-install style="display:inline-flex;align-items:center;gap:6px;color:var(--color-primary);font-weight:700;text-decoration:none;font-size:var(--text-sm)">
+      📲 Install our app for faster booking next time
+    </a>
+  </div>
+
   <!-- Progress Bar -->
   <div class="booking-progress-bar">
     <div class="container">
