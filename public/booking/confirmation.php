@@ -146,6 +146,20 @@ $isGroup = count($groupBookings) > 1;
       <?php endif; ?>
     </div>
 
+    <!-- Account awareness — every booker already has a passwordless account -->
+    <div style="background:#F9EEF9;border:1px solid #E8D8EE;border-radius:var(--border-radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);text-align:center">
+      <?php if ($ownsViaLogin): ?>
+        <p style="margin:0 0 var(--space-4);font-weight:700;color:var(--color-deep-purple)">This booking is saved to your account ✨</p>
+        <a href="/account/bookings" style="display:inline-block;background:var(--color-primary);color:#fff;text-decoration:none;font-weight:700;padding:12px 26px;border-radius:8px;font-size:var(--text-md)">View my bookings</a>
+      <?php else: ?>
+        <p style="margin:0 0 var(--space-2);font-weight:700;color:var(--color-deep-purple)">Your BraidedbyAGB account is ready ✨</p>
+        <p style="margin:0 0 var(--space-4);color:var(--color-text-muted);font-size:var(--text-sm);line-height:1.6">
+          Sign in anytime with <strong><?= $booking['c_email'] ? htmlspecialchars($booking['c_email']) : 'your email address' ?></strong> — no password needed — to view your bookings, track payments, and check out faster next time.
+        </p>
+        <a href="/login" style="display:inline-block;background:var(--color-primary);color:#fff;text-decoration:none;font-weight:700;padding:12px 26px;border-radius:8px;font-size:var(--text-md)">Sign in to my account</a>
+      <?php endif; ?>
+    </div>
+
     <?php if ($isGroup): ?>
     <!-- Group booking summary (family / multiple appointments) -->
     <div class="booking-summary" style="margin-bottom:var(--space-6)">

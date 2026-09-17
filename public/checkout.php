@@ -58,6 +58,13 @@ if (isClient()) {
       <!-- Left: Details & Payment -->
       <div class="checkout-main">
 
+        <?php if (!isClient()): ?>
+        <div style="background:#F9EEF9;border:1px solid #E8D8EE;border-radius:10px;padding:12px 18px;margin-bottom:var(--space-5);display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:var(--text-sm)">
+          <span style="color:var(--color-text-muted)">Shopped with us before?</span>
+          <a href="/login" style="color:var(--color-primary);font-weight:700;text-decoration:none">Sign in to autofill →</a>
+        </div>
+        <?php endif; ?>
+
         <!-- Contact Details -->
         <div class="booking-step active">
           <div class="booking-step-header">

@@ -201,6 +201,16 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
     </div>
   </section>
 
+  <?php if (!isClient()): ?>
+  <!-- Returning-client sign-in nudge (skippable; guests just book) -->
+  <div class="container" style="margin-bottom:var(--space-4)">
+    <div style="max-width:760px;margin:0 auto;background:#F9EEF9;border:1px solid #E8D8EE;border-radius:10px;padding:12px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:center;text-align:center;font-size:var(--text-sm)">
+      <span style="color:var(--color-text-muted)">Booked with us before?</span>
+      <a href="/login" style="color:var(--color-primary);font-weight:700;text-decoration:none">Sign in to autofill your details →</a>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <!-- Progress Bar -->
   <div class="booking-progress-bar">
     <div class="container">

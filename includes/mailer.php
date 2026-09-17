@@ -135,6 +135,25 @@ HTML;
 }
 
 // ── Email wrapper template ────────────────────────────────
+/**
+ * A small "your account is ready" call-to-action for client-facing booking
+ * emails. Every booker already has a passwordless account (keyed by their
+ * email); this is how they find out it exists and can sign in with an emailed
+ * code — no forced sign-up, surfaced at the natural moment.
+ */
+function accountCtaHtml(): string {
+    $url = SITE_URL . '/login';
+    return <<<HTML
+<div style="background:#F9EEF9;border:1px solid #E8D8EE;border-radius:10px;padding:18px 20px;margin:24px 0;">
+  <p style="margin:0 0 6px;font-weight:700;color:#7A0050;">Your BraidedbyAGB account is ready ✨</p>
+  <p style="margin:0 0 14px;font-size:14px;color:#6B5575;line-height:1.6;">
+    Sign in anytime with this email address — no password needed — to view your bookings, track payments and check out faster next time.
+  </p>
+  <a href="{$url}" style="display:inline-block;background:#CC1A8A;color:#fff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:8px;font-size:14px;">Sign in to my account</a>
+</div>
+HTML;
+}
+
 function emailWrapper(string $content, string $preheader = ''): string {
     $siteUrl  = SITE_URL;
     $siteName = SITE_NAME;
@@ -262,7 +281,7 @@ function emailBookingReceived(array $booking, array $customer, array $service): 
   <a href="https://wa.me/447769064971" class="cta-btn">WhatsApp Us</a>
 </p>
 HTML;
-        $mail->Body = emailWrapper($content);
+        $mail->Body = emailWrapper($content . accountCtaHtml());
         return $mail->send();
     } catch (Exception $e) {
         error_log('Email error (bookingReceived): ' . $e->getMessage());
@@ -1085,7 +1104,7 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
   <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
 </p>
 HTML;
-        $mail->Body    = emailWrapper($content);
+        $mail->Body    = emailWrapper($content . accountCtaHtml());
         $mail->AltBody = "Payment received: {$deposit} for {$svc} on {$date} at {$time}. Booking ref: {$ref}. Transaction: {$txRef}.";
         return $mail->send();
     } catch (Exception $e) {
@@ -1301,7 +1320,7 @@ HTML;
 </p>
 HTML;
 
-        $mail->Body    = emailWrapper($content);
+        $mail->Body    = emailWrapper($content . accountCtaHtml());
         $mail->AltBody = "Your {$count} appointment(s) are booked. Group ref {$groupRef}. Total deposit {$grpDeposit}, balance {$grpBalance} due on the day(s).";
         return $mail->send();
     } catch (Exception $e) {
@@ -1446,7 +1465,7 @@ HTML;
   If you have any questions, feel free to WhatsApp us or reply to this email.
 </p>
 HTML;
-        $mail->Body    = emailWrapper($content, 'Booking Confirmation');
+        $mail->Body    = emailWrapper($content . accountCtaHtml(), 'Booking Confirmation');
         $mail->AltBody = "Hi {$customer['name']},\n\nYour booking for {$service['name']} on $date at $time has been confirmed.\nTotal: $total | Deposit: $deposit | Balance on day: $balance"
                        . ($paymentLink ? "\n\nPay your deposit here: $paymentLink" : '');
         return $mail->send();
