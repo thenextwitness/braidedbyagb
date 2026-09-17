@@ -72,9 +72,11 @@
           <ul class="footer-links">
             <li><a href="/booking">Book an Appointment</a></li>
             <li><a href="/shop">Shop Extensions</a></li>
+            <li><a href="/app">My Account</a></li>
             <li><a href="/about">About Us</a></li>
             <li><a href="/contact">Contact</a></li>
             <li><a href="/policies">Policies</a></li>
+            <li><a href="#" data-agb-install>📲 Install the app</a></li>
           </ul>
           <h4 class="footer-col-title" style="margin-top:1.5rem;">Contact</h4>
           <ul class="footer-links">

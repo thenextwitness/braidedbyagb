@@ -57,6 +57,15 @@ require_once __DIR__ . '/../../includes/account-head.php';
 
   <?php $activeTab = '/account'; require __DIR__ . '/../../includes/account-tabs.php'; ?>
 
+  <div data-agb-install style="margin:-8px 0 22px;display:flex;align-items:center;gap:12px;background:#F9EEF9;border:1px solid #E8D8EE;border-radius:12px;padding:12px 16px;">
+    <span style="font-size:1.4rem">📲</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700;color:#7A0050;font-size:0.95rem">Install the app</div>
+      <div style="color:#6B5575;font-size:0.82rem">Add BraidedbyAGB to your home screen for one-tap booking.</div>
+    </div>
+    <button type="button" data-agb-install class="auth-btn" style="width:auto;margin:0;padding:10px 18px;font-size:0.9rem">Install</button>
+  </div>
+
   <div class="account-grid" style="margin-bottom:30px;">
     <div class="account-card">
       <h3>Upcoming</h3>
