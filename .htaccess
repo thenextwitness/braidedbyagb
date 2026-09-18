@@ -99,6 +99,7 @@ RewriteRule ^admin/settings/?$ admin/settings.php [L]
 RewriteRule ^admin/custom-requests/?$ admin/custom-requests.php [L]
 RewriteRule ^admin/addons/?$ admin/addons.php [L]
 RewriteRule ^admin/stylists/?$ admin/stylists.php [L]
+RewriteRule ^admin/payouts/?$ admin/payouts.php [L]
 
 # Security headers
 <IfModule mod_headers.c>

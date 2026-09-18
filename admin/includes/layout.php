@@ -160,6 +160,9 @@ try {
         <a href="/admin/stylists" class="admin-nav-link <?= $currentPage === 'stylists' ? 'active' : '' ?>">
           <span class="nav-icon">💇</span> Stylists
         </a>
+        <a href="/admin/payouts" class="admin-nav-link <?= $currentPage === 'payouts' ? 'active' : '' ?>">
+          <span class="nav-icon">💸</span> Payouts
+        </a>
       </div>
 
       <div class="admin-nav-section">
