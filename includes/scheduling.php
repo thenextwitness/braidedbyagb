@@ -32,14 +32,42 @@ if (!function_exists('getDB')) {
 const SCHEDULE_ACTIVE_STATUSES = ['pending', 'confirmed'];
 
 /**
- * How many bookings may run concurrently on a given date. Defaults to 1 (single
- * chair = today's behaviour). A per-day override table and weekday map arrive in
- * a later step; for now this reads a single setting that defaults to 1, so the
- * value is 1 unless deliberately changed.
+ * How many bookings may run concurrently on a given date (Phase C5).
+ *
+ * Capacity = the number of active stylists available that day. Each stylist can
+ * LEAD one concurrent booking; an assistant on the SAME booking shares that one
+ * slot (heavy job, two people, one client), so capacity tracks HEADCOUNT, not
+ * assignments. With two stylists a 2pm slot already holding one booking can still
+ * be booked once more — the owner assigns the second stylist and pays commission.
+ * It expands automatically as stylists are added; no setting to maintain.
+ *
+ * A stylist with a FULL-DAY time-off (a stylist_time_off row with no start_time)
+ * covering the date is removed from the count, so the salon can't be overbooked
+ * on a short-staffed day. Floored at 1: per-stylist time-off alone can never
+ * close the whole salon — real closures use the `availability` table (isDayBlocked).
+ *
+ * Falls back to the legacy booking_capacity_default setting only if the stylists
+ * table is somehow unavailable, so scheduling never hard-fails.
  */
 function slotCapacity(string $date): int {
-    $cap = (int) getSetting('booking_capacity_default', '1');
-    return $cap > 0 ? $cap : 1;
+    static $cache = [];
+    if (isset($cache[$date])) return $cache[$date];
+
+    $db = getDB();
+    try {
+        $active = (int) $db->query("SELECT COUNT(*) FROM stylists WHERE is_active = 1")->fetchColumn();
+        $off = $db->prepare("SELECT COUNT(DISTINCT st.id)
+                             FROM stylists st
+                             JOIN stylist_time_off t ON t.stylist_id = st.id
+                             WHERE st.is_active = 1 AND t.start_time IS NULL
+                               AND ? BETWEEN t.start_date AND t.end_date");
+        $off->execute([$date]);
+        $cap = $active - (int) $off->fetchColumn();
+    } catch (Throwable $e) {
+        $cap = (int) getSetting('booking_capacity_default', '1');
+    }
+
+    return $cache[$date] = ($cap > 0 ? $cap : 1);
 }
 
 /** The one duration precedence rule, as SQL. Requires aliases b, sv, s in scope. */
@@ -141,12 +169,41 @@ function isSlotAvailable(string $date, string $time, int $newDurMins = 60, ?int 
 }
 
 /**
- * Whether a specific stylist is free — reserved for the assignment step in a
- * later part of Phase C. A person is not a room, so this is always capacity 1
- * regardless of slotCapacity(). Defined here so the primitive lives in one place.
+ * Whether a specific stylist has NO other booking overlapping this window.
+ * A person is not a room: regardless of slotCapacity(), one stylist can only be
+ * in one place at a time. Used as an ADVISORY warning in the assignment picker
+ * (Phase C5) so the owner doesn't accidentally put the same stylist on two
+ * concurrent bookings — it never blocks. Excludes the booking being assigned so
+ * an existing assignment to it isn't counted as a clash, and voided assignments
+ * don't count.
  */
-// (isStylistFree lands with the stylist schema — kept out of C1 to keep this
-//  change purely a consolidation.)
+function isStylistFree(string $date, string $time, int $durMins, int $stylistId, ?int $excludeBookingId = null): bool {
+    if ($durMins < 1) $durMins = 60;
+    $db  = getDB();
+    $dur = bookingDurationExpr();
+    $in  = "'" . implode("','", SCHEDULE_ACTIVE_STATUSES) . "'";
+    $sql = "SELECT b.booked_time, {$dur} AS dur
+            FROM booking_assignments ba
+            JOIN bookings b ON b.id = ba.booking_id
+            JOIN services s ON s.id = b.service_id
+            LEFT JOIN service_variants sv ON sv.id = b.variant_id
+            WHERE ba.stylist_id = ? AND b.booked_date = ? AND b.status IN ({$in})
+              AND ba.earnings_status <> 'void'";
+    $params = [$stylistId, $date];
+    if ($excludeBookingId !== null) { $sql .= " AND b.id != ?"; $params[] = $excludeBookingId; }
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+
+    $startTs = strtotime($date . ' ' . $time);
+    $endTs   = $startTs + $durMins * 60;
+    foreach ($stmt->fetchAll() as $row) {
+        $bs = strtotime($date . ' ' . $row['booked_time']);
+        $be = $bs + ((int) $row['dur']) * 60;
+        if ($bs < $endTs && $startTs < $be) return false;   // overlaps
+    }
+    return true;
+}
 
 /**
  * The bookable-slots grid for a day — replaces the inline copy in the public

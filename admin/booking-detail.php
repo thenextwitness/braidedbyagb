@@ -263,6 +263,12 @@ $pageTitle = 'Booking — ' . $bk['booking_ref'];
 // Skill / time-off flags are ADVISORY — the form warns but never blocks.
 $svcId = (int)$bk['service_id'];
 $bkDate = $bk['booked_date'];
+// This booking's duration (same precedence as scheduling) — for the "already on
+// another booking at this time" advisory in the picker.
+$thisDur = (int)($db->query("SELECT COALESCE(NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60)
+                             FROM bookings b JOIN services s ON s.id=b.service_id
+                             LEFT JOIN service_variants sv ON sv.id=b.variant_id
+                             WHERE b.id=" . (int)$bookingId)->fetchColumn() ?: 60);
 $assignStylists = []; $skillAny = []; $canDoThis = []; $onTimeOff = []; $assignments = [];
 try {
     $assignStylists = $db->query("SELECT id, name, stylist_type, default_commission_pct, default_hourly_rate, is_owner
@@ -707,6 +713,7 @@ function copyPayLink() {
                 $warn = [];
                 if (!empty($skillAny[$sid]) && empty($canDoThis[$sid])) $warn[] = 'not skilled for this service';
                 if (!empty($onTimeOff[$sid])) $warn[] = 'on time off this day';
+                if (!isStylistFree($bkDate, $bk['booked_time'], $thisDur, $sid, (int)$bookingId)) $warn[] = 'already on another booking at this time';
             ?>
               <option value="<?= $sid ?>"
                       data-comm="<?= htmlspecialchars((string)$s['default_commission_pct']) ?>"
