@@ -172,6 +172,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } elseif ($action === 'revoke_payment_link') {
         $db->prepare("UPDATE bookings SET payment_token=NULL WHERE id=?")->execute([$bookingId]);
+
+    // ── Phase C4: stylist assignments ───────────────────────
+    // Each save recomputes earnings via recalcBookingAssignments() (C3), which
+    // also stamps the right status from the booking's state. Payout-locked rows
+    // are protected here and in the engine.
+    } elseif ($action === 'assign_stylist') {
+        $sid   = (int)($_POST['stylist_id'] ?? 0);
+        $role  = in_array($_POST['assign_role'] ?? '', ['lead','assist'], true) ? $_POST['assign_role'] : 'lead';
+        $model = in_array($_POST['pay_model'] ?? '', ['commission','hourly','none'], true) ? $_POST['pay_model'] : 'commission';
+        // Empty rate/hours = NULL, so the engine falls back to the stylist default.
+        $pct   = ($_POST['commission_pct'] ?? '') === '' ? null : max(0.0, min(100.0, round((float)$_POST['commission_pct'], 2)));
+        $rate  = ($_POST['hourly_rate']    ?? '') === '' ? null : max(0.0, round((float)$_POST['hourly_rate'], 2));
+        $hp    = ($_POST['hours_planned']  ?? '') === '' ? null : max(0.0, round((float)$_POST['hours_planned'], 2));
+        $notes = sanitize($_POST['assign_notes'] ?? '');
+        $redir = 'Stylist assigned.';
+        if ($sid <= 0) {
+            $redir = 'Pick a stylist to assign.';
+        } else {
+            try {
+                $db->prepare("INSERT INTO booking_assignments
+                    (booking_id, stylist_id, assign_role, pay_model, commission_pct, hourly_rate, hours_planned, notes, assigned_by)
+                    VALUES (?,?,?,?,?,?,?,?,?)")
+                   ->execute([$bookingId, $sid, $role, $model, $pct, $rate, $hp, $notes, (int)($_SESSION['admin_id'] ?? 0)]);
+                recalcBookingAssignments($db, (int)$bookingId);
+            } catch (PDOException $e) {
+                $redir = ((string)$e->getCode() === '23000')
+                       ? 'That stylist already has that role on this booking.'
+                       : 'Could not assign stylist.';
+                error_log('assign_stylist: ' . $e->getMessage());
+            }
+        }
+        header("Location: /admin/bookings/$bookingId?msg=" . urlencode($redir)); exit;
+
+    } elseif ($action === 'update_assignment') {
+        $aid = (int)($_POST['assignment_id'] ?? 0);
+        $chk = $db->prepare("SELECT payout_id FROM booking_assignments WHERE id=? AND booking_id=?");
+        $chk->execute([$aid, $bookingId]);
+        $cur = $chk->fetch();
+        if (!$cur) {
+            $redir = 'Assignment not found.';
+        } elseif ($cur['payout_id'] !== null) {
+            $redir = 'That assignment is locked to a payout and cannot be edited.';
+        } else {
+            $role  = in_array($_POST['assign_role'] ?? '', ['lead','assist'], true) ? $_POST['assign_role'] : 'lead';
+            $model = in_array($_POST['pay_model'] ?? '', ['commission','hourly','none'], true) ? $_POST['pay_model'] : 'commission';
+            $pct   = ($_POST['commission_pct'] ?? '') === '' ? null : max(0.0, min(100.0, round((float)$_POST['commission_pct'], 2)));
+            $rate  = ($_POST['hourly_rate']    ?? '') === '' ? null : max(0.0, round((float)$_POST['hourly_rate'], 2));
+            $hp    = ($_POST['hours_planned']  ?? '') === '' ? null : max(0.0, round((float)$_POST['hours_planned'], 2));
+            $hw    = ($_POST['hours_worked']   ?? '') === '' ? null : max(0.0, round((float)$_POST['hours_worked'], 2));
+            $notes = sanitize($_POST['assign_notes'] ?? '');
+            $db->prepare("UPDATE booking_assignments
+                          SET assign_role=?, pay_model=?, commission_pct=?, hourly_rate=?, hours_planned=?, hours_worked=?, notes=?
+                          WHERE id=?")
+               ->execute([$role, $model, $pct, $rate, $hp, $hw, $notes, $aid]);
+            recalcBookingAssignments($db, (int)$bookingId);
+            $redir = 'Assignment updated.';
+        }
+        header("Location: /admin/bookings/$bookingId?msg=" . urlencode($redir)); exit;
+
+    } elseif ($action === 'remove_assignment') {
+        $aid = (int)($_POST['assignment_id'] ?? 0);
+        $chk = $db->prepare("SELECT payout_id FROM booking_assignments WHERE id=? AND booking_id=?");
+        $chk->execute([$aid, $bookingId]);
+        $cur = $chk->fetch();
+        if (!$cur) {
+            $redir = 'Assignment not found.';
+        } elseif ($cur['payout_id'] !== null) {
+            $redir = 'Locked to a payout — cannot remove.';
+        } else {
+            $db->prepare("DELETE FROM booking_assignments WHERE id=?")->execute([$aid]);
+            $redir = 'Assignment removed.';
+        }
+        header("Location: /admin/bookings/$bookingId?msg=" . urlencode($redir)); exit;
     }
     header("Location: /admin/bookings/$bookingId?msg=Updated.");
     exit;
@@ -185,6 +258,43 @@ require_once __DIR__ . '/includes/layout.php';
 $stmt->execute([$bookingId]); $bk = $stmt->fetch();
 $msg = sanitize($_GET['msg'] ?? '');
 $pageTitle = 'Booking — ' . $bk['booking_ref'];
+
+// ── Phase C4: assignment picker + list data ─────────────────
+// Skill / time-off flags are ADVISORY — the form warns but never blocks.
+$svcId = (int)$bk['service_id'];
+$bkDate = $bk['booked_date'];
+$assignStylists = []; $skillAny = []; $canDoThis = []; $onTimeOff = []; $assignments = [];
+try {
+    $assignStylists = $db->query("SELECT id, name, stylist_type, default_commission_pct, default_hourly_rate, is_owner
+                                  FROM stylists WHERE is_active = 1 ORDER BY is_owner DESC, name")->fetchAll();
+    foreach ($db->query("SELECT DISTINCT stylist_id FROM stylist_services")->fetchAll(PDO::FETCH_COLUMN) as $x) $skillAny[(int)$x] = true;
+    $cd = $db->prepare("SELECT stylist_id FROM stylist_services WHERE service_id = ?");
+    $cd->execute([$svcId]);
+    foreach ($cd->fetchAll(PDO::FETCH_COLUMN) as $x) $canDoThis[(int)$x] = true;
+    $to = $db->prepare("SELECT DISTINCT stylist_id FROM stylist_time_off WHERE ? BETWEEN start_date AND end_date");
+    $to->execute([$bkDate]);
+    foreach ($to->fetchAll(PDO::FETCH_COLUMN) as $x) $onTimeOff[(int)$x] = true;
+    $as = $db->prepare("SELECT ba.*, s.name AS stylist_name, s.is_owner
+                        FROM booking_assignments ba JOIN stylists s ON s.id = ba.stylist_id
+                        WHERE ba.booking_id = ? ORDER BY FIELD(ba.assign_role,'lead','assist'), s.name");
+    $as->execute([$bookingId]);
+    $assignments = $as->fetchAll();
+} catch (Throwable $e) { /* stylist tables absent — card renders without a picker */ }
+
+$assignTotal = 0.0;
+foreach ($assignments as $a) if ($a['earnings_status'] !== 'void') $assignTotal += (float)$a['earnings_amount'];
+
+/** [label, textColor, bgColor] for an earnings status. */
+function earnBadge(string $status): array {
+    return match ($status) {
+        'earned' => ['Earned',  '#065f46', '#d1fae5'],
+        'void'   => ['Void',    '#991b1b', '#fee2e2'],
+        default  => ['Pending', '#854d0e', '#fef9c3'],
+    };
+}
+function payModelLabel(string $m): string {
+    return ['commission' => 'Commission', 'hourly' => 'Hourly', 'none' => 'No pay'][$m] ?? $m;
+}
 ?>
 
 <?php if ($msg): ?>
@@ -469,5 +579,215 @@ function copyPayLink() {
   </div>
 
 </div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- Phase C4 — Stylists & Earnings                             -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="detail-card" style="margin-top:20px">
+  <div class="detail-card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span>💇 Stylists &amp; Earnings</span>
+    <span style="font-size:0.78rem;font-weight:600;color:var(--admin-muted)">
+      <?php $earnedWord = $bk['status'] === 'completed' ? 'earned' : 'projected'; ?>
+      <?= count(array_filter($assignments, fn($a) => $a['earnings_status'] !== 'void')) ?> assigned ·
+      <?= formatPrice($assignTotal) ?> <?= $earnedWord ?>
+    </span>
+  </div>
+
+  <p style="font-size:0.72rem;color:var(--admin-muted);margin:-4px 0 14px">
+    Earnings become <strong>Earned</strong> when this booking is marked <em>completed</em> (same rule as revenue).
+    Nothing is paid until a payout runs. Line total for commission: <strong><?= formatPrice($bk['total_price']) ?></strong>.
+  </p>
+
+  <?php if (empty($assignments)): ?>
+    <p style="font-size:0.82rem;color:var(--admin-muted);margin-bottom:14px">No stylist assigned yet.</p>
+  <?php else: foreach ($assignments as $a):
+      [$bLabel,$bFg,$bBg] = earnBadge($a['earnings_status']);
+      $locked = $a['payout_id'] !== null;
+  ?>
+    <div style="border:1px solid var(--admin-border);border-radius:var(--admin-radius);padding:12px 14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <strong style="font-size:0.9rem"><?= htmlspecialchars($a['stylist_name']) ?></strong>
+        <span class="status-badge" style="background:#ede9fe;color:#5b21b6"><?= ucfirst($a['assign_role']) ?></span>
+        <span style="font-size:0.75rem;color:var(--admin-muted)"><?= payModelLabel($a['pay_model']) ?></span>
+        <span style="margin-left:auto;font-weight:700;color:var(--admin-primary)"><?= formatPrice($a['earnings_amount']) ?></span>
+        <span class="status-badge" style="background:<?= $bBg ?>;color:<?= $bFg ?>"><?= $bLabel ?><?= $locked ? ' · paid' : '' ?></span>
+      </div>
+      <div style="font-size:0.72rem;color:var(--admin-muted);margin-top:4px">
+        <?php if ($a['pay_model'] === 'commission'): ?>
+          <?= rtrim(rtrim(number_format((float)($a['commission_pct'] ?? 0), 2), '0'), '.') ?: '(default)' ?>% of <?= formatPrice($a['earnings_base'] ?? $bk['total_price']) ?>
+        <?php elseif ($a['pay_model'] === 'hourly'): ?>
+          <?= rtrim(rtrim(number_format((float)($a['hours_worked'] ?? $a['hours_planned'] ?? 0), 2), '0'), '.') ?>h ×
+          £<?= number_format((float)($a['hourly_rate'] ?? 0), 2) ?>/hr
+          <?= $a['hours_worked'] === null ? '(planned)' : '(worked)' ?>
+        <?php else: ?>
+          No payout for this assignment
+        <?php endif; ?>
+        <?php if (!empty($a['notes'])): ?> · <?= htmlspecialchars($a['notes']) ?><?php endif; ?>
+      </div>
+
+      <?php if (!$locked): ?>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button type="button" class="btn-admin btn-admin-outline btn-admin-sm"
+                onclick="document.getElementById('edit-a-<?= (int)$a['id'] ?>').classList.toggle('hidden')">✎ Edit</button>
+        <form method="POST" style="margin:0" onsubmit="return confirm('Remove this assignment?')">
+          <input type="hidden" name="action" value="remove_assignment">
+          <input type="hidden" name="assignment_id" value="<?= (int)$a['id'] ?>">
+          <button type="submit" class="btn-admin btn-admin-sm" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5">Remove</button>
+        </form>
+      </div>
+
+      <!-- Inline edit -->
+      <div id="edit-a-<?= (int)$a['id'] ?>" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--admin-border)">
+        <form method="POST" class="assign-form" onsubmit="return true">
+          <input type="hidden" name="action" value="update_assignment">
+          <input type="hidden" name="assignment_id" value="<?= (int)$a['id'] ?>">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="admin-form-group" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Role</label>
+              <select name="assign_role" class="admin-input admin-select" style="width:110px">
+                <option value="lead"   <?= $a['assign_role']==='lead'?'selected':'' ?>>Lead</option>
+                <option value="assist" <?= $a['assign_role']==='assist'?'selected':'' ?>>Assist</option>
+              </select>
+            </div>
+            <div class="admin-form-group" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Pay model</label>
+              <select name="pay_model" class="admin-input admin-select pay-model" style="width:130px" onchange="payModelToggle(this)">
+                <?php foreach (['commission','hourly','none'] as $pm): ?>
+                  <option value="<?= $pm ?>" <?= $a['pay_model']===$pm?'selected':'' ?>><?= payModelLabel($pm) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="admin-form-group pm-commission" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Commission %</label>
+              <input type="number" name="commission_pct" class="admin-input" style="width:110px" min="0" max="100" step="0.01"
+                     value="<?= $a['commission_pct'] !== null ? htmlspecialchars((string)$a['commission_pct']) : '' ?>" placeholder="default">
+            </div>
+            <div class="admin-form-group pm-hourly" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Rate £/hr</label>
+              <input type="number" name="hourly_rate" class="admin-input" style="width:100px" min="0" step="0.01"
+                     value="<?= $a['hourly_rate'] !== null ? htmlspecialchars((string)$a['hourly_rate']) : '' ?>" placeholder="default">
+            </div>
+            <div class="admin-form-group pm-hourly" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Hours planned</label>
+              <input type="number" name="hours_planned" class="admin-input" style="width:110px" min="0" step="0.25"
+                     value="<?= $a['hours_planned'] !== null ? htmlspecialchars((string)$a['hours_planned']) : '' ?>">
+            </div>
+            <div class="admin-form-group pm-hourly" style="margin:0">
+              <label class="admin-label" style="font-size:0.7rem">Hours worked</label>
+              <input type="number" name="hours_worked" class="admin-input" style="width:110px" min="0" step="0.25"
+                     value="<?= $a['hours_worked'] !== null ? htmlspecialchars((string)$a['hours_worked']) : '' ?>">
+            </div>
+            <div class="admin-form-group" style="margin:0;flex:1;min-width:140px">
+              <label class="admin-label" style="font-size:0.7rem">Note</label>
+              <input type="text" name="assign_notes" class="admin-input" value="<?= htmlspecialchars($a['notes'] ?? '') ?>">
+            </div>
+            <button type="submit" class="btn-admin btn-admin-primary btn-admin-sm">Save</button>
+          </div>
+        </form>
+      </div>
+      <?php else: ?>
+        <p style="font-size:0.68rem;color:var(--admin-muted);margin-top:6px">🔒 Locked — included in a payout, so it can't be changed here.</p>
+      <?php endif; ?>
+    </div>
+  <?php endforeach; endif; ?>
+
+  <!-- Assign a new stylist -->
+  <?php if (!empty($assignStylists)): ?>
+  <button type="button" class="btn-admin btn-admin-outline btn-admin-sm" onclick="document.getElementById('assignPanel').classList.toggle('hidden')" style="margin-top:6px">+ Assign a stylist</button>
+  <div id="assignPanel" class="hidden" style="margin-top:12px;padding:14px;background:#faf5ff;border:1px solid var(--admin-primary);border-radius:var(--admin-radius)">
+    <form method="POST" class="assign-form">
+      <input type="hidden" name="action" value="assign_stylist">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="admin-form-group" style="margin:0">
+          <label class="admin-label" style="font-size:0.7rem">Stylist</label>
+          <select name="stylist_id" class="admin-input admin-select" style="width:190px" onchange="stylistPick(this)" required>
+            <option value="">— Select —</option>
+            <?php foreach ($assignStylists as $s):
+                $sid = (int)$s['id'];
+                $warn = [];
+                if (!empty($skillAny[$sid]) && empty($canDoThis[$sid])) $warn[] = 'not skilled for this service';
+                if (!empty($onTimeOff[$sid])) $warn[] = 'on time off this day';
+            ?>
+              <option value="<?= $sid ?>"
+                      data-comm="<?= htmlspecialchars((string)$s['default_commission_pct']) ?>"
+                      data-rate="<?= htmlspecialchars((string)$s['default_hourly_rate']) ?>"
+                      data-warn="<?= htmlspecialchars(implode('; ', $warn)) ?>">
+                <?= htmlspecialchars($s['name']) ?><?= $s['is_owner'] ? ' (owner)' : '' ?><?= $warn ? ' ⚠' : '' ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="admin-form-group" style="margin:0">
+          <label class="admin-label" style="font-size:0.7rem">Role</label>
+          <select name="assign_role" class="admin-input admin-select" style="width:110px">
+            <option value="lead">Lead</option>
+            <option value="assist">Assist</option>
+          </select>
+        </div>
+        <div class="admin-form-group" style="margin:0">
+          <label class="admin-label" style="font-size:0.7rem">Pay model</label>
+          <select name="pay_model" class="admin-input admin-select pay-model" style="width:130px" onchange="payModelToggle(this)">
+            <option value="commission">Commission</option>
+            <option value="hourly">Hourly</option>
+            <option value="none">No pay</option>
+          </select>
+        </div>
+        <div class="admin-form-group pm-commission" style="margin:0">
+          <label class="admin-label" style="font-size:0.7rem">Commission %</label>
+          <input type="number" name="commission_pct" class="admin-input" style="width:110px" min="0" max="100" step="0.01" placeholder="default">
+        </div>
+        <div class="admin-form-group pm-hourly" style="margin:0;display:none">
+          <label class="admin-label" style="font-size:0.7rem">Rate £/hr</label>
+          <input type="number" name="hourly_rate" class="admin-input" style="width:100px" min="0" step="0.01" placeholder="default">
+        </div>
+        <div class="admin-form-group pm-hourly" style="margin:0;display:none">
+          <label class="admin-label" style="font-size:0.7rem">Hours planned</label>
+          <input type="number" name="hours_planned" class="admin-input" style="width:110px" min="0" step="0.25">
+        </div>
+        <div class="admin-form-group" style="margin:0;flex:1;min-width:140px">
+          <label class="admin-label" style="font-size:0.7rem">Note</label>
+          <input type="text" name="assign_notes" class="admin-input" placeholder="Optional">
+        </div>
+        <button type="submit" class="btn-admin btn-admin-primary btn-admin-sm">Assign</button>
+      </div>
+      <p id="assignWarn" style="font-size:0.72rem;color:#b45309;margin-top:8px;display:none"></p>
+    </form>
+  </div>
+  <?php endif; ?>
+</div>
+
+<style>
+.assign-form .pm-hourly{display:none}
+#assignPanel.hidden, [id^="edit-a-"].hidden{display:none}
+</style>
+<script>
+// Show the fields that matter for the chosen pay model, within THIS form only.
+function payModelToggle(sel){
+  var form = sel.closest('.assign-form');
+  var model = sel.value;
+  form.querySelectorAll('.pm-commission').forEach(function(el){ el.style.display = (model==='commission')?'':'none'; });
+  form.querySelectorAll('.pm-hourly').forEach(function(el){ el.style.display = (model==='hourly')?'':'none'; });
+}
+// Prefill rate placeholders from the stylist's defaults + surface advisory warnings.
+function stylistPick(sel){
+  var opt = sel.options[sel.selectedIndex];
+  var form = sel.closest('.assign-form');
+  var comm = form.querySelector('input[name="commission_pct"]');
+  var rate = form.querySelector('input[name="hourly_rate"]');
+  if (comm) comm.placeholder = opt.dataset.comm ? ('default ' + opt.dataset.comm + '%') : 'default';
+  if (rate) rate.placeholder = opt.dataset.rate ? ('default £' + opt.dataset.rate) : 'default';
+  var warnEl = document.getElementById('assignWarn');
+  if (warnEl){
+    if (opt.dataset.warn){
+      warnEl.textContent = '⚠ ' + opt.text.replace(' ⚠','') + ' — ' + opt.dataset.warn + '. You can still assign.';
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+}
+// Initialise every pay-model select on load (edit forms may start as hourly/none).
+document.querySelectorAll('.assign-form .pay-model').forEach(payModelToggle);
+</script>
 
 <?php require_once __DIR__ . '/includes/layout-end.php'; ?>
