@@ -18,6 +18,7 @@ RewriteRule ^policies/?$ public/policies.php [L]
 RewriteRule ^review/?$ public/review.php [L,QSA]
 RewriteRule ^custom-request/?$ public/custom-request.php [L,QSA]
 RewriteRule ^services/?$ public/services.php [L]
+RewriteRule ^gallery/?$ public/gallery.php [L]
 RewriteRule ^services/([a-z0-9-]+)/?$ public/service-detail.php?slug=$1 [L,QSA]
 
 # Direct payment link (admin-generated)
@@ -100,6 +101,7 @@ RewriteRule ^admin/custom-requests/?$ admin/custom-requests.php [L]
 RewriteRule ^admin/addons/?$ admin/addons.php [L]
 RewriteRule ^admin/stylists/?$ admin/stylists.php [L]
 RewriteRule ^admin/payouts/?$ admin/payouts.php [L]
+RewriteRule ^admin/gallery/?$ admin/gallery.php [L]
 
 # Security headers
 <IfModule mod_headers.c>

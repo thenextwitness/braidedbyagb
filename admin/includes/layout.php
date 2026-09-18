@@ -106,6 +106,9 @@ try {
         <a href="/admin/addons" class="admin-nav-link <?= $currentPage === 'addons' ? 'active' : '' ?>">
           <span class="nav-icon">✦</span> Add-ons Manager
         </a>
+        <a href="/admin/gallery" class="admin-nav-link <?= $currentPage === 'gallery' ? 'active' : '' ?>">
+          <span class="nav-icon">🖼️</span> Gallery
+        </a>
       </div>
 
       <div class="admin-nav-section">

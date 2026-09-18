@@ -37,6 +37,7 @@ RewriteRule ^livechat/?$            /admin/livechat.php [L,QSA]
 RewriteRule ^addons/?$            /admin/addons.php [L]
 RewriteRule ^stylists/?$          /admin/stylists.php [L]
 RewriteRule ^payouts/?$           /admin/payouts.php [L]
+RewriteRule ^gallery/?$           /admin/gallery.php [L]
 
 # Block direct PHP file access from outside
 <FilesMatch "\.php$">

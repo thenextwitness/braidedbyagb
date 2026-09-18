@@ -32,6 +32,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <nav class="main-nav" aria-label="Main navigation">
       <ul class="nav-list">
         <li><a href="/services" class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">Services</a></li>
+        <li><a href="/gallery" class="nav-link <?= $currentPage === 'gallery' ? 'active' : '' ?>">Gallery</a></li>
         <li><a href="/shop" class="nav-link <?= $currentPage === 'shop' ? 'active' : '' ?>">Shop</a></li>
         <li><a href="/about" class="nav-link <?= $currentPage === 'about' ? 'active' : '' ?>">About</a></li>
         <li><a href="/contact" class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>">Contact</a></li>
@@ -58,6 +59,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
   <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
     <ul class="mobile-nav-list">
       <li><a href="/services" class="mobile-nav-link">Services</a></li>
+      <li><a href="/gallery" class="mobile-nav-link">Gallery</a></li>
       <li><a href="/shop" class="mobile-nav-link">Shop Extensions</a></li>
       <li><a href="/about" class="mobile-nav-link">About</a></li>
       <li><a href="/contact" class="mobile-nav-link">Contact</a></li>

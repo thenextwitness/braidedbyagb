@@ -826,6 +826,26 @@ step('stylists owner seed row',
     },
     $report);
 
+// ── Phase G: service gallery ───────────────────────────────
+// Customer-facing gallery images the owner uploads from admin. service_id is
+// nullable so an image can be general or tied to a service; ON DELETE SET NULL
+// keeps an image (as general) if its service is later deleted.
+step('gallery_images table',
+    fn() => tableExists($db, $dbName, 'gallery_images'),
+    fn() => $db->exec("CREATE TABLE gallery_images (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        service_id    INT UNSIGNED DEFAULT NULL,
+        image_url     VARCHAR(255) NOT NULL,
+        caption       VARCHAR(255) DEFAULT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        is_active     TINYINT(1) NOT NULL DEFAULT 1,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_active_order (is_active, display_order),
+        KEY idx_service (service_id),
+        CONSTRAINT fk_gi_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

@@ -128,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     <nav class="sp-nav-links" id="spNavLinks">
       <a href="#about">About</a>
       <a href="#services">Services</a>
+      <a href="/gallery">Gallery</a>
       <a href="#testimonials">Testimonials</a>
       <a href="#policy">Policy</a>
       <a href="#contact">Contact</a>
@@ -140,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
   <div class="sp-mobile-menu" id="spMobileMenu">
     <a href="#about">About</a>
     <a href="#services">Services</a>
+    <a href="/gallery">Gallery</a>
     <a href="#testimonials">Testimonials</a>
     <a href="#policy">Policy</a>
     <a href="#contact">Contact</a>
@@ -260,7 +262,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
         <a href="#contact" class="btn btn-outline">Send an Enquiry</a>
       </div>
     </div>
-    <div style="text-align:center;margin-top:40px"><a href="/services" class="btn btn-outline btn-lg">View All Services &amp; Prices</a></div>
+    <div style="text-align:center;margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="/services" class="btn btn-outline btn-lg">View All Services &amp; Prices</a>
+      <a href="/gallery" class="btn btn-gold btn-lg">View Our Gallery</a>
+    </div>
   </div>
 </section>
 
