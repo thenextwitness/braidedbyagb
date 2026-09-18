@@ -977,6 +977,182 @@ switch ($endpoint) {
 
         http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
 
+    // ── STYLISTS (Phase E) ────────────────────────────────────
+    // GET  /api/admin/stylists
+    // POST /api/admin/stylists                     { name,email,... }  create
+    // POST /api/admin/stylists/{id}/update         { ... }
+    // POST /api/admin/stylists/{id}/toggle
+    case 'stylists':
+        requireAuth();
+        require_once __DIR__ . '/../includes/helpers.php';
+        $db = getDB();
+
+        if ($method === 'GET' && !$id) {
+            $rows = $db->query("SELECT id, name, email, phone, stylist_type, default_commission_pct,
+                                       default_hourly_rate, is_active, is_owner, portal_enabled
+                                FROM stylists ORDER BY is_owner DESC, is_active DESC, name")->fetchAll();
+            echo json_encode(['stylists' => $rows]); exit;
+        }
+        if ($method === 'POST' && !$id && !$action) {
+            $name  = trim($body['name'] ?? '');
+            $email = strtolower(trim($body['email'] ?? ''));
+            $type  = in_array($body['stylist_type'] ?? '', ['braider','barber','both'], true) ? $body['stylist_type'] : 'braider';
+            $pct   = max(0.0, min(100.0, round((float)($body['default_commission_pct'] ?? 0), 2)));
+            $rate  = max(0.0, round((float)($body['default_hourly_rate'] ?? 0), 2));
+            $portal = !empty($body['portal_enabled']) ? 1 : 0;
+            if ($name === '' || !validateEmail($email)) { http_response_code(400); echo json_encode(['error' => 'Name and valid email required']); exit; }
+            $dupe = $db->prepare("SELECT id FROM stylists WHERE email=?"); $dupe->execute([$email]);
+            if ($dupe->fetch()) { http_response_code(409); echo json_encode(['error' => 'A stylist with that email exists']); exit; }
+            $db->prepare("INSERT INTO stylists (name,email,phone,stylist_type,default_commission_pct,default_hourly_rate,portal_enabled,is_active)
+                          VALUES (?,?,?,?,?,?,?,1)")
+               ->execute([$name,$email,trim($body['phone'] ?? ''),$type,$pct,$rate,$portal]);
+            echo json_encode(['success' => true, 'id' => (int)$db->lastInsertId()]); exit;
+        }
+        if ($method === 'POST' && $id && $action === 'update') {
+            $st = $db->prepare("SELECT is_owner FROM stylists WHERE id=?"); $st->execute([$id]);
+            $cur = $st->fetch();
+            if (!$cur) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
+            $isOwner = (int)$cur['is_owner'] === 1;
+            $name  = trim($body['name'] ?? '');
+            $email = strtolower(trim($body['email'] ?? ''));
+            $type  = in_array($body['stylist_type'] ?? '', ['braider','barber','both'], true) ? $body['stylist_type'] : 'braider';
+            $pct   = max(0.0, min(100.0, round((float)($body['default_commission_pct'] ?? 0), 2)));
+            $rate  = max(0.0, round((float)($body['default_hourly_rate'] ?? 0), 2));
+            $active = $isOwner ? 1 : (!empty($body['is_active']) ? 1 : 0);
+            $portal = $isOwner ? 0 : (!empty($body['portal_enabled']) ? 1 : 0);
+            if ($name === '' || !validateEmail($email)) { http_response_code(400); echo json_encode(['error' => 'Name and valid email required']); exit; }
+            $dupe = $db->prepare("SELECT id FROM stylists WHERE email=? AND id<>?"); $dupe->execute([$email, $id]);
+            if ($dupe->fetch()) { http_response_code(409); echo json_encode(['error' => 'Another stylist uses that email']); exit; }
+            $db->prepare("UPDATE stylists SET name=?,email=?,phone=?,stylist_type=?,default_commission_pct=?,default_hourly_rate=?,is_active=?,portal_enabled=? WHERE id=?")
+               ->execute([$name,$email,trim($body['phone'] ?? ''),$type,$pct,$rate,$active,$portal,$id]);
+            echo json_encode(['success' => true]); exit;
+        }
+        if ($method === 'POST' && $id && $action === 'toggle') {
+            $st = $db->prepare("SELECT is_owner, is_active FROM stylists WHERE id=?"); $st->execute([$id]);
+            $cur = $st->fetch();
+            if (!$cur) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
+            if ((int)$cur['is_owner'] === 1) { http_response_code(400); echo json_encode(['error' => 'The owner cannot be deactivated']); exit; }
+            $new = (int)$cur['is_active'] === 1 ? 0 : 1;
+            $db->prepare("UPDATE stylists SET is_active=? WHERE id=?")->execute([$new, $id]);
+            echo json_encode(['success' => true, 'is_active' => $new]); exit;
+        }
+        http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
+
+    // ── ASSIGNMENTS (Phase E) ─────────────────────────────────
+    // GET    /api/admin/assignments?booking_id=X   → booking + assignments + stylist picker
+    // POST   /api/admin/assignments?booking_id=X   { stylist_id, ... }  assign
+    // POST   /api/admin/assignments/{id}/update    { ... }
+    // DELETE /api/admin/assignments/{id}
+    case 'assignments':
+        requireAuth();
+        require_once __DIR__ . '/../includes/helpers.php';   // pulls bookings.php (recalcBookingAssignments)
+        $db = getDB();
+
+        if ($method === 'GET') {
+            $bid = (int)($_GET['booking_id'] ?? 0);
+            if (!$bid) { http_response_code(400); echo json_encode(['error' => 'booking_id required']); exit; }
+            $bk = $db->prepare("SELECT id, booking_ref, booked_date, booked_time, total_price, status, service_id FROM bookings WHERE id=?");
+            $bk->execute([$bid]); $booking = $bk->fetch();
+            if (!$booking) { http_response_code(404); echo json_encode(['error' => 'Booking not found']); exit; }
+            $as = $db->prepare("SELECT ba.*, s.name AS stylist_name, s.is_owner
+                                FROM booking_assignments ba JOIN stylists s ON s.id=ba.stylist_id
+                                WHERE ba.booking_id=? ORDER BY FIELD(ba.assign_role,'lead','assist'), s.name");
+            $as->execute([$bid]);
+            $stylists = $db->query("SELECT id, name, default_commission_pct, default_hourly_rate, is_owner
+                                    FROM stylists WHERE is_active=1 ORDER BY is_owner DESC, name")->fetchAll();
+            echo json_encode(['booking' => $booking, 'assignments' => $as->fetchAll(), 'stylists' => $stylists]); exit;
+        }
+        if ($method === 'POST' && !$id) {
+            $bid = (int)($_GET['booking_id'] ?? ($body['booking_id'] ?? 0));
+            $sid = (int)($body['stylist_id'] ?? 0);
+            if (!$bid || !$sid) { http_response_code(400); echo json_encode(['error' => 'booking_id and stylist_id required']); exit; }
+            $role  = in_array($body['assign_role'] ?? '', ['lead','assist'], true) ? $body['assign_role'] : 'lead';
+            $model = in_array($body['pay_model'] ?? '', ['commission','hourly','none'], true) ? $body['pay_model'] : 'commission';
+            $pct   = ($body['commission_pct'] ?? '') === '' ? null : max(0.0, min(100.0, round((float)$body['commission_pct'], 2)));
+            $rate  = ($body['hourly_rate']    ?? '') === '' ? null : max(0.0, round((float)$body['hourly_rate'], 2));
+            $hp    = ($body['hours_planned']  ?? '') === '' ? null : max(0.0, round((float)$body['hours_planned'], 2));
+            try {
+                $db->prepare("INSERT INTO booking_assignments (booking_id,stylist_id,assign_role,pay_model,commission_pct,hourly_rate,hours_planned,notes,assigned_by)
+                              VALUES (?,?,?,?,?,?,?,?,?)")
+                   ->execute([$bid,$sid,$role,$model,$pct,$rate,$hp,trim($body['notes'] ?? ''),requireAuth()]);
+            } catch (PDOException $e) {
+                http_response_code(409); echo json_encode(['error' => 'That stylist already has that role on this booking']); exit;
+            }
+            recalcBookingAssignments($db, $bid);
+            echo json_encode(['success' => true, 'id' => (int)$db->lastInsertId()]); exit;
+        }
+        if ($method === 'POST' && $id && $action === 'update') {
+            $row = $db->prepare("SELECT booking_id, payout_id FROM booking_assignments WHERE id=?"); $row->execute([$id]);
+            $cur = $row->fetch();
+            if (!$cur) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
+            if ($cur['payout_id'] !== null) { http_response_code(423); echo json_encode(['error' => 'Locked to a payout']); exit; }
+            $role  = in_array($body['assign_role'] ?? '', ['lead','assist'], true) ? $body['assign_role'] : 'lead';
+            $model = in_array($body['pay_model'] ?? '', ['commission','hourly','none'], true) ? $body['pay_model'] : 'commission';
+            $pct   = ($body['commission_pct'] ?? '') === '' ? null : max(0.0, min(100.0, round((float)$body['commission_pct'], 2)));
+            $rate  = ($body['hourly_rate']    ?? '') === '' ? null : max(0.0, round((float)$body['hourly_rate'], 2));
+            $hp    = ($body['hours_planned']  ?? '') === '' ? null : max(0.0, round((float)$body['hours_planned'], 2));
+            $hw    = ($body['hours_worked']   ?? '') === '' ? null : max(0.0, round((float)$body['hours_worked'], 2));
+            $db->prepare("UPDATE booking_assignments SET assign_role=?,pay_model=?,commission_pct=?,hourly_rate=?,hours_planned=?,hours_worked=?,notes=? WHERE id=?")
+               ->execute([$role,$model,$pct,$rate,$hp,$hw,trim($body['notes'] ?? ''),$id]);
+            recalcBookingAssignments($db, (int)$cur['booking_id']);
+            echo json_encode(['success' => true]); exit;
+        }
+        if ($method === 'DELETE' && $id) {
+            $row = $db->prepare("SELECT booking_id, payout_id FROM booking_assignments WHERE id=?"); $row->execute([$id]);
+            $cur = $row->fetch();
+            if (!$cur) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
+            if ($cur['payout_id'] !== null) { http_response_code(423); echo json_encode(['error' => 'Locked to a payout']); exit; }
+            $db->prepare("DELETE FROM booking_assignments WHERE id=?")->execute([$id]);
+            recalcBookingAssignments($db, (int)$cur['booking_id']);
+            echo json_encode(['success' => true]); exit;
+        }
+        http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
+
+    // ── PAYOUTS (Phase E) ─────────────────────────────────────
+    // GET  /api/admin/payouts                → owed-per-stylist + history
+    // POST /api/admin/payouts                { stylist_id, method, ... }
+    // POST /api/admin/payouts/{id}/void
+    case 'payouts':
+        requireAuth();
+        require_once __DIR__ . '/../includes/helpers.php';
+        require_once __DIR__ . '/../includes/payouts.php';
+        $db = getDB();
+
+        if ($method === 'GET') {
+            $stylists = $db->query("SELECT id, name, is_owner FROM stylists WHERE is_active=1 ORDER BY is_owner DESC, name")->fetchAll();
+            $owed = [];
+            foreach ($stylists as $s) {
+                $o = stylistOwed($db, (int)$s['id']);
+                if ($o['total'] > 0.005) $owed[] = array_merge(['stylist_id' => (int)$s['id'], 'name' => $s['name']], $o);
+            }
+            $history = $db->query("SELECT p.*, s.name AS stylist_name
+                                   FROM stylist_payouts p JOIN stylists s ON s.id=p.stylist_id
+                                   ORDER BY p.payout_date DESC, p.id DESC LIMIT 50")->fetchAll();
+            echo json_encode(['owed' => $owed, 'history' => $history]); exit;
+        }
+        if ($method === 'POST' && !$id) {
+            $sid = (int)($body['stylist_id'] ?? 0);
+            if (!$sid) { http_response_code(400); echo json_encode(['error' => 'stylist_id required']); exit; }
+            $res = createStylistPayout($db, $sid, [
+                'method'       => $body['method'] ?? 'bank_transfer',
+                'reference'    => trim($body['reference'] ?? ''),
+                'adjustment'   => (float)($body['adjustment'] ?? 0),
+                'notes'        => trim($body['notes'] ?? ''),
+                'payout_date'  => preg_match('/^\d{4}-\d{2}-\d{2}$/', $body['payout_date'] ?? '') ? $body['payout_date'] : date('Y-m-d'),
+                'period_start' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $body['period_start'] ?? '') ? $body['period_start'] : null,
+                'period_end'   => preg_match('/^\d{4}-\d{2}-\d{2}$/', $body['period_end'] ?? '') ? $body['period_end'] : null,
+                'created_by'   => requireAuth(),
+            ]);
+            if ($res['ok']) { echo json_encode(['success' => true, 'payout_id' => $res['payout_id'], 'amount' => $res['amount']]); exit; }
+            http_response_code(400); echo json_encode(['error' => $res['error'] ?? 'Could not record payout']); exit;
+        }
+        if ($method === 'POST' && $id && $action === 'void') {
+            $res = voidStylistPayout($db, $id);
+            if ($res['ok']) { echo json_encode(['success' => true]); exit; }
+            http_response_code(400); echo json_encode(['error' => $res['error'] ?? 'Could not void payout']); exit;
+        }
+        http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
+
     // ── SERVICES ─────────────────────────────────────────────
     case 'services':
         requireAuth();
