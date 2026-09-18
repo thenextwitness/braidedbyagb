@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,11 +23,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.braidedbyagb.admin.data.db.AppDatabase
 import com.braidedbyagb.admin.data.db.CacheEntry
+import com.braidedbyagb.admin.data.model.Assignment
+import com.braidedbyagb.admin.data.model.AssignmentRequest
 import com.braidedbyagb.admin.data.model.BookingDetail
 import com.braidedbyagb.admin.data.model.NotesRequest
 import com.braidedbyagb.admin.data.model.RescheduleRequest
 import com.braidedbyagb.admin.data.model.SetDurationRequest
 import com.braidedbyagb.admin.data.model.StatusRequest
+import com.braidedbyagb.admin.data.model.StylistOption
 import com.braidedbyagb.admin.data.remote.ApiClient
 import com.braidedbyagb.admin.ui.screens.dashboard.StatusChip
 import com.braidedbyagb.admin.ui.theme.Primary
@@ -72,6 +77,12 @@ fun BookingDetailScreen(
     var showRevokeConfirm by remember { mutableStateOf(false) }
     var showDurationDialog by remember { mutableStateOf(false) }
 
+    // Stylist assignments (Phase E)
+    var assignments      by remember { mutableStateOf<List<Assignment>>(emptyList()) }
+    var stylistOptions   by remember { mutableStateOf<List<StylistOption>>(emptyList()) }
+    var editingAssignment by remember { mutableStateOf<Assignment?>(null) }
+    var showAssign       by remember { mutableStateOf(false) }
+
     fun reload() { scope.launch {
         // Cache-first
         val entry = withContext(Dispatchers.IO) { dao.get(cacheKey) }
@@ -94,10 +105,30 @@ fun BookingDetailScreen(
         } catch (e: Exception) {
             if (bk == null) error = "Connection error"
         }
+        // Assignments (Phase E) — refreshed on every reload so earnings/status stay current.
+        try {
+            val ares = ApiClient.api.getAssignments(bookingId)
+            if (ares.isSuccessful && ares.body() != null) {
+                assignments    = ares.body()!!.assignments
+                stylistOptions = ares.body()!!.stylists
+            }
+        } catch (_: Exception) {}
         loading = false
     }}
 
     LaunchedEffect(Unit) { reload() }
+
+    // ── Assign / edit stylist dialog ──────────────────────────
+    if (showAssign) {
+        AssignmentDialog(
+            existing  = editingAssignment,
+            stylists  = stylistOptions,
+            bookingId = bookingId,
+            onDismiss = { showAssign = false },
+            onSaved   = { showAssign = false; snack = "Assignment saved"; reload() },
+            onMessage = { m -> snack = m }
+        )
+    }
 
     // ── Reschedule dialog ─────────────────────────────────────
     if (showReschedule) {
@@ -464,6 +495,57 @@ fun BookingDetailScreen(
                         }
                     }
 
+                    // Stylists & earnings (Phase E)
+                    item {
+                        InfoCard("Stylists & Earnings") {
+                            if (assignments.isEmpty()) {
+                                Text("No stylist assigned yet.", fontSize = 13.sp, color = TextMuted)
+                            } else {
+                                assignments.forEach { a ->
+                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text("${a.stylistName} · ${a.role.replaceFirstChar { it.uppercase() }}",
+                                                fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            val basis = when (a.payModel) {
+                                                "commission" -> "${a.commissionPct?.let { "%.0f".format(it) } ?: "default"}% commission"
+                                                "hourly"     -> "${a.hoursWorked ?: a.hoursPlanned ?: 0.0}h × £%.2f/hr".format(a.hourlyRate ?: 0.0)
+                                                else          -> "No pay"
+                                            }
+                                            Text("$basis · ${a.earningsStatus}", fontSize = 12.sp, color = TextMuted)
+                                        }
+                                        Text("£%.2f".format(a.earningsAmount), fontWeight = FontWeight.Bold, color = Primary)
+                                    }
+                                    if (a.payoutId == null) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            TextButton(onClick = { editingAssignment = a; showAssign = true },
+                                                enabled = isOnline, contentPadding = PaddingValues(0.dp)) {
+                                                Text("Edit", fontSize = 12.sp, color = Primary)
+                                            }
+                                            TextButton(onClick = {
+                                                scope.launch {
+                                                    try {
+                                                        val res = ApiClient.api.deleteAssignment(a.id)
+                                                        if (res.isSuccessful) { snack = "Assignment removed"; reload() }
+                                                        else snack = "Could not remove"
+                                                    } catch (_: Exception) { snack = "Connection error" }
+                                                }
+                                            }, enabled = isOnline, contentPadding = PaddingValues(0.dp)) {
+                                                Text("Remove", fontSize = 12.sp, color = Color(0xFFDC2626))
+                                            }
+                                        }
+                                    } else {
+                                        Text("🔒 Included in a payout", fontSize = 11.sp, color = TextMuted)
+                                    }
+                                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                                }
+                            }
+                            TextButton(onClick = { editingAssignment = null; showAssign = true },
+                                enabled = isOnline, contentPadding = PaddingValues(0.dp)) {
+                                Text("+ Assign stylist", fontSize = 12.sp, color = Primary)
+                            }
+                        }
+                    }
+
                     // Payment link card (shown when token exists and deposit not yet paid)
                     if (!b.paymentToken.isNullOrBlank() && b.depositPaid == 0) {
                         item {
@@ -643,4 +725,121 @@ fun InfoRow(label: String, value: String) {
              modifier = Modifier.width(110.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontSize = 13.sp, modifier = Modifier.weight(1f))
     }
+}
+
+// ── Assign / edit a stylist on this booking (Phase E) ─────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AssignmentDialog(
+    existing:  Assignment?,
+    stylists:  List<StylistOption>,
+    bookingId: Int,
+    onDismiss: () -> Unit,
+    onSaved:   () -> Unit,
+    onMessage: (String) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var stylistId    by remember { mutableStateOf(existing?.stylistId ?: stylists.firstOrNull()?.id ?: 0) }
+    var role         by remember { mutableStateOf(existing?.role ?: "lead") }
+    var payModel     by remember { mutableStateOf(existing?.payModel ?: "commission") }
+    var pct          by remember { mutableStateOf(existing?.commissionPct?.let { "%.2f".format(it) } ?: "") }
+    var rate         by remember { mutableStateOf(existing?.hourlyRate?.let { "%.2f".format(it) } ?: "") }
+    var hoursPlanned by remember { mutableStateOf(existing?.hoursPlanned?.let { it.toString() } ?: "") }
+    var hoursWorked  by remember { mutableStateOf(existing?.hoursWorked?.let { it.toString() } ?: "") }
+    var notes        by remember { mutableStateOf(existing?.notes ?: "") }
+    var stylistMenu  by remember { mutableStateOf(false) }
+    var roleMenu     by remember { mutableStateOf(false) }
+    var payMenu      by remember { mutableStateOf(false) }
+    var saving       by remember { mutableStateOf(false) }
+
+    val payLabels  = mapOf("commission" to "Commission", "hourly" to "Hourly", "none" to "No pay")
+    val roleLabels = mapOf("lead" to "Lead", "assist" to "Assist")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (existing == null) "Assign stylist" else "Edit assignment") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (existing == null) {
+                    ExposedDropdownMenuBox(expanded = stylistMenu, onExpandedChange = { stylistMenu = !stylistMenu }) {
+                        OutlinedTextField(
+                            value = stylists.firstOrNull { it.id == stylistId }?.name ?: "Select stylist",
+                            onValueChange = {}, readOnly = true, label = { Text("Stylist") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stylistMenu) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(expanded = stylistMenu, onDismissRequest = { stylistMenu = false }) {
+                            stylists.forEach { s ->
+                                DropdownMenuItem(text = { Text(s.name + if (s.isOwner == 1) " (owner)" else "") },
+                                    onClick = { stylistId = s.id; stylistMenu = false })
+                            }
+                        }
+                    }
+                } else {
+                    Text(existing.stylistName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Primary)
+                }
+
+                ExposedDropdownMenuBox(expanded = roleMenu, onExpandedChange = { roleMenu = !roleMenu }) {
+                    OutlinedTextField(
+                        value = roleLabels[role] ?: "Lead", onValueChange = {}, readOnly = true, label = { Text("Role") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleMenu) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = roleMenu, onDismissRequest = { roleMenu = false }) {
+                        roleLabels.forEach { (k, v) -> DropdownMenuItem(text = { Text(v) }, onClick = { role = k; roleMenu = false }) }
+                    }
+                }
+
+                ExposedDropdownMenuBox(expanded = payMenu, onExpandedChange = { payMenu = !payMenu }) {
+                    OutlinedTextField(
+                        value = payLabels[payModel] ?: "Commission", onValueChange = {}, readOnly = true, label = { Text("Pay model") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = payMenu) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = payMenu, onDismissRequest = { payMenu = false }) {
+                        payLabels.forEach { (k, v) -> DropdownMenuItem(text = { Text(v) }, onClick = { payModel = k; payMenu = false }) }
+                    }
+                }
+
+                when (payModel) {
+                    "commission" -> OutlinedTextField(pct, { pct = it }, label = { Text("Commission % (blank = default)") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    "hourly" -> {
+                        OutlinedTextField(rate, { rate = it }, label = { Text("£/hr (blank = default)") },
+                            singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(hoursPlanned, { hoursPlanned = it }, label = { Text("Hours planned") },
+                            singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(hoursWorked, { hoursWorked = it }, label = { Text("Hours worked") },
+                            singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                OutlinedTextField(notes, { notes = it }, label = { Text("Note (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !saving, onClick = {
+                if (existing == null && stylistId <= 0) { onMessage("Pick a stylist."); return@TextButton }
+                saving = true
+                val req = AssignmentRequest(
+                    stylistId    = if (existing == null) stylistId else null,
+                    role         = role,
+                    payModel     = payModel,
+                    commissionPct = pct.toDoubleOrNull(),
+                    hourlyRate    = rate.toDoubleOrNull(),
+                    hoursPlanned  = hoursPlanned.toDoubleOrNull(),
+                    hoursWorked   = hoursWorked.toDoubleOrNull(),
+                    notes         = notes.trim().ifBlank { null }
+                )
+                scope.launch {
+                    try {
+                        val res = if (existing == null) ApiClient.api.createAssignment(bookingId, req)
+                                  else ApiClient.api.updateAssignment(existing.id, req)
+                        if (res.isSuccessful) onSaved() else onMessage("Save failed (${res.code()})")
+                    } catch (_: Exception) { onMessage("Connection error") }
+                    saving = false
+                }
+            }) { Text(if (saving) "Saving…" else "Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
