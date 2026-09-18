@@ -103,9 +103,9 @@ try {
         <a href="/admin/services" class="admin-nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">
           <span class="nav-icon">✂️</span> Services & Prices
         </a>
-        </a>
         <a href="/admin/addons" class="admin-nav-link <?= $currentPage === 'addons' ? 'active' : '' ?>">
           <span class="nav-icon">✦</span> Add-ons Manager
+        </a>
       </div>
 
       <div class="admin-nav-section">
@@ -152,6 +152,13 @@ try {
         </a>
         <a href="/admin/discounts" class="admin-nav-link <?= $currentPage === 'discounts' ? 'active' : '' ?>">
           <span class="nav-icon">🏷️</span> Discount Codes
+        </a>
+      </div>
+
+      <div class="admin-nav-section">
+        <p class="admin-nav-label">Team</p>
+        <a href="/admin/stylists" class="admin-nav-link <?= $currentPage === 'stylists' ? 'active' : '' ?>">
+          <span class="nav-icon">💇</span> Stylists
         </a>
       </div>
 

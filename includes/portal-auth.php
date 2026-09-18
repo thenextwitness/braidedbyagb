@@ -70,8 +70,16 @@ function portalProviders(): array {
             'table'      => 'customers',
             'name_field' => 'name',
         ],
+        // A stylist can authenticate only while active AND portal-enabled. The
+        // owner seed is portal_enabled=0 (she uses the admin panel), so this
+        // gate keeps her — and any deactivated stylist — out of the portal even
+        // if a password or remember-token still exists.
+        'stylist' => [
+            'table'      => 'stylists',
+            'name_field' => 'name',
+            'filter_sql' => 'is_active = 1 AND portal_enabled = 1',
+        ],
     ];
-    // Phase C will register 'stylist' here once the stylists table exists.
     return $providers;
 }
 
@@ -91,9 +99,11 @@ function portalFindIdentities(PDO $db, string $email): array {
     foreach (portalProviders() as $type => $p) {
         $blockedSel = $type === 'client' ? 'is_blocked' : '0 AS is_blocked';
         $pwSel      = 'password_hash';
+        $where      = 'email = ?';
+        if (!empty($p['filter_sql'])) $where .= ' AND ' . $p['filter_sql'];
         try {
             $s = $db->prepare("SELECT id, {$p['name_field']} AS name, email, {$pwSel}, {$blockedSel}
-                               FROM {$p['table']} WHERE email = ? LIMIT 1");
+                               FROM {$p['table']} WHERE {$where} LIMIT 1");
             $s->execute([$email]);
             $row = $s->fetch();
         } catch (Throwable $e) {
@@ -416,7 +426,11 @@ function portalResumeFromRemember(): void {
     // Load the identity fresh and resume.
     $p = portalProvider($tok['user_type']);
     if (!$p) return;
-    $u = $db->prepare("SELECT id, {$p['name_field']} AS name, email FROM {$p['table']} WHERE id = ? LIMIT 1");
+    // Re-apply the provider gate: a stylist deactivated since the token was
+    // issued must not resume from a stale remember cookie.
+    $rwhere = 'id = ?';
+    if (!empty($p['filter_sql'])) $rwhere .= ' AND ' . $p['filter_sql'];
+    $u = $db->prepare("SELECT id, {$p['name_field']} AS name, email FROM {$p['table']} WHERE {$rwhere} LIMIT 1");
     $u->execute([(int)$tok['user_id']]);
     $row = $u->fetch();
     if (!$row) { portalClearRememberCookie(); return; }

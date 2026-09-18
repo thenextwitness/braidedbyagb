@@ -660,6 +660,172 @@ step('bookings.confirm_token backfill',
     },
     $report);
 
+// ── Phase C2: multi-stylist data model ────────────────────
+// Stylists are a SEPARATE table from admin_users (which grants full admin via
+// requireAdmin()). Auth columns mirror what includes/portal-auth.php expects
+// (password_hash NULL until invite accepted, last_login_at, login_attempts,
+// locked_until) so the same passwordless-code/optional-password core serves them.
+step('stylists table',
+    fn() => tableExists($db, $dbName, 'stylists'),
+    fn() => $db->exec("CREATE TABLE stylists (
+        id                     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name                   VARCHAR(120)  NOT NULL,
+        email                  VARCHAR(180)  NOT NULL UNIQUE,
+        phone                  VARCHAR(40)   DEFAULT NULL,
+        password_hash          VARCHAR(255)  DEFAULT NULL,
+        email_verified         TINYINT(1)    NOT NULL DEFAULT 0,
+        stylist_type           ENUM('braider','barber','both') NOT NULL DEFAULT 'braider',
+        default_commission_pct DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
+        default_hourly_rate    DECIMAL(8,2)  NOT NULL DEFAULT 0.00,
+        is_active              TINYINT(1)    NOT NULL DEFAULT 1,
+        is_owner               TINYINT(1)    NOT NULL DEFAULT 0,
+        portal_enabled         TINYINT(1)    NOT NULL DEFAULT 1,
+        bio                    TEXT          DEFAULT NULL,
+        photo_url              VARCHAR(255)  DEFAULT NULL,
+        invite_token           VARCHAR(64)   DEFAULT NULL,
+        invite_expires         DATETIME      DEFAULT NULL,
+        last_login_at          DATETIME      DEFAULT NULL,
+        login_attempts         INT UNSIGNED  NOT NULL DEFAULT 0,
+        locked_until           DATETIME      DEFAULT NULL,
+        created_at             DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at             DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_active (is_active),
+        KEY idx_invite (invite_token)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Per-service assignment: each cart item is already its own bookings row sharing
+// cart_group_ref, so a row here = one stylist doing one service. A booking can
+// carry a lead AND an assistant at once (owner works it, stylist assists hourly),
+// which is why this is a separate table, not a bookings.stylist_id column. Rates
+// are snapshotted onto the assignment so a later default-rate change never
+// rewrites past pay. No FK on payout_id (set when a pay run covers it).
+step('booking_assignments table',
+    fn() => tableExists($db, $dbName, 'booking_assignments'),
+    fn() => $db->exec("CREATE TABLE booking_assignments (
+        id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        booking_id      INT UNSIGNED NOT NULL,
+        stylist_id      INT UNSIGNED NOT NULL,
+        assign_role     ENUM('lead','assist')              NOT NULL DEFAULT 'lead',
+        pay_model       ENUM('commission','hourly','none') NOT NULL DEFAULT 'commission',
+        commission_pct  DECIMAL(5,2)  DEFAULT NULL,
+        hourly_rate     DECIMAL(8,2)  DEFAULT NULL,
+        hours_planned   DECIMAL(5,2)  DEFAULT NULL,
+        hours_worked    DECIMAL(5,2)  DEFAULT NULL,
+        earnings_base   DECIMAL(10,2) DEFAULT NULL,
+        earnings_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        earnings_status ENUM('pending','earned','void')    NOT NULL DEFAULT 'pending',
+        payout_id       INT UNSIGNED  DEFAULT NULL,
+        notes           VARCHAR(255)  DEFAULT NULL,
+        assigned_by     INT UNSIGNED  DEFAULT NULL,
+        created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_booking_stylist_role (booking_id, stylist_id, assign_role),
+        KEY idx_booking (booking_id),
+        KEY idx_stylist_status (stylist_id, earnings_status),
+        KEY idx_payout (payout_id),
+        CONSTRAINT fk_ba_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+        CONSTRAINT fk_ba_stylist FOREIGN KEY (stylist_id) REFERENCES stylists(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// What the owner actually PAID a stylist (distinct from what a booking earned).
+// Invariant: commission_total + hourly_total + adjustment = amount.
+step('stylist_payouts table',
+    fn() => tableExists($db, $dbName, 'stylist_payouts'),
+    fn() => $db->exec("CREATE TABLE stylist_payouts (
+        id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        stylist_id       INT UNSIGNED NOT NULL,
+        payout_date      DATE NOT NULL,
+        period_start     DATE DEFAULT NULL,
+        period_end       DATE DEFAULT NULL,
+        commission_total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        hourly_total     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        adjustment       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        amount           DECIMAL(10,2) NOT NULL,
+        method           ENUM('bank_transfer','cash','other') NOT NULL DEFAULT 'bank_transfer',
+        reference        VARCHAR(80)  DEFAULT NULL,
+        notes            TEXT         DEFAULT NULL,
+        journal_entry_id INT UNSIGNED DEFAULT NULL,
+        created_by       INT UNSIGNED DEFAULT NULL,
+        created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_stylist_date (stylist_id, payout_date),
+        CONSTRAINT fk_sp_stylist FOREIGN KEY (stylist_id) REFERENCES stylists(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Coarse skill attribution (braiding/barbering) on services, plus an optional
+// fine-grained allow-list. Both ADVISORY — the assignment UI warns but never
+// blocks.
+step('services.service_type column',
+    fn() => columnExists($db, $dbName, 'services', 'service_type'),
+    fn() => $db->exec("ALTER TABLE services ADD COLUMN service_type
+        ENUM('braiding','barbering','both') NOT NULL DEFAULT 'braiding'"),
+    $report);
+step('stylist_services table',
+    fn() => tableExists($db, $dbName, 'stylist_services'),
+    fn() => $db->exec("CREATE TABLE stylist_services (
+        stylist_id INT UNSIGNED NOT NULL,
+        service_id INT UNSIGNED NOT NULL,
+        PRIMARY KEY (stylist_id, service_id),
+        CONSTRAINT fk_ss_stylist FOREIGN KEY (stylist_id) REFERENCES stylists(id) ON DELETE CASCADE,
+        CONSTRAINT fk_ss_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Per-stylist unavailability. Kept OUT of the salon-wide `availability` table on
+// purpose — adding a nullable stylist_id there would break its UNIQUE(avail_date,
+// time_slot) guard (MySQL treats NULLs as distinct). Greys a stylist out in the
+// assignment picker only; never affects the public slot grid.
+step('stylist_time_off table',
+    fn() => tableExists($db, $dbName, 'stylist_time_off'),
+    fn() => $db->exec("CREATE TABLE stylist_time_off (
+        id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        stylist_id INT UNSIGNED NOT NULL,
+        start_date DATE NOT NULL,
+        end_date   DATE NOT NULL,
+        start_time TIME DEFAULT NULL,
+        end_time   TIME DEFAULT NULL,
+        reason     VARCHAR(160) DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_stylist_range (stylist_id, start_date, end_date),
+        CONSTRAINT fk_sto_stylist FOREIGN KEY (stylist_id) REFERENCES stylists(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Accounting: stylist cost accounts + a journal source for payouts. Revenue is
+// journalled per the booking lifecycle (Phase R); payouts hit the ledger when
+// the pay-run ships (C4/C5) via journalStylistPayout().
+step('accounts stylist cost codes',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM accounts WHERE code IN ('5300','5310')")->fetchColumn() >= 2,
+    fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES
+        ('5300','Stylist Commission','expense'),
+        ('5310','Stylist Wages','expense')"),
+    $report);
+step("journal_entries.source includes 'stylist_payout'",
+    fn() => enumHasValue($db, $dbName, 'journal_entries', 'source', 'stylist_payout'),
+    fn() => $db->exec("ALTER TABLE journal_entries MODIFY COLUMN source
+                       ENUM('booking_payment','expense','owner_draw','manual',
+                            'booking_deposit','booking_forfeit','booking_reversal',
+                            'stylist_payout') NOT NULL"),
+    $report);
+
+// Seed the owner as a stylist (is_owner=1) so reports separate 'owner worked it'
+// from 'a stylist worked it' without a magic id. portal_enabled=0 — she uses the
+// admin panel, not the stylist portal.
+step('stylists owner seed row',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM stylists WHERE is_owner=1")->fetchColumn() > 0,
+    function() use ($db) {
+        $a = $db->query("SELECT id, name, email FROM admin_users ORDER BY id LIMIT 1")->fetch();
+        if (!$a) return;
+        $db->prepare("INSERT INTO stylists
+            (name, email, stylist_type, default_commission_pct, default_hourly_rate,
+             is_active, is_owner, portal_enabled)
+            VALUES (?,?,'both',100.00,0.00,1,1,0)")
+           ->execute([$a['name'] ?: 'Owner', $a['email']]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
