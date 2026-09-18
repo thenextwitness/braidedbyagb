@@ -50,6 +50,10 @@ RewriteRule ^account/payments/?$ public/account/payments.php [L,QSA]
 RewriteRule ^account/profile/?$ public/account/profile.php [L,QSA]
 RewriteRule ^account/?$ public/account/index.php [L,QSA]
 
+# Stylist portal (Phase C4). Multi-segment rule precedes the plain /portal rule.
+RewriteRule ^portal/earnings/?$ public/portal/earnings.php [L,QSA]
+RewriteRule ^portal/?$ public/portal/index.php [L,QSA]
+
 # PWA — service worker at root scope, and the offline fallback page
 RewriteRule ^sw\.js$ public/sw.php [L]
 RewriteRule ^offline/?$ public/offline.php [L]
