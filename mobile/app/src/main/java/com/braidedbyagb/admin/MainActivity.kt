@@ -34,6 +34,8 @@ import com.braidedbyagb.admin.ui.screens.reviews.ReviewsScreen
 import com.braidedbyagb.admin.ui.screens.services.ServiceEditScreen
 import com.braidedbyagb.admin.ui.screens.services.ServicesScreen
 import com.braidedbyagb.admin.ui.screens.settings.SettingsScreen
+import com.braidedbyagb.admin.ui.screens.stylists.StylistsScreen
+import com.braidedbyagb.admin.ui.screens.payouts.PayoutsScreen
 import com.braidedbyagb.admin.ui.screens.chat.ChatSessionsScreen
 import com.braidedbyagb.admin.ui.screens.chat.ChatDetailScreen
 import com.braidedbyagb.admin.service.FcmService
@@ -56,6 +58,8 @@ object ReviewsRoute    { const val route = "reviews" }
 object RequestsRoute   { const val route = "custom_requests" }
 object DiscountsRoute  { const val route = "discounts" }
 object ChatRoute       { const val route = "chat" }
+object StylistsRoute   { const val route = "stylists" }
+object PayoutsRoute    { const val route = "payouts" }
 
 val NAV_ITEMS = listOf(
     Screen.Dashboard, Screen.Bookings, Screen.Customers,
@@ -157,6 +161,8 @@ fun AppRoot(
         currentRoute == ReviewsRoute.route                  -> Screen.Settings.route
         currentRoute == RequestsRoute.route                 -> Screen.Settings.route
         currentRoute == DiscountsRoute.route                -> Screen.Settings.route
+        currentRoute == StylistsRoute.route                 -> Screen.Settings.route
+        currentRoute == PayoutsRoute.route                  -> Screen.Settings.route
         currentRoute == ChatRoute.route                     -> Screen.Chat.route
         currentRoute?.startsWith("chat_detail")     == true -> Screen.Chat.route
         else -> currentRoute
@@ -243,7 +249,9 @@ fun AppRoot(
                     onManageRequests  = { navController.navigate(RequestsRoute.route) },
                     onManageDiscounts = { navController.navigate(DiscountsRoute.route) },
                     onManageChat      = { navController.navigate(ChatRoute.route) },
-                    onOpenAccounting  = { navController.navigate(Screen.Accounting.route) }
+                    onOpenAccounting  = { navController.navigate(Screen.Accounting.route) },
+                    onManageStylists  = { navController.navigate(StylistsRoute.route) },
+                    onManagePayouts   = { navController.navigate(PayoutsRoute.route) }
                 )
             }
             // Secondary screens — reachable via deep links / other nav actions, not in bottom bar
@@ -257,6 +265,8 @@ fun AppRoot(
             }
             composable(CalendarRoute.route)  { CalendarScreen() }
             composable(OrdersRoute.route)    { OrdersScreen() }
+            composable(StylistsRoute.route)  { StylistsScreen(onBack = { navController.popBackStack() }) }
+            composable(PayoutsRoute.route)   { PayoutsScreen(onBack = { navController.popBackStack() }) }
             composable(ReviewsRoute.route)   { ReviewsScreen() }
             composable(RequestsRoute.route)  { CustomRequestsScreen() }
             composable(DiscountsRoute.route) { DiscountsScreen() }

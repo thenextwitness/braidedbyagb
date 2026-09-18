@@ -96,7 +96,9 @@ fun SettingsScreen(
     onManageRequests:  () -> Unit = {},
     onManageDiscounts:  () -> Unit = {},
     onManageChat:       () -> Unit = {},
-    onOpenAccounting:   () -> Unit = {}
+    onOpenAccounting:   () -> Unit = {},
+    onManageStylists:   () -> Unit = {},
+    onManagePayouts:    () -> Unit = {}
 ) {
     val context   = LocalContext.current
     val scope     = rememberCoroutineScope()
@@ -348,6 +350,36 @@ fun SettingsScreen(
                     }
                 }
 
+                item {
+                    Card(onClick = onManageStylists, modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.padding(14.dp).fillMaxWidth(),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Stylists", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                                Text("Add and manage your team, rates and portal access", fontSize = 12.sp, color = TextMuted)
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = TextMuted, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                item {
+                    Card(onClick = onManagePayouts, modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.padding(14.dp).fillMaxWidth(),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Payouts", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                                Text("Pay stylists what they've earned; view payout history", fontSize = 12.sp, color = TextMuted)
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = TextMuted, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
                 item {
                     Card(onClick = onManageReviews, modifier = Modifier.fillMaxWidth()) {
                         Row(
