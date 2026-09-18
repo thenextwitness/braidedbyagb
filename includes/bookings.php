@@ -256,6 +256,11 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
     $ref   = (string) $bk['booking_ref'];
     $total = round((float) $bk['total_price'], 2);
 
+    // Stylist earnings recognise on the same event as revenue. One idempotent
+    // call here covers every path (→ completed marks them 'earned'; any other
+    // status returns them to 'pending'); locked/voided rows are left alone.
+    recalcBookingAssignments($db, $bookingId, $newStatus);
+
     if ($newStatus === 'completed') {
         // A booking corrected from incomplete back to completed: undo the forfeit first.
         reverseBookingLedger($db, $bookingId, 'booking_forfeit', $ref);
@@ -295,5 +300,111 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
     // Incomplete specifically forfeits the deposit to income.
     if ($newStatus === 'incomplete') {
         forfeitBookingDeposit($db, $bookingId);
+    }
+}
+
+// ============================================================
+//  PHASE C3 — STYLIST EARNINGS (derived, self-healing)
+//
+//  A booking_assignments row records what ONE stylist will earn for ONE
+//  service. Earnings follow the SAME recognition rule as revenue:
+//    · pending — the booking is not (yet) completed. Nothing is owed.
+//    · earned  — the booking is completed; the stylist is owed this amount.
+//    · void    — explicitly written off by the owner (terminal; recalc leaves
+//                it alone until the owner un-voids it).
+//  Owner's rule "no stylist pay on incomplete" falls straight out of this:
+//  an incomplete booking never reaches 'completed', so its assignments never
+//  leave 'pending'. A booking bounced completed → incomplete → completed moves
+//  its earnings earned → pending → earned with no drift, exactly like the ledger.
+//
+//  Money is NOT journalled here — an earned amount is a figure the owner owes,
+//  posted to the books (5300/5310) only when a payout actually pays it
+//  (Phase C4/C5, journalStylistPayout). Rows already tied to a payout
+//  (payout_id set) are LOCKED and never recomputed.
+// ============================================================
+
+/**
+ * The revenue a commission is calculated against for one assignment. Each cart
+ * item is its own bookings row, so the whole line total (service + its add-ons)
+ * is the natural base. Defined in ONE place so the rule is easy to change later.
+ */
+function assignmentCommissionBase(float $bookingTotal): float {
+    return round($bookingTotal, 2);
+}
+
+/**
+ * Pure calculation of one assignment's base + amount from its pay model.
+ * Rates fall back to the stylist's current defaults when the assignment has no
+ * snapshot of its own. $a must carry the assignment columns plus the joined
+ * default_commission_pct / default_hourly_rate.
+ *
+ * Returns ['base' => ?float, 'amount' => float]. base is the commission base
+ * (NULL for hourly / none — the amount there is hours × rate, not a % of a base).
+ */
+function computeAssignmentEarnings(array $a, float $bookingTotal): array {
+    switch ($a['pay_model']) {
+        case 'hourly':
+            $rate  = isset($a['hourly_rate']) && $a['hourly_rate'] !== null
+                   ? (float) $a['hourly_rate'] : (float) ($a['default_hourly_rate'] ?? 0);
+            // Prefer hours actually worked; fall back to the planned figure.
+            $hours = isset($a['hours_worked']) && $a['hours_worked'] !== null
+                   ? (float) $a['hours_worked']
+                   : (isset($a['hours_planned']) && $a['hours_planned'] !== null ? (float) $a['hours_planned'] : 0.0);
+            return ['base' => null, 'amount' => round($hours * $rate, 2)];
+
+        case 'commission':
+            $pct  = isset($a['commission_pct']) && $a['commission_pct'] !== null
+                  ? (float) $a['commission_pct'] : (float) ($a['default_commission_pct'] ?? 0);
+            $base = assignmentCommissionBase($bookingTotal);
+            return ['base' => $base, 'amount' => round($base * $pct / 100, 2)];
+
+        default: // 'none' — e.g. the owner working her own booking
+            return ['base' => null, 'amount' => 0.0];
+    }
+}
+
+/**
+ * Recompute every non-locked assignment on a booking and align its
+ * earnings_status with the booking's state. Idempotent and self-healing: safe
+ * to call after any status change AND after the assignment set is edited
+ * (Phase C4 calls it on save). Locked rows (attached to a payout) and rows the
+ * owner has voided are left untouched.
+ *
+ * @param string|null $status The booking's effective status. Pass the value the
+ *   caller just wrote (avoids a re-read race); when null it is read from the row.
+ */
+function recalcBookingAssignments(PDO $db, int $bookingId, ?string $status = null): void {
+    try {
+        $bk = $db->prepare("SELECT status, total_price FROM bookings WHERE id = ?");
+        $bk->execute([$bookingId]);
+        $row = $bk->fetch();
+        if (!$row) return;
+
+        $status = $status ?? (string) $row['status'];
+        $total  = round((float) $row['total_price'], 2);
+        // Earnings are recognised on exactly the same event as revenue.
+        $target = $status === 'completed' ? 'earned' : 'pending';
+
+        $sel = $db->prepare("
+            SELECT ba.id, ba.pay_model, ba.commission_pct, ba.hourly_rate,
+                   ba.hours_planned, ba.hours_worked,
+                   s.default_commission_pct, s.default_hourly_rate
+            FROM booking_assignments ba
+            JOIN stylists s ON s.id = ba.stylist_id
+            WHERE ba.booking_id = ? AND ba.payout_id IS NULL AND ba.earnings_status <> 'void'
+        ");
+        $sel->execute([$bookingId]);
+        $rows = $sel->fetchAll();
+        if (!$rows) return;
+
+        $upd = $db->prepare("UPDATE booking_assignments
+                             SET earnings_base = ?, earnings_amount = ?, earnings_status = ?
+                             WHERE id = ?");
+        foreach ($rows as $a) {
+            $calc = computeAssignmentEarnings($a, $total);
+            $upd->execute([$calc['base'], $calc['amount'], $target, (int) $a['id']]);
+        }
+    } catch (Throwable $e) {
+        error_log('recalcBookingAssignments(' . $bookingId . '): ' . $e->getMessage());
     }
 }
