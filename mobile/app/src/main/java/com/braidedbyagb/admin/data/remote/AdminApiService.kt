@@ -255,6 +255,45 @@ interface AdminApiService {
     @POST("api/admin.php?endpoint=discounts&action=toggle")
     suspend fun toggleDiscount(@Query("id") id: Int): Response<ServiceMutateResponse>
 
+    // ── Stylists (Phase E) ────────────────────────────────────
+    @GET("api/admin.php?endpoint=stylists")
+    suspend fun getStylists(): Response<StylistsResponse>
+
+    @POST("api/admin.php?endpoint=stylists")
+    suspend fun createStylist(@Body req: StylistRequest): Response<ServiceMutateResponse>
+
+    @POST("api/admin.php?endpoint=stylists&action=update")
+    suspend fun updateStylist(@Query("id") id: Int, @Body req: StylistRequest): Response<SuccessResponse>
+
+    @POST("api/admin.php?endpoint=stylists&action=toggle")
+    suspend fun toggleStylist(@Query("id") id: Int): Response<ServiceMutateResponse>
+
+    // ── Booking assignments (Phase E) ─────────────────────────
+    @GET("api/admin.php?endpoint=assignments")
+    suspend fun getAssignments(@Query("booking_id") bookingId: Int): Response<AssignmentsResponse>
+
+    @POST("api/admin.php?endpoint=assignments")
+    suspend fun createAssignment(
+        @Query("booking_id") bookingId: Int,
+        @Body req: AssignmentRequest
+    ): Response<ServiceMutateResponse>
+
+    @POST("api/admin.php?endpoint=assignments&action=update")
+    suspend fun updateAssignment(@Query("id") id: Int, @Body req: AssignmentRequest): Response<SuccessResponse>
+
+    @DELETE("api/admin.php?endpoint=assignments")
+    suspend fun deleteAssignment(@Query("id") id: Int): Response<SuccessResponse>
+
+    // ── Payouts (Phase E) ─────────────────────────────────────
+    @GET("api/admin.php?endpoint=payouts")
+    suspend fun getPayouts(): Response<PayoutsResponse>
+
+    @POST("api/admin.php?endpoint=payouts")
+    suspend fun createPayout(@Body req: PayoutRequest): Response<PayoutResult>
+
+    @POST("api/admin.php?endpoint=payouts&action=void")
+    suspend fun voidPayout(@Query("id") id: Int): Response<SuccessResponse>
+
     // ── Live Chat ─────────────────────────────────────────────
     @POST("api/livechat.php?action=register_token")
     suspend fun registerFcmToken(@Body req: RegisterTokenRequest): Response<SuccessResponse>

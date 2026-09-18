@@ -507,3 +507,110 @@ data class RegisterTokenRequest(val token: String)
 // ── Generic ──────────────────────────────────────────────
 data class SuccessResponse(val success: Boolean)
 data class ErrorResponse(val error: String)
+
+// ── Stylists (Phase E) ────────────────────────────────────
+data class Stylist(
+    val id: Int,
+    val name: String,
+    val email: String,
+    val phone: String? = null,
+    @SerializedName("stylist_type")           val stylistType: String = "braider",
+    @SerializedName("default_commission_pct") val defaultCommissionPct: Double = 0.0,
+    @SerializedName("default_hourly_rate")    val defaultHourlyRate: Double = 0.0,
+    @SerializedName("is_active")              val isActive: Int = 1,
+    @SerializedName("is_owner")               val isOwner: Int = 0,
+    @SerializedName("portal_enabled")         val portalEnabled: Int = 1
+)
+data class StylistsResponse(val stylists: List<Stylist>)
+data class StylistRequest(
+    val name: String,
+    val email: String,
+    val phone: String? = null,
+    @SerializedName("stylist_type")           val stylistType: String = "braider",
+    @SerializedName("default_commission_pct") val defaultCommissionPct: Double = 0.0,
+    @SerializedName("default_hourly_rate")    val defaultHourlyRate: Double = 0.0,
+    @SerializedName("portal_enabled")         val portalEnabled: Boolean = true,
+    @SerializedName("is_active")              val isActive: Boolean = true
+)
+
+// ── Booking assignments (Phase E) ─────────────────────────
+data class Assignment(
+    val id: Int,
+    @SerializedName("booking_id")      val bookingId: Int = 0,
+    @SerializedName("stylist_id")      val stylistId: Int = 0,
+    @SerializedName("stylist_name")    val stylistName: String = "",
+    @SerializedName("assign_role")     val role: String = "lead",
+    @SerializedName("pay_model")       val payModel: String = "commission",
+    @SerializedName("commission_pct")  val commissionPct: Double? = null,
+    @SerializedName("hourly_rate")     val hourlyRate: Double? = null,
+    @SerializedName("hours_planned")   val hoursPlanned: Double? = null,
+    @SerializedName("hours_worked")    val hoursWorked: Double? = null,
+    @SerializedName("earnings_base")   val earningsBase: Double? = null,
+    @SerializedName("earnings_amount") val earningsAmount: Double = 0.0,
+    @SerializedName("earnings_status") val earningsStatus: String = "pending",
+    @SerializedName("payout_id")       val payoutId: Int? = null,
+    val notes: String? = null
+)
+data class AssignmentBooking(
+    val id: Int,
+    @SerializedName("booking_ref") val ref: String = "",
+    @SerializedName("total_price") val totalPrice: Double = 0.0,
+    val status: String = ""
+)
+data class StylistOption(
+    val id: Int,
+    val name: String,
+    @SerializedName("default_commission_pct") val defaultCommissionPct: Double = 0.0,
+    @SerializedName("default_hourly_rate")    val defaultHourlyRate: Double = 0.0,
+    @SerializedName("is_owner")               val isOwner: Int = 0
+)
+data class AssignmentsResponse(
+    val booking: AssignmentBooking,
+    val assignments: List<Assignment>,
+    val stylists: List<StylistOption>
+)
+data class AssignmentRequest(
+    @SerializedName("stylist_id")     val stylistId: Int? = null,
+    @SerializedName("assign_role")    val role: String = "lead",
+    @SerializedName("pay_model")      val payModel: String = "commission",
+    @SerializedName("commission_pct") val commissionPct: Double? = null,
+    @SerializedName("hourly_rate")    val hourlyRate: Double? = null,
+    @SerializedName("hours_planned")  val hoursPlanned: Double? = null,
+    @SerializedName("hours_worked")   val hoursWorked: Double? = null,
+    val notes: String? = null
+)
+
+// ── Payouts (Phase E) ─────────────────────────────────────
+data class OwedStylist(
+    @SerializedName("stylist_id") val stylistId: Int,
+    val name: String,
+    val commission: Double = 0.0,
+    val hourly: Double = 0.0,
+    val total: Double = 0.0,
+    val count: Int = 0
+)
+data class PayoutRecord(
+    val id: Int,
+    @SerializedName("stylist_name")     val stylistName: String = "",
+    @SerializedName("payout_date")      val date: String = "",
+    val amount: Double = 0.0,
+    @SerializedName("commission_total") val commissionTotal: Double = 0.0,
+    @SerializedName("hourly_total")     val hourlyTotal: Double = 0.0,
+    val adjustment: Double = 0.0,
+    val method: String = "bank_transfer",
+    val reference: String? = null
+)
+data class PayoutsResponse(val owed: List<OwedStylist>, val history: List<PayoutRecord>)
+data class PayoutRequest(
+    @SerializedName("stylist_id")  val stylistId: Int,
+    val method: String = "bank_transfer",
+    val reference: String? = null,
+    val adjustment: Double = 0.0,
+    val notes: String? = null,
+    @SerializedName("payout_date") val payoutDate: String
+)
+data class PayoutResult(
+    val success: Boolean,
+    @SerializedName("payout_id") val payoutId: Int? = null,
+    val amount: Double? = null
+)
