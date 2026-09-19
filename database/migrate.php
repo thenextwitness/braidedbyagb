@@ -846,6 +846,197 @@ step('gallery_images table',
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
     $report);
 
+// ── Phase D1: training academy schema ──────────────────────
+// A trainee is the SAME customers row (one person, one login). Learner-only
+// fields live on a 1:1 satellite so customers/booking/shop code is untouched.
+step('trainee_profiles table',
+    fn() => tableExists($db, $dbName, 'trainee_profiles'),
+    fn() => $db->exec("CREATE TABLE trainee_profiles (
+        customer_id        INT UNSIGNED PRIMARY KEY,
+        date_of_birth      DATE DEFAULT NULL,
+        guardian_name      VARCHAR(120) DEFAULT NULL,
+        guardian_contact   VARCHAR(120) DEFAULT NULL,
+        guardian_consent   TINYINT(1) NOT NULL DEFAULT 0,
+        funding_body       VARCHAR(120) DEFAULT NULL,
+        safeguarding_notes TEXT DEFAULT NULL,
+        created_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at         DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_tp_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('courses table',
+    fn() => tableExists($db, $dbName, 'courses'),
+    fn() => $db->exec("CREATE TABLE courses (
+        id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        title          VARCHAR(160) NOT NULL,
+        slug           VARCHAR(180) NOT NULL UNIQUE,
+        level          ENUM('beginner','intermediate','advanced') NOT NULL DEFAULT 'beginner',
+        summary        VARCHAR(255) DEFAULT NULL,
+        description    TEXT DEFAULT NULL,
+        syllabus       TEXT DEFAULT NULL,
+        price          DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        deposit_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        image_url      VARCHAR(255) DEFAULT NULL,
+        is_active      TINYINT(1) NOT NULL DEFAULT 1,
+        display_order  INT NOT NULL DEFAULT 0,
+        created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_active (is_active, display_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_cohorts table',
+    fn() => tableExists($db, $dbName, 'course_cohorts'),
+    fn() => $db->exec("CREATE TABLE course_cohorts (
+        id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        course_id  INT UNSIGNED NOT NULL,
+        name       VARCHAR(120) NOT NULL,
+        start_date DATE DEFAULT NULL,
+        end_date   DATE DEFAULT NULL,
+        seats      INT UNSIGNED NOT NULL DEFAULT 8,
+        location   VARCHAR(160) DEFAULT NULL,
+        is_active  TINYINT(1) NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_course (course_id, is_active),
+        CONSTRAINT fk_cc_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_modules table',
+    fn() => tableExists($db, $dbName, 'course_modules'),
+    fn() => $db->exec("CREATE TABLE course_modules (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        course_id     INT UNSIGNED NOT NULL,
+        title         VARCHAR(160) NOT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_cm_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_lessons table',
+    fn() => tableExists($db, $dbName, 'course_lessons'),
+    fn() => $db->exec("CREATE TABLE course_lessons (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        module_id     INT UNSIGNED NOT NULL,
+        title         VARCHAR(160) NOT NULL,
+        content       MEDIUMTEXT DEFAULT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        is_preview    TINYINT(1) NOT NULL DEFAULT 0,
+        CONSTRAINT fk_cl_module FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_lesson_materials table',
+    fn() => tableExists($db, $dbName, 'course_lesson_materials'),
+    fn() => $db->exec("CREATE TABLE course_lesson_materials (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        lesson_id     INT UNSIGNED NOT NULL,
+        title         VARCHAR(160) NOT NULL,
+        url           VARCHAR(255) NOT NULL,
+        material_type ENUM('link','file','video') NOT NULL DEFAULT 'link',
+        display_order INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_clm_lesson FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// One enrolment = one person on one course (optionally a specific cohort).
+step('course_enrolments table',
+    fn() => tableExists($db, $dbName, 'course_enrolments'),
+    fn() => $db->exec("CREATE TABLE course_enrolments (
+        id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        customer_id    INT UNSIGNED NOT NULL,
+        course_id      INT UNSIGNED NOT NULL,
+        cohort_id      INT UNSIGNED DEFAULT NULL,
+        status         ENUM('pending','active','completed','withdrawn','waitlisted') NOT NULL DEFAULT 'pending',
+        payment_status ENUM('unpaid','deposit_paid','paid','waived') NOT NULL DEFAULT 'unpaid',
+        amount_due     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        amount_paid    DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        notes          VARCHAR(255) DEFAULT NULL,
+        enrolled_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at   DATETIME DEFAULT NULL,
+        updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_customer_cohort (customer_id, cohort_id),
+        KEY idx_customer (customer_id),
+        KEY idx_course_status (course_id, status),
+        CONSTRAINT fk_ce_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+        CONSTRAINT fk_ce_course   FOREIGN KEY (course_id)   REFERENCES courses(id)   ON DELETE CASCADE,
+        CONSTRAINT fk_ce_cohort   FOREIGN KEY (cohort_id)   REFERENCES course_cohorts(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_payments table',
+    fn() => tableExists($db, $dbName, 'course_payments'),
+    fn() => $db->exec("CREATE TABLE course_payments (
+        id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        enrolment_id      INT UNSIGNED NOT NULL,
+        amount            DECIMAL(10,2) NOT NULL,
+        type              ENUM('deposit','full','installment') NOT NULL DEFAULT 'full',
+        method            VARCHAR(40) NOT NULL DEFAULT 'stripe',
+        stripe_payment_intent VARCHAR(255) DEFAULT NULL,
+        status            ENUM('pending','succeeded','failed','refunded') NOT NULL DEFAULT 'pending',
+        journal_entry_id  INT UNSIGNED DEFAULT NULL,
+        created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_enrolment (enrolment_id),
+        KEY idx_intent (stripe_payment_intent),
+        CONSTRAINT fk_cp_enrolment FOREIGN KEY (enrolment_id) REFERENCES course_enrolments(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_lesson_progress table',
+    fn() => tableExists($db, $dbName, 'course_lesson_progress'),
+    fn() => $db->exec("CREATE TABLE course_lesson_progress (
+        id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        enrolment_id INT UNSIGNED NOT NULL,
+        lesson_id    INT UNSIGNED NOT NULL,
+        completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_enrol_lesson (enrolment_id, lesson_id),
+        CONSTRAINT fk_clp_enrolment FOREIGN KEY (enrolment_id) REFERENCES course_enrolments(id) ON DELETE CASCADE,
+        CONSTRAINT fk_clp_lesson    FOREIGN KEY (lesson_id)    REFERENCES course_lessons(id)    ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_attendance table',
+    fn() => tableExists($db, $dbName, 'course_attendance'),
+    fn() => $db->exec("CREATE TABLE course_attendance (
+        id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        enrolment_id INT UNSIGNED NOT NULL,
+        session_date DATE NOT NULL,
+        present      TINYINT(1) NOT NULL DEFAULT 1,
+        note         VARCHAR(160) DEFAULT NULL,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_enrol_session (enrolment_id, session_date),
+        CONSTRAINT fk_ca_enrolment FOREIGN KEY (enrolment_id) REFERENCES course_enrolments(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_certificates table',
+    fn() => tableExists($db, $dbName, 'course_certificates'),
+    fn() => $db->exec("CREATE TABLE course_certificates (
+        id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        enrolment_id        INT UNSIGNED NOT NULL,
+        certificate_ref     VARCHAR(32) NOT NULL UNIQUE,
+        name_on_certificate VARCHAR(160) NOT NULL,
+        issued_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_enrolment (enrolment_id),
+        CONSTRAINT fk_cert_enrolment FOREIGN KEY (enrolment_id) REFERENCES course_enrolments(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+// Course fees are their own income line; recognised when paid (paid up front).
+step('accounts 4030 Course Revenue',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM accounts WHERE code='4030'")->fetchColumn() > 0,
+    fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES ('4030','Course Revenue','income')"),
+    $report);
+step("journal_entries.source includes 'course_payment'",
+    fn() => enumHasValue($db, $dbName, 'journal_entries', 'source', 'course_payment'),
+    fn() => $db->exec("ALTER TABLE journal_entries MODIFY COLUMN source
+                       ENUM('booking_payment','expense','owner_draw','manual',
+                            'booking_deposit','booking_forfeit','booking_reversal',
+                            'stylist_payout','course_payment') NOT NULL"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
