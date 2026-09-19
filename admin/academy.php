@@ -240,7 +240,9 @@ function lvlLabel(string $l): string { return ucfirst($l); }
       </form>
 
       <!-- Curriculum -->
-      <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--admin-muted);margin:6px 0">Curriculum</h4>
+      <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--admin-muted);margin:6px 0">
+        Curriculum <a href="/admin/quizzes?course=<?= $id ?>" style="float:right;font-weight:400;text-transform:none;letter-spacing:normal">❓ Theory tests →</a>
+      </h4>
       <?php foreach (($modulesByCourse[$id] ?? []) as $m): $mid=(int)$m['id']; ?>
         <div style="border:1px solid var(--admin-border);border-radius:8px;padding:10px;margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">

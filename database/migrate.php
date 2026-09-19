@@ -1037,6 +1037,84 @@ step("journal_entries.source includes 'course_payment'",
                             'stylist_payout','course_payment') NOT NULL"),
     $report);
 
+// ── Phase D5: quiz engine ───────────────────────────────────
+// SECURITY: course_question_options.is_correct is server-only — it is NEVER
+// selected into any client-facing query/JSON. Grading happens server-side in
+// includes/quiz.php against the attempt, which is bound to the learner's own
+// enrolment by a random token.
+step('course_quizzes table',
+    fn() => tableExists($db, $dbName, 'course_quizzes'),
+    fn() => $db->exec("CREATE TABLE course_quizzes (
+        id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        course_id       INT UNSIGNED NOT NULL,
+        title           VARCHAR(160) NOT NULL,
+        pass_mark       TINYINT UNSIGNED NOT NULL DEFAULT 70,
+        time_limit_mins INT UNSIGNED DEFAULT NULL,
+        is_active       TINYINT(1) NOT NULL DEFAULT 1,
+        created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_course (course_id, is_active),
+        CONSTRAINT fk_cq_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_questions table',
+    fn() => tableExists($db, $dbName, 'course_questions'),
+    fn() => $db->exec("CREATE TABLE course_questions (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        quiz_id       INT UNSIGNED NOT NULL,
+        question_text TEXT NOT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        KEY idx_quiz (quiz_id),
+        CONSTRAINT fk_cqu_quiz FOREIGN KEY (quiz_id) REFERENCES course_quizzes(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_question_options table',
+    fn() => tableExists($db, $dbName, 'course_question_options'),
+    fn() => $db->exec("CREATE TABLE course_question_options (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        question_id   INT UNSIGNED NOT NULL,
+        option_text   VARCHAR(500) NOT NULL,
+        is_correct    TINYINT(1) NOT NULL DEFAULT 0,
+        display_order INT NOT NULL DEFAULT 0,
+        KEY idx_question (question_id),
+        CONSTRAINT fk_cqo_question FOREIGN KEY (question_id) REFERENCES course_questions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_quiz_attempts table',
+    fn() => tableExists($db, $dbName, 'course_quiz_attempts'),
+    fn() => $db->exec("CREATE TABLE course_quiz_attempts (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        quiz_id       INT UNSIGNED NOT NULL,
+        enrolment_id  INT UNSIGNED NOT NULL,
+        attempt_token CHAR(64) NOT NULL,
+        started_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at    DATETIME DEFAULT NULL,
+        submitted_at  DATETIME DEFAULT NULL,
+        score         TINYINT UNSIGNED DEFAULT NULL,
+        passed        TINYINT(1) DEFAULT NULL,
+        KEY idx_enrol (enrolment_id),
+        KEY idx_token (attempt_token),
+        CONSTRAINT fk_cqa_quiz     FOREIGN KEY (quiz_id)      REFERENCES course_quizzes(id)   ON DELETE CASCADE,
+        CONSTRAINT fk_cqa_enrol    FOREIGN KEY (enrolment_id) REFERENCES course_enrolments(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
+step('course_quiz_answers table',
+    fn() => tableExists($db, $dbName, 'course_quiz_answers'),
+    fn() => $db->exec("CREATE TABLE course_quiz_answers (
+        id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        attempt_id  INT UNSIGNED NOT NULL,
+        question_id INT UNSIGNED NOT NULL,
+        option_id   INT UNSIGNED DEFAULT NULL,
+        is_correct  TINYINT(1) NOT NULL DEFAULT 0,
+        UNIQUE KEY uniq_attempt_question (attempt_id, question_id),
+        KEY idx_attempt (attempt_id),
+        CONSTRAINT fk_cqan_attempt FOREIGN KEY (attempt_id) REFERENCES course_quiz_attempts(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

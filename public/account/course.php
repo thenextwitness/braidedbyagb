@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/portal-auth.php';
+require_once __DIR__ . '/../../includes/quiz.php';
 
 requireClient();
 $db  = getDB();
@@ -135,6 +136,28 @@ require_once __DIR__ . '/../../includes/account-head.php';
       </div>
     <?php endforeach; ?>
   <?php endforeach; endif; ?>
+
+  <?php $quizzes = quizzesForCourse($db, $courseId); if ($quizzes): ?>
+    <h2 style="font-family:'Montserrat',sans-serif;color:#7A0050;font-size:1.05rem;margin:24px 0 10px">Theory tests</h2>
+    <div class="account-list">
+      <?php foreach ($quizzes as $qz): $best = quizBestAttempt($db, (int)$qz['id'], $eid); ?>
+        <a class="account-row" style="text-decoration:none" href="/account/learning/<?= $eid ?>/quiz/<?= (int)$qz['id'] ?>">
+          <div>
+            <div class="title"><?= htmlspecialchars($qz['title']) ?></div>
+            <div class="meta">
+              <?= (int)$qz['question_count'] ?> question<?= (int)$qz['question_count'] === 1 ? '' : 's' ?> · pass <?= (int)$qz['pass_mark'] ?>%
+              <?= $qz['time_limit_mins'] ? ' · ' . (int)$qz['time_limit_mins'] . ' min' : '' ?>
+            </div>
+          </div>
+          <?php if ($best): ?>
+            <span class="<?= (int)$best['passed'] ? 'account-pill pill-completed' : 'account-pill pill-pending' ?>"><?= (int)$best['score'] ?>%<?= (int)$best['passed'] ? ' ✓' : '' ?></span>
+          <?php else: ?>
+            <span class="account-pill pill-pending">Start</span>
+          <?php endif; ?>
+        </a>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 
   <?php if ($attendance): ?>
     <h2 style="font-family:'Montserrat',sans-serif;color:#7A0050;font-size:1.05rem;margin:24px 0 10px">Attendance</h2>

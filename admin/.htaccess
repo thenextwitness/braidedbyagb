@@ -40,6 +40,7 @@ RewriteRule ^payouts/?$           /admin/payouts.php [L]
 RewriteRule ^gallery/?$           /admin/gallery.php [L]
 RewriteRule ^academy/?$           /admin/academy.php [L]
 RewriteRule ^enrolments/?$        /admin/enrolments.php [L]
+RewriteRule ^quizzes/?$           /admin/quizzes.php [L,QSA]
 
 # Block direct PHP file access from outside
 <FilesMatch "\.php$">

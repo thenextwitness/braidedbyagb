@@ -50,6 +50,7 @@ RewriteRule ^app/?$ public/app.php [L]
 # The {ref} detail rule must precede the plain bookings-list rule.
 RewriteRule ^account/bookings/([A-Za-z0-9-]+)/?$ public/account/booking.php?ref=$1 [L,QSA]
 RewriteRule ^account/bookings/?$ public/account/bookings.php [L,QSA]
+RewriteRule ^account/learning/([0-9]+)/quiz/([0-9]+)/?$ public/account/quiz.php?e=$1&quiz=$2 [L,QSA]
 RewriteRule ^account/learning/([0-9]+)/?$ public/account/course.php?e=$1 [L,QSA]
 RewriteRule ^account/learning/?$ public/account/learning.php [L,QSA]
 RewriteRule ^account/orders/?$ public/account/orders.php [L,QSA]
@@ -110,6 +111,7 @@ RewriteRule ^admin/payouts/?$ admin/payouts.php [L]
 RewriteRule ^admin/gallery/?$ admin/gallery.php [L]
 RewriteRule ^admin/academy/?$ admin/academy.php [L]
 RewriteRule ^admin/enrolments/?$ admin/enrolments.php [L]
+RewriteRule ^admin/quizzes/?$ admin/quizzes.php [L,QSA]
 
 # Security headers
 <IfModule mod_headers.c>
