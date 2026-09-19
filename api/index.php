@@ -1134,6 +1134,118 @@ switch ($endpoint) {
         }
         break;
 
+    // ── COURSE ENROLMENT INTENT (Phase D3) ────────────────────────────
+    // Validates the public enrolment form, creates the customer + trainee
+    // profile + enrolment + pending payment, then returns a Stripe client
+    // secret (full payment). Under-18 requires guardian consent. Seats are
+    // checked inside a FOR UPDATE txn so the last seat can't oversell.
+    case 'course-enrol-intent':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
+        $body     = json_decode(file_get_contents('php://input'), true) ?? [];
+        $courseId = (int)($body['course_id'] ?? 0);
+        $cohortId = ($body['cohort_id'] ?? '') === '' ? null : (int)$body['cohort_id'];
+        $name     = trim(sanitize($body['name'] ?? ''));
+        $email    = strtolower(trim((string)($body['email'] ?? '')));
+        $dob      = trim((string)($body['date_of_birth'] ?? ''));
+        $gName    = trim(sanitize($body['guardian_name'] ?? ''));
+        $gContact = trim(sanitize($body['guardian_contact'] ?? ''));
+        $gConsent = !empty($body['guardian_consent']);
+
+        if ($name === '' || !validateEmail($email)) jsonResponse(['error' => 'Please enter your name and a valid email.'], 400);
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob) || !strtotime($dob)) jsonResponse(['error' => 'Please enter a valid date of birth.'], 400);
+
+        $db = getDB();
+        $cs = $db->prepare("SELECT * FROM courses WHERE id=? AND is_active=1");
+        $cs->execute([$courseId]);
+        $course = $cs->fetch();
+        if (!$course) jsonResponse(['error' => 'That course is not available.'], 404);
+
+        $under18 = strtotime($dob) > strtotime('-18 years');
+        if ($under18 && ($gName === '' || $gContact === '' || !$gConsent)) {
+            jsonResponse(['error' => 'A parent/guardian name, contact and consent are required for under-18s.'], 400);
+        }
+
+        $price = round((float)$course['price'], 2);
+        $pence = (int) round($price * 100);
+        require_once __DIR__ . '/../includes/courses.php';
+
+        $db->beginTransaction();
+        try {
+            // Resolve or create the customer (a trainee is just a customer).
+            $q = $db->prepare("SELECT id FROM customers WHERE email=?"); $q->execute([$email]);
+            $customerId = (int)($q->fetchColumn() ?: 0);
+            if (!$customerId) {
+                $db->prepare("INSERT INTO customers (name,email) VALUES (?,?)")->execute([$name, $email]);
+                $customerId = (int)$db->lastInsertId();
+            }
+            // Learner profile (DOB + guardian) — created/updated lazily.
+            $db->prepare("INSERT INTO trainee_profiles (customer_id,date_of_birth,guardian_name,guardian_contact,guardian_consent)
+                          VALUES (?,?,?,?,?)
+                          ON DUPLICATE KEY UPDATE date_of_birth=VALUES(date_of_birth), guardian_name=VALUES(guardian_name),
+                            guardian_contact=VALUES(guardian_contact), guardian_consent=VALUES(guardian_consent)")
+               ->execute([$customerId, $dob, $gName ?: null, $gContact ?: null, $gConsent ? 1 : 0]);
+
+            if ($cohortId !== null) {
+                $co = $db->prepare("SELECT id FROM course_cohorts WHERE id=? AND course_id=? AND is_active=1 FOR UPDATE");
+                $co->execute([$cohortId, $courseId]);
+                if (!$co->fetch()) { $db->rollBack(); jsonResponse(['error' => 'That cohort is not available.'], 409); }
+            }
+
+            // Reuse an unpaid pending enrolment for the same course+cohort; block if already enrolled.
+            $ex = $db->prepare("SELECT id, status, payment_status FROM course_enrolments
+                                WHERE customer_id=? AND course_id=? AND cohort_id <=> ? LIMIT 1");
+            $ex->execute([$customerId, $courseId, $cohortId]);
+            $existing = $ex->fetch();
+            if ($existing && (in_array($existing['status'], ['active','completed'], true) || $existing['payment_status'] === 'paid')) {
+                $db->rollBack(); jsonResponse(['error' => 'You are already enrolled on this course.'], 409);
+            }
+            if ($existing) {
+                $enrolId = (int)$existing['id'];
+                $db->prepare("UPDATE course_enrolments SET amount_due=? WHERE id=?")->execute([$price, $enrolId]);
+            } else {
+                if ($cohortId !== null && cohortSeatsLeft($db, $cohortId) < 1) {
+                    $db->rollBack(); jsonResponse(['error' => 'Sorry, that cohort is now full.'], 409);
+                }
+                $db->prepare("INSERT INTO course_enrolments (customer_id,course_id,cohort_id,status,payment_status,amount_due)
+                              VALUES (?,?,?,?,?,?)")
+                   ->execute([$customerId,$courseId,$cohortId,'pending','unpaid',$price]);
+                $enrolId = (int)$db->lastInsertId();
+            }
+
+            // Free course → enrol immediately, no payment.
+            if ($pence < 30) {
+                $db->prepare("UPDATE course_enrolments SET status='active', payment_status='paid' WHERE id=?")->execute([$enrolId]);
+                $db->commit();
+                jsonResponse(['success' => true, 'free' => true, 'enrolment_id' => $enrolId]);
+            }
+
+            $db->prepare("INSERT INTO course_payments (enrolment_id,amount,type,method,status) VALUES (?,?,?,?,'pending')")
+               ->execute([$enrolId, $price, 'full', 'stripe']);
+            $paymentId = (int)$db->lastInsertId();
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('course-enrol-intent error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Could not start enrolment. Please try again.'], 500);
+        }
+
+        if (!stripeConfigured()) jsonResponse(['error' => 'Card payment is not configured.'], 500);
+        try {
+            $intent = stripeCreatePaymentIntent($pence, 'gbp', [
+                'kind'         => 'course',
+                'payment_id'   => $paymentId,
+                'enrolment_id' => $enrolId,
+                'course_id'    => $courseId,
+            ], 'course_' . $paymentId);
+            $secret = $intent['client_secret'] ?? null;
+            if (!$secret) throw new RuntimeException('No client secret');
+            jsonResponse(['success' => true, 'client_secret' => $secret, 'enrolment_id' => $enrolId, 'title' => $course['title']]);
+        } catch (Throwable $e) {
+            error_log('course-enrol-intent PI error: ' . $e->getMessage());
+            jsonResponse(['error' => 'Payment could not be initiated. Please try again.'], 500);
+        }
+        break;
+
     // ── FINALIZE PAYMENT (return-page fast path) ──────────────────────
     // Called by the confirmation pages after the customer returns from a
     // redirect payment method. Verifies the PaymentIntent server-side and

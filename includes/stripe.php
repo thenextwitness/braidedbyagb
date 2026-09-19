@@ -150,6 +150,7 @@ function finalizeStripePayment(PDO $db, array $intent, string $confirmedBy): arr
         case 'cart':        return finalizeCartPayment($db, $piId, $meta, $confirmedBy);
         case 'pay-booking': return finalizePayBookingPayment($db, $piId, $meta, $confirmedBy);
         case 'order':       return finalizeOrderPayment($db, $piId, $meta, $confirmedBy);
+        case 'course':      return finalizeCoursePayment($db, $piId, $meta, $confirmedBy);
         default:
             error_log("finalizeStripePayment: unknown/empty kind for PI {$piId}");
             return ['finalized' => false, 'reason' => 'unknown_kind', 'kind' => $kind];
@@ -307,6 +308,46 @@ function finalizePayBookingPayment(PDO $db, string $piId, array $meta, string $c
         }
     }
     return ['finalized' => true, 'already' => !$transitioned, 'ref' => $bk['booking_ref']];
+}
+
+// ── Course enrolment (Phase D3) ─────────────────────────────
+// metadata: kind=course, payment_id (the pending course_payments row),
+// enrolment_id. Marks the payment succeeded, activates the enrolment, posts the
+// fee to 4030 and refreshes payment status. Idempotent (FOR UPDATE + guard).
+function finalizeCoursePayment(PDO $db, string $piId, array $meta, string $confirmedBy): array {
+    $paymentId = (int) ($meta['payment_id'] ?? 0);
+    if ($paymentId <= 0) return ['finalized' => false, 'reason' => 'no_payment_id'];
+    require_once __DIR__ . '/courses.php';
+
+    $transitioned = false; $enrolmentId = 0;
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare("SELECT * FROM course_payments WHERE id = ? FOR UPDATE");
+        $stmt->execute([$paymentId]);
+        $pay = $stmt->fetch();
+        if (!$pay) { $db->rollBack(); return ['finalized' => false, 'reason' => 'not_found']; }
+        $enrolmentId = (int) $pay['enrolment_id'];
+
+        if (($pay['status'] ?? '') !== 'succeeded') {
+            $transitioned = true;
+            $db->prepare("UPDATE course_payments SET status='succeeded', stripe_payment_intent=? WHERE id=?")
+               ->execute([$piId, $paymentId]);
+            $db->prepare("UPDATE course_enrolments SET status='active' WHERE id=? AND status IN ('pending','waitlisted')")
+               ->execute([$enrolmentId]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('finalizeCoursePayment error: ' . $e->getMessage());
+        throw $e;
+    }
+
+    if ($transitioned) {
+        // Post to the ledger + derive payment_status (both idempotent). Non-fatal.
+        try { journalCoursePayment($db, $paymentId); refreshEnrolmentPayment($db, $enrolmentId); }
+        catch (Throwable $e) { error_log('finalizeCoursePayment post-commit: ' . $e->getMessage()); }
+    }
+    return ['finalized' => true, 'already' => !$transitioned, 'enrolment_id' => $enrolmentId];
 }
 
 // ── Shop order (checkout.php) ───────────────────────────────

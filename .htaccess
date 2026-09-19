@@ -19,6 +19,10 @@ RewriteRule ^review/?$ public/review.php [L,QSA]
 RewriteRule ^custom-request/?$ public/custom-request.php [L,QSA]
 RewriteRule ^services/?$ public/services.php [L]
 RewriteRule ^gallery/?$ public/gallery.php [L]
+RewriteRule ^academy/?$ public/academy.php [L]
+RewriteRule ^academy/enrolled/?$ public/course-enrolled.php [L,QSA]
+RewriteRule ^academy/([a-z0-9-]+)/enrol/?$ public/course-enrol.php?slug=$1 [L,QSA]
+RewriteRule ^academy/([a-z0-9-]+)/?$ public/course.php?slug=$1 [L,QSA]
 RewriteRule ^services/([a-z0-9-]+)/?$ public/service-detail.php?slug=$1 [L,QSA]
 
 # Direct payment link (admin-generated)
