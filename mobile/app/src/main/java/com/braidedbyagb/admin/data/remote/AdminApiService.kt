@@ -1,6 +1,8 @@
 package com.braidedbyagb.admin.data.remote
 
 import com.braidedbyagb.admin.data.model.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -293,6 +295,24 @@ interface AdminApiService {
 
     @POST("api/admin.php?endpoint=payouts&action=void")
     suspend fun voidPayout(@Query("id") id: Int): Response<SuccessResponse>
+
+    // ── Gallery (Phase E4) ────────────────────────────────────
+    @GET("api/admin.php?endpoint=gallery")
+    suspend fun getGallery(): Response<GalleryResponse>
+
+    @Multipart
+    @POST("api/admin.php?endpoint=gallery")
+    suspend fun uploadGalleryImage(
+        @Part image: MultipartBody.Part,
+        @Part("service_id") serviceId: RequestBody?,
+        @Part("caption") caption: RequestBody?
+    ): Response<ServiceMutateResponse>
+
+    @POST("api/admin.php?endpoint=gallery&action=update")
+    suspend fun updateGalleryImage(@Query("id") id: Int, @Body req: GalleryUpdateRequest): Response<SuccessResponse>
+
+    @DELETE("api/admin.php?endpoint=gallery")
+    suspend fun deleteGalleryImage(@Query("id") id: Int): Response<SuccessResponse>
 
     // ── Live Chat ─────────────────────────────────────────────
     @POST("api/livechat.php?action=register_token")

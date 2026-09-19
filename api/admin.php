@@ -1153,6 +1153,52 @@ switch ($endpoint) {
         }
         http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
 
+    // ── GALLERY (Phase E4) ────────────────────────────────────
+    // GET    /api/admin/gallery                → images + active services
+    // POST   /api/admin/gallery (multipart)    → upload image (file + fields)
+    // POST   /api/admin/gallery/{id}/update    { caption, service_id, is_active, display_order }
+    // DELETE /api/admin/gallery/{id}
+    case 'gallery':
+        requireAuth();
+        require_once __DIR__ . '/../includes/helpers.php';
+        $db = getDB();
+
+        if ($method === 'GET') {
+            $images = $db->query("SELECT g.*, s.name AS service_name
+                                  FROM gallery_images g LEFT JOIN services s ON s.id=g.service_id
+                                  ORDER BY g.is_active DESC, g.display_order ASC, g.id DESC")->fetchAll();
+            $services = $db->query("SELECT id, name FROM services WHERE is_active=1 ORDER BY name")->fetchAll();
+            echo json_encode(['images' => $images, 'services' => $services]); exit;
+        }
+        if ($method === 'POST' && !$id) {
+            // Multipart upload: fields arrive in $_POST, the file in $_FILES.
+            if (empty($_FILES['image']['name']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400); echo json_encode(['error' => 'No image uploaded']); exit;
+            }
+            $url = uploadImage($_FILES['image'], 'gallery');
+            if (!$url) { http_response_code(400); echo json_encode(['error' => 'Upload failed (JPG/PNG/WebP, max 5MB)']); exit; }
+            $serviceId = ($_POST['service_id'] ?? '') === '' ? null : (int)$_POST['service_id'];
+            $caption   = trim($_POST['caption'] ?? '');
+            $max = (int)$db->query("SELECT COALESCE(MAX(display_order),0) FROM gallery_images")->fetchColumn();
+            $db->prepare("INSERT INTO gallery_images (service_id,image_url,caption,display_order,is_active) VALUES (?,?,?,?,1)")
+               ->execute([$serviceId, $url, $caption, $max + 1]);
+            echo json_encode(['success' => true, 'id' => (int)$db->lastInsertId(), 'image_url' => $url]); exit;
+        }
+        if ($method === 'POST' && $id && $action === 'update') {
+            $serviceId = ($body['service_id'] ?? '') === '' || ($body['service_id'] ?? null) === null ? null : (int)$body['service_id'];
+            $caption   = trim($body['caption'] ?? '');
+            $active    = !empty($body['is_active']) ? 1 : 0;
+            $order     = (int)($body['display_order'] ?? 0);
+            $db->prepare("UPDATE gallery_images SET service_id=?, caption=?, is_active=?, display_order=? WHERE id=?")
+               ->execute([$serviceId, $caption, $active, $order, $id]);
+            echo json_encode(['success' => true]); exit;
+        }
+        if ($method === 'DELETE' && $id) {
+            $db->prepare("DELETE FROM gallery_images WHERE id=?")->execute([$id]);
+            echo json_encode(['success' => true]); exit;
+        }
+        http_response_code(405); echo json_encode(['error' => 'Method not allowed']); exit;
+
     // ── SERVICES ─────────────────────────────────────────────
     case 'services':
         requireAuth();

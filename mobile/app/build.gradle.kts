@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.security.crypto)
     implementation(libs.kotlinx.coroutines)
+    // Coil — remote image loading in Compose (gallery)
+    implementation(libs.coil.compose)
     // Stripe Terminal SDK v5 — Tap to Pay on Android (Maven Central)
     implementation("com.stripe:stripeterminal:5.4.1")
     // Room — local SQLite cache

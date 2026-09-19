@@ -614,3 +614,22 @@ data class PayoutResult(
     @SerializedName("payout_id") val payoutId: Int? = null,
     val amount: Double? = null
 )
+
+// ── Gallery (Phase E4) ────────────────────────────────────
+data class GalleryImage(
+    val id: Int,
+    @SerializedName("image_url")    val imageUrl: String = "",
+    val caption: String? = null,
+    @SerializedName("service_id")   val serviceId: Int? = null,
+    @SerializedName("service_name") val serviceName: String? = null,
+    @SerializedName("display_order") val displayOrder: Int = 0,
+    @SerializedName("is_active")    val isActive: Int = 1
+)
+data class GalleryServiceOption(val id: Int, val name: String)
+data class GalleryResponse(val images: List<GalleryImage>, val services: List<GalleryServiceOption>)
+data class GalleryUpdateRequest(
+    @SerializedName("service_id")    val serviceId: Int? = null,
+    val caption: String? = null,
+    @SerializedName("is_active")     val isActive: Boolean = true,
+    @SerializedName("display_order") val displayOrder: Int = 0
+)
