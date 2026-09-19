@@ -38,6 +38,8 @@ RewriteRule ^addons/?$            /admin/addons.php [L]
 RewriteRule ^stylists/?$          /admin/stylists.php [L]
 RewriteRule ^payouts/?$           /admin/payouts.php [L]
 RewriteRule ^gallery/?$           /admin/gallery.php [L]
+RewriteRule ^academy/?$           /admin/academy.php [L]
+RewriteRule ^enrolments/?$        /admin/enrolments.php [L]
 
 # Block direct PHP file access from outside
 <FilesMatch "\.php$">

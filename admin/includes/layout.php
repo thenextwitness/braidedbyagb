@@ -169,6 +169,16 @@ try {
       </div>
 
       <div class="admin-nav-section">
+        <p class="admin-nav-label">Academy</p>
+        <a href="/admin/academy" class="admin-nav-link <?= $currentPage === 'academy' ? 'active' : '' ?>">
+          <span class="nav-icon">🎓</span> Courses
+        </a>
+        <a href="/admin/enrolments" class="admin-nav-link <?= $currentPage === 'enrolments' ? 'active' : '' ?>">
+          <span class="nav-icon">📝</span> Enrolments
+        </a>
+      </div>
+
+      <div class="admin-nav-section">
         <p class="admin-nav-label">Finance</p>
         <a href="/admin/accounting" class="admin-nav-link <?= $currentPage === 'accounting' ? 'active' : '' ?>">
           <span class="nav-icon">💰</span> Accounting
