@@ -8,6 +8,7 @@ $activeTab = $activeTab ?? '';
 $accountTabs = [
     '/account'          => 'Dashboard',
     '/account/bookings' => 'Bookings',
+    '/account/learning' => 'Learning',
     '/account/orders'   => 'Orders',
     '/account/payments' => 'Payments',
     '/account/profile'  => 'Profile',
