@@ -323,6 +323,15 @@ $isGroup = count($groupBookings) > 1;
 </style>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
+<?php
+// Meta Pixel conversion — count a booking only when the deposit is actually paid
+// (a real, committed booking, not a price enquiry). Value = full booking total;
+// booking_ref de-duplicates on refresh. No-op unless a Pixel is configured.
+if (!empty($booking['deposit_paid'])) {
+    $convValue = isset($grpTotal) && $grpTotal > 0 ? (float)$grpTotal : (float)$booking['total_price'];
+    metaPixelTrack('Schedule', ['value' => round($convValue, 2), 'currency' => 'GBP'], (string)$booking['booking_ref']);
+}
+?>
 <script src="/assets/js/main.js"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'site_name', 'site_email', 'site_phone', 'site_address',
             'deposit_percent', 'booking_buffer_hours',
             'bank_account_name', 'bank_sort_code', 'bank_account_number',
-            'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url',
+            'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
             'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
             'auto_cancel_bank_transfer_hours',
@@ -423,6 +423,13 @@ $isError = str_starts_with($msg, 'ERROR:');
           <div class="admin-form-group">
             <label class="admin-label">Facebook URL</label>
             <input class="admin-input" type="url" name="facebook_url" value="<?= htmlspecialchars($g('facebook_url','')) ?>" placeholder="https://facebook.com/YourPage">
+          </div>
+        </div>
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-label">Meta (Facebook) Pixel ID</label>
+            <input class="admin-input" type="text" name="meta_pixel_id" value="<?= htmlspecialchars($g('meta_pixel_id','')) ?>" placeholder="e.g. 1234567890123456" inputmode="numeric">
+            <small style="color:var(--admin-muted)">From Meta Events Manager. Once set, the Pixel tracks page views and fires a booking conversion when a deposit is paid — so ads optimise for real bookings.</small>
           </div>
         </div>
       </div>
