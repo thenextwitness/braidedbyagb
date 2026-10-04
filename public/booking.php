@@ -544,10 +544,10 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
               <label class="form-label">Payment Details</label>
               <div id="stripe-payment-element"></div>
               <div id="stripe-card-errors" class="stripe-error" role="alert"></div>
+              <!-- Shown when Klarna/Clearpay is chosen: pay-in-3 covers the full price -->
+              <div id="bnpl-note" style="display:none;margin-top:var(--space-3);padding:var(--space-3) var(--space-4);background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius-md,8px);font-size:var(--text-sm);color:#166534"></div>
             </div>
-            <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" disabled onclick="submitStripePayment()">
-              Pay Deposit — <span id="stripe-deposit-amount"></span>
-            </button>
+            <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" disabled onclick="submitStripePayment()">Pay Deposit</button>
           </div>
 
           <!-- Bank transfer section -->
@@ -1232,7 +1232,9 @@ function currentTravelFee()  {
   const a = TRAVEL_FEES.find(f => f.key === travelAreaKey);
   return a ? a.fee : 0;
 }
-function amountDueNow()      { return cartDeposit() + currentTravelFee(); }
+// Charged now: deposit + travel — or, for pay-in-3 (Klarna/Clearpay), the full
+// services price + travel (the deposit becomes their first instalment).
+function amountDueNow()      { return (payFull ? cartTotal() : cartDeposit()) + currentTravelFee(); }
 function homeReady() {
   if (locationType !== 'home') return true;
   return !!travelAreaKey && document.getElementById('service-address').value.trim().length > 5;
@@ -1297,6 +1299,20 @@ function updatePayButtonState() {
 
 // ── Payment step ─────────────────────────────────────────
 let stripe, elements, paymentElement, paymentHandlersBound = false;
+// True while Klarna/Clearpay (pay in 3) is selected in the Payment Element.
+// Those methods finance the FULL price, so we charge it all now and the
+// customer owes nothing on the day. Card/PayPal/bank stay deposit-now.
+let payFull = false;
+const BNPL_TYPES = ['klarna', 'afterpay_clearpay'];
+
+// One place that sets the Stripe button text (rebuilt each time, so a failed
+// payment can never strip out the amount and break later re-renders).
+function setPayBtnLabel() {
+  const btn = document.getElementById('stripe-pay-btn');
+  if (!btn) return;
+  const amt = '£' + amountDueNow().toFixed(2);
+  btn.textContent = payFull ? ('Pay ' + amt + ' in 3 — full price') : ('Pay Deposit — ' + amt);
+}
 
 function renderPaymentStep() {
   const deposit = cartDeposit();
@@ -1332,9 +1348,10 @@ function renderPaymentStep() {
   });
 
   // ── Home service gate + travel fee ──────────────────────
-  const travelFee = currentTravelFee();
-  const amountNow = deposit + travelFee;   // deposit + full travel, paid now
-  const dueLater  = total - deposit;       // services balance (travel prepaid)
+  const travelFee  = currentTravelFee();
+  const depositNow = deposit + travelFee;              // deposit + full travel (card/PayPal/bank)
+  const amountNow  = payFull ? total + travelFee : depositNow;   // what the Stripe button charges
+  const dueLater   = payFull ? 0 : total - deposit;    // services balance (travel prepaid)
 
   const homeMinLabel = document.getElementById('home-min-label');
   if (homeMinLabel) homeMinLabel.textContent = HOME_SERVICE_MIN.toFixed(0);
@@ -1365,14 +1382,24 @@ function renderPaymentStep() {
       <div class="booking-summary-body">
         <div class="summary-row"><span class="label">Services</span><span class="value">£${total.toFixed(2)}</span></div>
         ${travelRow}
-        <div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>
-        <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? ' (deposit + travel)' : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
-        <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}</span></div>
+        ${payFull
+          ? `<div class="summary-row deposit"><span class="label">Paying in 3 (Klarna/Clearpay) — full price</span><span class="value">£${total.toFixed(2)}</span></div>`
+          : `<div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>`}
+        <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? (payFull ? ' (full price + travel)' : ' (deposit + travel)') : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
+        <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}${payFull ? ' — nothing to pay' : ''}</span></div>
       </div>
     </div>`;
 
-  document.getElementById('stripe-deposit-amount').textContent = '£' + amountNow.toFixed(2);
-  document.getElementById('bank-deposit-label').textContent    = '£' + amountNow.toFixed(2);
+  setPayBtnLabel();
+  // Bank transfer is never pay-in-3 — it always shows the deposit amount.
+  document.getElementById('bank-deposit-label').textContent    = '£' + depositNow.toFixed(2);
+  const bnplNote = document.getElementById('bnpl-note');
+  if (bnplNote) {
+    bnplNote.style.display = payFull ? 'block' : 'none';
+    bnplNote.textContent = payFull
+      ? '✓ Pay in 3 covers your full appointment price (£' + amountNow.toFixed(2) + ') in interest-free instalments — your deposit is the first instalment and there\'s nothing to pay on the day.'
+      : '';
+  }
 
   // Bank details — reference uses the payer's first name + first appointment date
   const firstDate = cart.length ? cart[0].date : '';
@@ -1383,7 +1410,7 @@ function renderPaymentStep() {
     <div class="bank-detail-row"><span>Sort Code:</span><strong>${BANK_SORT}</strong></div>
     <div class="bank-detail-row"><span>Account Number:</span><strong>${BANK_ACC}</strong></div>
     <div class="bank-detail-row"><span>Reference:</span><strong>${payerFirst}-${firstDate.replace(/-/g,'')}</strong></div>
-    <div class="bank-detail-row total"><span>Amount to Transfer:</span><strong style="color:var(--color-primary)">£${amountNow.toFixed(2)}</strong></div>
+    <div class="bank-detail-row total"><span>Amount to Transfer:</span><strong style="color:var(--color-primary)">£${depositNow.toFixed(2)}</strong></div>
     <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-4)">
       ⚠️ Please use your name as the payment reference. Your booking will be held for 24 hours pending confirmation of payment.
     </p>`;
@@ -1398,6 +1425,11 @@ function renderPaymentStep() {
     elements = stripe.elements({ mode: 'payment', amount: depositPence, currency: 'gbp', locale: 'en-GB' });
     paymentElement = elements.create('payment', { layout: 'tabs' });
     paymentElement.mount('#stripe-payment-element');
+    // Switching to/from Klarna or Clearpay flips between full-price and deposit.
+    paymentElement.on('change', function (e) {
+      const isBnpl = !!(e && e.value && BNPL_TYPES.indexOf(e.value.type) !== -1);
+      if (isBnpl !== payFull) { payFull = isBnpl; renderPaymentStep(); }
+    });
   } else {
     elements.update({ amount: depositPence });
   }
@@ -1441,6 +1473,7 @@ async function submitStripePayment() {
       body: JSON.stringify({
         payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
         payment_method: 'stripe',
+        pay_mode: payFull ? 'full' : 'deposit',   // pay-in-3 charges the full price
         items: buildCartItems(),
         ...homePayload()
       })
@@ -1468,10 +1501,10 @@ async function submitStripePayment() {
   }
 }
 
-function resetStripeBtn(depositLabel) {
+function resetStripeBtn() {
   const btn = document.getElementById('stripe-pay-btn');
   btn.disabled = false;
-  btn.textContent = 'Pay Deposit — ' + depositLabel;
+  setPayBtnLabel();
 }
 
 // ── Bank transfer submission ─────────────────────────────

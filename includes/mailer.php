@@ -141,6 +141,16 @@ HTML;
  * email); this is how they find out it exists and can sign in with an emailed
  * code — no forced sign-up, surfaced at the natural moment.
  */
+/**
+ * Customer-facing "balance due" text. A booking with nothing left to pay (e.g.
+ * paid in full via Klarna/Clearpay pay-in-3) says so plainly instead of a
+ * confusing "£0.00 (payable on the day)".
+ */
+function balanceDueText(float $balance, string $suffix = ''): string {
+    if ($balance <= 0.005) return 'Nothing to pay — paid in full ✓';
+    return formatPrice($balance) . ($suffix !== '' ? " ({$suffix})" : '');
+}
+
 function accountCtaHtml(): string {
     $url = SITE_URL . '/login';
     return <<<HTML
@@ -302,6 +312,7 @@ function emailBookingApproved(array $booking, array $customer, array $service, a
         $time    = formatTime($booking['booked_time']);
         $deposit = formatPrice((float)$booking['deposit_amount']);
         $balance = formatPrice((float)$booking['remaining_balance']);
+        $balanceTxt = balanceDueText((float)$booking['remaining_balance'], 'payable on the day');
         $total   = formatPrice((float)$booking['total_price']);
         $addonHtml = '';
         foreach ($addons as $a) {
@@ -320,7 +331,7 @@ function emailBookingApproved(array $booking, array $customer, array $service, a
     <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>Deposit Paid:</td><td class="gold-text">{$deposit} ✓</td></tr>
-    <tr><td>Balance Due:</td><td>{$balance} (payable on the day)</td></tr>
+    <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>
 {$locationBlock}
@@ -413,6 +424,7 @@ function emailReminder24hr(array $booking, array $customer, array $service): boo
         $date    = formatDate($booking['booked_date']);
         $time    = formatTime($booking['booked_time']);
         $balance = formatPrice((float)$booking['remaining_balance']);
+        $balanceTxt = balanceDueText((float)$booking['remaining_balance'], 'cash or bank transfer on the day');
         $content = <<<HTML
 <h2>See you tomorrow! 💕</h2>
 <p>Hi {$name}, just a friendly reminder that your appointment is <strong>tomorrow</strong>.</p>
@@ -421,7 +433,7 @@ function emailReminder24hr(array $booking, array $customer, array $service): boo
     <tr><td>Service:</td><td><strong>{$svc}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
     <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
-    <tr><td>Balance Due:</td><td>{$balance} (cash or bank transfer on the day)</td></tr>
+    <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>
 <div class="policy-box">
@@ -1060,6 +1072,7 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
         $time    = formatTime($booking['booked_time']);
         $deposit = formatPrice((float)$booking['deposit_amount']);
         $balance = formatPrice((float)$booking['remaining_balance']);
+        $balanceTxt = balanceDueText((float)$booking['remaining_balance']);
         $total   = formatPrice((float)$booking['total_price']);
         $paidOn  = date('j F Y \a\t g:i A');
         $txRef   = $stripeId ? sanitize($stripeId) : 'N/A';
@@ -1088,7 +1101,7 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
     <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>Deposit Paid:</td><td class="gold-text">{$deposit} ✓</td></tr>
-    <tr><td>Balance Due on Day:</td><td>{$balance}</td></tr>
+    <tr><td>Balance Due on Day:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>
 
@@ -1228,6 +1241,10 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
             $deposit = formatPrice((float)$it['deposit_amount']);
             $total   = formatPrice((float)$it['total_price']);
             $balance = formatPrice((float)$it['remaining_balance']);
+            // Pay-in-3 (Klarna/Clearpay) bookings are paid in full up front.
+            $itPaidFull = $paymentMethod !== 'bank_transfer' && (float)$it['remaining_balance'] <= 0.005;
+            $paidLbl    = $itPaidFull ? 'Paid in Full:' : 'Deposit Paid:';
+            $balanceTxt = $itPaidFull ? 'Nothing to pay on the day' : "{$balance} (on the day)";
             // Who the appointment is for — falls back to the payer when not set
             $who     = !empty($it['guest_name']) ? sanitize($it['guest_name']) : $name;
             $num     = $i + 1;
@@ -1241,8 +1258,8 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
     <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
     <tr><td>Total Price:</td><td>{$total}</td></tr>
-    <tr><td>Deposit Paid:</td><td class="gold-text">{$deposit} ✓</td></tr>
-    <tr><td>Balance Due:</td><td>{$balance} (on the day)</td></tr>
+    <tr><td>{$paidLbl}</td><td class="gold-text">{$deposit} ✓</td></tr>
+    <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>
 HTML;
@@ -1252,9 +1269,11 @@ HTML;
         $grpDeposit = formatPrice($totalDeposit);
         $grpBalance = formatPrice($totalBalance);
 
+        $grpPaidFull = $paymentMethod !== 'bank_transfer' && $totalBalance <= 0.005;
         $payLabel = $paymentMethod === 'bank_transfer'
             ? 'Deposit total to transfer'
-            : 'Deposit total paid';
+            : ($grpPaidFull ? 'Total paid in full' : 'Deposit total paid');
+        if ($grpPaidFull) $grpBalance = 'Nothing to pay on the day';
 
         $summaryBox = <<<HTML
 <div class="detail-box" style="border-left-color:#D4AF37">

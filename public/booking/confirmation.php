@@ -184,8 +184,9 @@ $isGroup = count($groupBookings) > 1;
         </div>
         <?php endforeach; ?>
         <div class="summary-row total"><span class="label">Combined Total</span><span class="value"><?= formatPrice($grpTotal) ?></span></div>
-        <div class="summary-row deposit"><span class="label">Deposit <?= $booking['deposit_paid'] ? 'Paid ✓' : 'Pending' ?></span><span class="value"><?= formatPrice($grpDeposit) ?></span></div>
-        <div class="summary-row"><span class="label">Balance on Days</span><span class="value"><?= formatPrice($grpTotal - $grpDeposit) ?></span></div>
+        <?php $grpPaidFull = $booking['deposit_paid'] && ($grpTotal - $grpDeposit) <= 0.005; ?>
+        <div class="summary-row deposit"><span class="label"><?= $grpPaidFull ? 'Paid in Full ✓' : ('Deposit ' . ($booking['deposit_paid'] ? 'Paid ✓' : 'Pending')) ?></span><span class="value"><?= formatPrice($grpDeposit) ?></span></div>
+        <div class="summary-row"><span class="label">Balance on Days</span><span class="value"><?= $grpPaidFull ? 'Nothing to pay' : formatPrice($grpTotal - $grpDeposit) ?></span></div>
       </div>
     </div>
     <?php else: ?>
@@ -213,13 +214,14 @@ $isGroup = count($groupBookings) > 1;
           <span class="label">Total Price</span>
           <span class="value"><?= formatPrice((float)$booking['total_price']) ?></span>
         </div>
+        <?php $paidFull = $booking['deposit_paid'] && (float)$booking['remaining_balance'] <= 0.005; ?>
         <div class="summary-row deposit">
-          <span class="label">Deposit <?= $booking['deposit_paid'] ? 'Paid ✓' : 'Pending' ?></span>
+          <span class="label"><?= $paidFull ? 'Paid in Full ✓' : ('Deposit ' . ($booking['deposit_paid'] ? 'Paid ✓' : 'Pending')) ?></span>
           <span class="value"><?= formatPrice((float)$booking['deposit_amount']) ?></span>
         </div>
         <div class="summary-row">
           <span class="label">Balance on Day</span>
-          <span class="value"><?= formatPrice((float)$booking['remaining_balance']) ?></span>
+          <span class="value"><?= $paidFull ? 'Nothing to pay' : formatPrice((float)$booking['remaining_balance']) ?></span>
         </div>
         <div class="summary-row">
           <span class="label">Status</span>

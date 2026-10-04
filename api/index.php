@@ -797,11 +797,19 @@ switch ($endpoint) {
             $travelFee = $travelFeeTable[$travelAreaKey];
         }
 
-        // Authoritative amount charged now (pence) = deposit + full travel fee.
-        // Matches the amount the Payment Element was mounted with client-side.
-        $depositTotal = 0.0;
-        foreach ($items as $it) $depositTotal += (float)($it['deposit'] ?? 0);
-        $chargeTotal  = $depositTotal + $travelFee;
+        // Authoritative amount charged now (pence) = deposit + full travel fee —
+        // or, when the customer chose a pay-in-3 method (Klarna/Clearpay), the FULL
+        // services price + travel: Klarna/Clearpay pay us in full and the customer
+        // repays them in 3, so the deposit is simply their first instalment and
+        // nothing is due on the day. Only honoured for card/Stripe payments.
+        // Matches the amount the Payment Element was updated to client-side.
+        $payFull      = $method === 'stripe' && (($data['pay_mode'] ?? '') === 'full');
+        $depositTotal = 0.0; $itemsTotal = 0.0;
+        foreach ($items as $it) {
+            $depositTotal += (float)($it['deposit'] ?? 0);
+            $itemsTotal   += (float)($it['total'] ?? 0);
+        }
+        $chargeTotal  = ($payFull ? $itemsTotal : $depositTotal) + $travelFee;
         $depositPence = (int) round($chargeTotal * 100);
         if ($method === 'stripe' && $depositPence < 30) {
             jsonResponse(['error' => 'Amount is too small to charge by card.'], 400);
@@ -819,6 +827,7 @@ switch ($endpoint) {
                 $intent = stripeCreatePaymentIntent($depositPence, 'gbp', [
                     'kind'      => 'cart',
                     'group_ref' => $groupRef,
+                    'pay_mode'  => $payFull ? 'full' : 'deposit',   // read by finalizeCartPayment
                     'source'    => 'braidedbyagb_booking',
                 ], 'cart_' . $groupRef);
                 $clientSecret = $intent['client_secret'] ?? null;

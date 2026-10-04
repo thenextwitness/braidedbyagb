@@ -176,6 +176,17 @@ function finalizeCartPayment(PDO $db, string $piId, array $meta, string $confirm
 
         if ($unpaid) {
             $transitioned = true;
+            // Pay-in-3 (Klarna/Clearpay) charged the FULL price: record each booking
+            // as paid in full (deposit_amount = total, nothing due on the day). Done
+            // before journalBookingDeposit() below so the whole amount is held in
+            // 2000 and released to revenue at completion by the existing hook.
+            if (($meta['pay_mode'] ?? '') === 'full') {
+                $db->prepare("UPDATE bookings SET deposit_amount = total_price, remaining_balance = 0 WHERE cart_group_ref = ?")
+                   ->execute([$groupRef]);
+                $db->prepare("UPDATE payments p JOIN bookings b ON b.id = p.booking_id
+                              SET p.amount = b.total_price WHERE p.stripe_id = ? AND p.type = 'deposit'")
+                   ->execute([$piId]);
+            }
             $db->prepare("UPDATE bookings SET deposit_paid = 1 WHERE cart_group_ref = ?")->execute([$groupRef]);
             $db->prepare("
                 UPDATE payments SET status = 'succeeded', confirmed_by = ?, confirmed_at = NOW()
