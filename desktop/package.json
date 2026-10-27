@@ -1,0 +1,43 @@
+{
+  "name": "braidedbyagb-admin",
+  "productName": "BraidedbyAGB Admin",
+  "version": "1.0.0",
+  "description": "BraidedbyAGB admin panel as a Windows desktop app",
+  "main": "main.js",
+  "author": "BraidedbyAGB",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "uk.co.braidedbyagb.admin",
+    "productName": "BraidedbyAGB Admin",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "offline.html",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BraidedbyAGB Admin"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
+  }
+}
