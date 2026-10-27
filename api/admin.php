@@ -1060,7 +1060,8 @@ switch ($endpoint) {
             $as->execute([$bid]);
             $stylists = $db->query("SELECT id, name, default_commission_pct, default_hourly_rate, is_owner
                                     FROM stylists WHERE is_active=1 ORDER BY is_owner DESC, name")->fetchAll();
-            echo json_encode(['booking' => $booking, 'assignments' => $as->fetchAll(), 'stylists' => $stylists]); exit;
+            echo json_encode(['booking' => $booking, 'assignments' => $as->fetchAll(), 'stylists' => $stylists,
+                              'enabled' => multiStylistEnabled()]); exit;
         }
         if ($method === 'POST' && !$id) {
             $bid = (int)($_GET['booking_id'] ?? ($body['booking_id'] ?? 0));

@@ -53,6 +53,9 @@ function slotCapacity(string $date): int {
     static $cache = [];
     if (isset($cache[$date])) return $cache[$date];
 
+    // Multi-stylist mode off (the default): a single chair, one booking per slot.
+    if (!multiStylistEnabled()) return $cache[$date] = 1;
+
     $db = getDB();
     try {
         $active = (int) $db->query("SELECT COUNT(*) FROM stylists WHERE is_active = 1")->fetchColumn();

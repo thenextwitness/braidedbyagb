@@ -586,6 +586,7 @@ function copyPayLink() {
 
 </div>
 
+<?php if (multiStylistEnabled()): /* stylist assignments only in multi-stylist mode */ ?>
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- Phase C4 — Stylists & Earnings                             -->
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -796,5 +797,7 @@ function stylistPick(sel){
 // Initialise every pay-model select on load (edit forms may start as hourly/none).
 document.querySelectorAll('.assign-form .pay-model').forEach(payModelToggle);
 </script>
+
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/layout-end.php'; ?>

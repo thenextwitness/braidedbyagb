@@ -80,6 +80,8 @@ function portalProviders(): array {
             'filter_sql' => 'is_active = 1 AND portal_enabled = 1',
         ],
     ];
+    // Multi-stylist mode off: stylists cannot sign in at all.
+    if (!function_exists('multiStylistEnabled') || !multiStylistEnabled()) unset($providers['stylist']);
     return $providers;
 }
 
@@ -154,6 +156,12 @@ function requireClient(): void {
 }
 function requireStylist(): void {
     portalResumeFromRemember();
+    // Mode switched off while a stylist was signed in: end that session.
+    if (isStylist() && function_exists('multiStylistEnabled') && !multiStylistEnabled()) {
+        portalLogout();
+        header('Location: /login');
+        exit;
+    }
     if (!isStylist()) {
         $_SESSION['portal_after_login'] = $_SERVER['REQUEST_URI'] ?? '/portal';
         header('Location: /login');

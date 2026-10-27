@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'admin_notify_evening',
             'admin_notify_30min',
             'loyalty_enabled',
+            'multi_stylist_enabled',
         ];
         foreach ($checkboxes as $key) {
             $val = isset($_POST[$key]) ? '1' : '0';
@@ -143,6 +144,7 @@ $isError = str_starts_with($msg, 'ERROR:');
     <a href="#email"          class="settings-nav-link">Email / SMTP</a>
     <a href="#reviews"        class="settings-nav-link">Reviews</a>
     <a href="#notifications"  class="settings-nav-link">Notifications</a>
+    <a href="#team"           class="settings-nav-link">Team</a>
     <a href="#social"         class="settings-nav-link">Social Links</a>
     <a href="#security"       class="settings-nav-link">Security</a>
   </nav>
@@ -407,6 +409,19 @@ $isError = str_starts_with($msg, 'ERROR:');
             <small style="color:var(--admin-text-muted);font-size:0.75rem">e.g. 500 = clients need at least 500 pts (= £5 off) before they can redeem</small>
           </div>
         </div>
+      </div>
+
+      <!-- Team / multi-stylist mode -->
+      <div class="settings-section admin-form-card" id="team">
+        <div class="settings-section-title">👥 Team (multi-stylist mode)</div>
+        <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" name="multi_stylist_enabled" <?= $g('multi_stylist_enabled','0') === '1' ? 'checked' : '' ?> style="margin-top:3px">
+          <span><strong>Multi-stylist mode</strong><br>
+            <small style="color:var(--admin-muted)">
+              <strong>Off (recommended while you work solo):</strong> one booking per time slot, and the stylist team, assignments, payouts and stylist logins are hidden.<br>
+              <strong>On:</strong> each time slot takes as many bookings as you have active stylists, and the Team menu (Stylists, Payouts) appears. Your data is kept either way.
+            </small></span>
+        </label>
       </div>
 
       <!-- Social -->

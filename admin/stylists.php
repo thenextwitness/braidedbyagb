@@ -13,6 +13,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
+if (!multiStylistEnabled()) { header('Location: /admin/settings#team'); exit; }   // multi-stylist mode off
 $db = getDB();
 
 $msg = ''; $error = '';

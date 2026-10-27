@@ -170,6 +170,16 @@ function waApplyTokens(string $s): string {
     ]);
 }
 
+/**
+ * Multi-stylist mode (Admin → Settings). OFF by default: one booking per time
+ * slot, and the stylist team, assignments, payouts and stylist portal are
+ * hidden everywhere. Data is kept; switching it on restores everything.
+ */
+function multiStylistEnabled(): bool {
+    try { return getSetting('multi_stylist_enabled', '0') === '1'; }
+    catch (Throwable $e) { return false; }
+}
+
 function setSetting(string $key, string $value): void {
     $db   = getDB();
     $stmt = $db->prepare("

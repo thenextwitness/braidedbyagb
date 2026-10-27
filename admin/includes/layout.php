@@ -148,6 +148,7 @@ try {
         </a>
       </div>
 
+      <?php if (multiStylistEnabled()): ?>
       <div class="admin-nav-section">
         <p class="admin-nav-label">Team</p>
         <a href="/admin/stylists" class="admin-nav-link <?= $currentPage === 'stylists' ? 'active' : '' ?>">
@@ -157,6 +158,7 @@ try {
           <span class="nav-icon">💸</span> Payouts
         </a>
       </div>
+      <?php endif; ?>
 
       <div class="admin-nav-section">
         <p class="admin-nav-label">Academy</p>
