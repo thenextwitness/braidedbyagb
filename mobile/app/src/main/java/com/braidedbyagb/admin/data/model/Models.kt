@@ -567,7 +567,8 @@ data class StylistOption(
 data class AssignmentsResponse(
     val booking: AssignmentBooking,
     val assignments: List<Assignment>,
-    val stylists: List<StylistOption>
+    val stylists: List<StylistOption>,
+    val enabled: Boolean = false   // multi-stylist mode (Admin → Settings → Team)
 )
 data class AssignmentRequest(
     @SerializedName("stylist_id")     val stylistId: Int? = null,

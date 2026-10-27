@@ -82,6 +82,7 @@ fun BookingDetailScreen(
     var stylistOptions   by remember { mutableStateOf<List<StylistOption>>(emptyList()) }
     var editingAssignment by remember { mutableStateOf<Assignment?>(null) }
     var showAssign       by remember { mutableStateOf(false) }
+    var stylistMode      by remember { mutableStateOf(false) }   // multi-stylist mode (server setting)
 
     fun reload() { scope.launch {
         // Cache-first
@@ -109,6 +110,7 @@ fun BookingDetailScreen(
         try {
             val ares = ApiClient.api.getAssignments(bookingId)
             if (ares.isSuccessful && ares.body() != null) {
+                stylistMode    = ares.body()!!.enabled
                 assignments    = ares.body()!!.assignments
                 stylistOptions = ares.body()!!.stylists
             }
@@ -495,8 +497,8 @@ fun BookingDetailScreen(
                         }
                     }
 
-                    // Stylists & earnings (Phase E)
-                    item {
+                    // Stylists & earnings — only in multi-stylist mode
+                    if (stylistMode) item {
                         InfoCard("Stylists & Earnings") {
                             if (assignments.isEmpty()) {
                                 Text("No stylist assigned yet.", fontSize = 13.sp, color = TextMuted)

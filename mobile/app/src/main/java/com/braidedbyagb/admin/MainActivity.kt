@@ -65,7 +65,7 @@ object GalleryRoute    { const val route = "gallery_admin" }
 
 val NAV_ITEMS = listOf(
     Screen.Dashboard, Screen.Bookings, Screen.Customers,
-    Screen.Chat, Screen.Settings
+    Screen.Settings   // Chat tab removed: website enquiries are WhatsApp-only now
 )
 
 class MainActivity : ComponentActivity() {
@@ -132,19 +132,8 @@ fun AppRoot(
         }
     }
 
-    // Unread chat badge count — polled every 30 s
-    var chatUnreadCount by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            try {
-                val res = ApiClient.api.getChatSessions(status = "active")
-                if (res.isSuccessful) {
-                    chatUnreadCount = res.body()?.count { it.unreadAdmin > 0 } ?: 0
-                }
-            } catch (_: Exception) {}
-            delay(30_000)
-        }
-    }
+    // (Live chat removed — no unread-chat polling.)
+    val chatUnreadCount = 0
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route

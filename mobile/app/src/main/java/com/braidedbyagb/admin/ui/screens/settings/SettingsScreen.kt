@@ -351,7 +351,8 @@ fun SettingsScreen(
                     }
                 }
 
-                item {
+                // Team tools only in multi-stylist mode (Admin → Settings → Team on the web)
+                if (settings["multi_stylist_enabled"] == "1") item {
                     Card(onClick = onManageStylists, modifier = Modifier.fillMaxWidth()) {
                         Row(
                             Modifier.padding(14.dp).fillMaxWidth(),
@@ -366,7 +367,7 @@ fun SettingsScreen(
                         }
                     }
                 }
-                item {
+                if (settings["multi_stylist_enabled"] == "1") item {
                     Card(onClick = onManagePayouts, modifier = Modifier.fillMaxWidth()) {
                         Row(
                             Modifier.padding(14.dp).fillMaxWidth(),
@@ -441,22 +442,6 @@ fun SettingsScreen(
                         }
                     }
                 }
-                item {
-                    Card(onClick = onManageChat, modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.padding(14.dp).fillMaxWidth(),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text("Live Chat", fontWeight = FontWeight.Medium, fontSize = 13.sp)
-                                Text("View and respond to website visitor conversations", fontSize = 12.sp, color = TextMuted)
-                            }
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = TextMuted, modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-
                 // ── Data Maintenance ─────────────────────────────────────
                 item {
                     Text("Data", fontWeight = FontWeight.Bold, fontSize = 14.sp,
