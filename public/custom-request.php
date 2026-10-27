@@ -365,7 +365,7 @@ $pageTitle = 'Custom Style Request';
           <a href="/booking" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,var(--color-primary),#9400d3);color:#fff;font-family:var(--font-primary);font-weight:700;font-size:0.82rem;letter-spacing:0.08em;text-decoration:none;border-radius:8px;">
             Browse Standard Services
           </a>
-          <a href="https://wa.me/447769064971" target="_blank" rel="noopener"
+          <a href="<?= waUrl() ?>" target="_blank" rel="noopener"
              style="display:inline-block;padding:12px 28px;background:#25D366;color:#fff;font-family:var(--font-primary);font-weight:700;font-size:0.82rem;letter-spacing:0.08em;text-decoration:none;border-radius:8px;">
             💬 WhatsApp Us
           </a>

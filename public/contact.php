@@ -103,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div>
               <p class="contact-info-title">Phone / WhatsApp</p>
               <p class="contact-info-value">
-                <a href="tel:07769064971">07769 064 971</a><br>
-                <a href="https://wa.me/447769064971">Chat on WhatsApp</a>
+                <a href="tel:<?= waNumberLocal() ?>"><?= waNumberDisplay() ?></a><br>
+                <a href="<?= waUrl() ?>">Chat on WhatsApp</a>
               </p>
             </div>
           </div>
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div style="margin-top:var(--space-8);padding:var(--space-6);background:var(--color-bg-light);border-radius:var(--border-radius-lg);border:1px solid var(--color-border)">
             <p style="font-family:var(--font-primary);font-weight:700;color:var(--color-deep-purple);margin-bottom:var(--space-3)">💬 Fastest Response via WhatsApp</p>
             <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);line-height:1.6">For quick questions, booking enquiries or if you're running late to an appointment — WhatsApp is the fastest way to reach us.</p>
-            <a href="https://wa.me/447769064971?text=Hi%2C%20I%27d%20like%20to%20enquire%20about%20BraidedbyAGB"
+            <a href="<?= waUrl() ?>?text=Hi%2C%20I%27d%20like%20to%20enquire%20about%20BraidedbyAGB"
                class="btn btn-primary w-full"
                target="_blank" rel="noopener"
                style="justify-content:center">
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
       <div class="cta-strip-inner">
         <h3 class="cta-strip-title">Ready to book your appointment?</h3>
-        <a href="/booking" class="btn btn-gold btn-lg">Book Now — 07769 064 971</a>
+        <a href="/booking" class="btn btn-gold btn-lg">Book Now — <?= waNumberDisplay() ?></a>
       </div>
     </div>
   </section>

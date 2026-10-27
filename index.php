@@ -12,6 +12,8 @@ if (file_exists(__DIR__ . '/public/index.php')) {
 }
 
 // Otherwise show a holding page
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/helpers.php';
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,9 +115,9 @@ if (file_exists(__DIR__ . '/public/index.php')) {
     <br><br>
     Our new website is launching very soon. In the meantime, get in touch to book your appointment.
   </p>
-  <div class="phone">07769 064 971</div>
+  <div class="phone"><?= waNumberDisplay() ?></div>
   <div class="cta">Book Your Appointment!</div>
-  <a href="https://wa.me/447769064971?text=Hi%2C%20I%27d%20like%20to%20book%20an%20appointment%20with%20BraidedbyAGB"
+  <a href="<?= waUrl() ?>?text=Hi%2C%20I%27d%20like%20to%20book%20an%20appointment%20with%20BraidedbyAGB"
      class="whatsapp-btn">
     💬 WhatsApp Us
   </a>

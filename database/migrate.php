@@ -1115,6 +1115,20 @@ step('course_quiz_answers table',
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"),
     $report);
 
+// ── Business WhatsApp number → 07312017135 (owner request 2026-10) ──
+// The number now has ONE source (whatsapp_number setting, read via waNumber*()).
+// Set it once; the marker stops a re-run overwriting a number later changed in
+// Admin → Settings.
+step('whatsapp_number set to 07312017135 (one-time)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='wa_number_2026_10_set'")->fetchColumn() > 0,
+    function() use ($db) {
+        $up = $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?,?)
+                            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $up->execute(['whatsapp_number', '07312017135']);
+        $up->execute(['wa_number_2026_10_set', '1']);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

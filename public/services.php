@@ -167,7 +167,7 @@ $categories = array_unique(array_column($services, 'category'));
           <span class="policy-icon">💬</span>
           <div>
             <h5>Running Late?</h5>
-            <p>WhatsApp us immediately on <a href="https://wa.me/447769064971">07769 064 971</a>.</p>
+            <p>WhatsApp us immediately on <a href="<?= waUrl() ?>"><?= waNumberDisplay() ?></a>.</p>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ $categories = array_unique(array_column($services, 'category'));
     <div class="container">
       <div class="cta-strip-inner">
         <h3 class="cta-strip-title">Ready to Book Your Appointment?</h3>
-        <a href="/booking" class="btn btn-gold btn-lg">Book Now — 07769 064 971</a>
+        <a href="/booking" class="btn btn-gold btn-lg">Book Now — <?= waNumberDisplay() ?></a>
       </div>
     </div>
   </section>

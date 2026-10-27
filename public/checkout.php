@@ -218,7 +218,7 @@ if (isClient()) {
         <div style="margin-top:var(--space-4)">
           <div class="trust-item"><span>🔒</span><span>256-bit SSL secure checkout</span></div>
           <div class="trust-item"><span>📦</span><span>Orders dispatched within 1–2 days</span></div>
-          <div class="trust-item"><span>💬</span><span>Questions? WhatsApp 07769 064 971</span></div>
+          <div class="trust-item"><span>💬</span><span>Questions? WhatsApp <?= waNumberDisplay() ?></span></div>
         </div>
       </div>
 

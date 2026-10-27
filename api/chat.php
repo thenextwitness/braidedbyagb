@@ -52,7 +52,7 @@ try {
     }
 } catch (Throwable $e) {
     error_log('Chat DB error: ' . $e->getMessage());
-    $phone = '07769064971';
+    $phone = waNumberDisplay();
     echo json_encode([
         'reply' => "I'm having a technical issue right now. Please WhatsApp us on {$phone} and we'll help straight away! 💬",
         'suggests_whatsapp' => true,
@@ -61,7 +61,7 @@ try {
     exit;
 }
 
-$phone    = $cfg['whatsapp_number']           ?? '07769064971';
+$phone    = waNumberDisplay();
 $deposit  = $cfg['deposit_percent']            ?? '30';
 $cancel   = $cfg['cancellation_hours']         ?? '48';
 $late     = $cfg['late_arrival_mins']          ?? '20';

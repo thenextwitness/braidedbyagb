@@ -30,6 +30,11 @@ function sendMail($to, string $subject, string $html, string $altText = '', arra
     $recipients = is_array($to) ? array_values(array_filter($to)) : [(string)$to];
     if (empty($recipients)) { error_log('sendMail: no recipient.'); return false; }
 
+    // Live business WhatsApp number (Settings) — every email uses {{WA_*}} placeholders.
+    $subject = waApplyTokens($subject);
+    $html    = waApplyTokens($html);
+    $altText = waApplyTokens($altText);
+
     // Always include a plain-text alternative. A multipart (HTML + text) email
     // scores noticeably better with spam filters than HTML-only. If the caller
     // didn't supply one, derive it from the HTML.
@@ -167,7 +172,7 @@ HTML;
 function emailWrapper(string $content, string $preheader = ''): string {
     $siteUrl  = SITE_URL;
     $siteName = SITE_NAME;
-    $phone    = SITE_PHONE;
+    $phone    = waNumberDisplay();
     $year     = date('Y');
     $logoUrl  = SITE_URL . '/assets/images/braidedbyagblogo.png';
 
@@ -176,8 +181,7 @@ function emailWrapper(string $content, string $preheader = ''): string {
     $addressTown  = htmlspecialchars(getSetting('site_address', 'Farnborough, Hampshire, UK'), ENT_QUOTES, 'UTF-8');
     $instaUrl     = trim(getSetting('instagram_url', ''));
     $instaHandle  = htmlspecialchars(getSetting('instagram_handle', '@BraidedbyAGB'), ENT_QUOTES, 'UTF-8');
-    $waNumber     = preg_replace('/\D/', '', getSetting('whatsapp_number', '447769064971'));
-    if (strlen($waNumber) === 11 && str_starts_with($waNumber, '0')) $waNumber = '44' . substr($waNumber, 1);
+    $waNumber     = waNumberIntl();
 
     // Hidden preheader — the preview line shown by inbox clients before opening.
     // If none is supplied, derive a contextual one from the email's own opening
@@ -284,11 +288,11 @@ function emailBookingReceived(array $booking, array $customer, array $service): 
   </table>
 </div>
 <div class="policy-box">
-  ⏰ <strong>Late Arrival Reminder:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. After 20 minutes your appointment may be cancelled and your deposit forfeited. If you're running late, please WhatsApp us immediately on 07769064971.
+  ⏰ <strong>Late Arrival Reminder:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. After 20 minutes your appointment may be cancelled and your deposit forfeited. If you're running late, please WhatsApp us immediately on {{WA_DISPLAY}}.
 </div>
 <p>We'll send you a confirmation email as soon as your booking is approved. If you have any questions, please don't hesitate to reach out.</p>
 <p style="text-align:center;margin-top:28px;">
-  <a href="https://wa.me/447769064971" class="cta-btn">WhatsApp Us</a>
+  <a href="{{WA_URL}}" class="cta-btn">WhatsApp Us</a>
 </p>
 HTML;
         $mail->Body = emailWrapper($content . accountCtaHtml());
@@ -336,7 +340,7 @@ function emailBookingApproved(array $booking, array $customer, array $service, a
 </div>
 {$locationBlock}
 <div class="policy-box">
-  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Arrivals after 20 minutes may result in cancellation and forfeiture of your deposit. Running late? WhatsApp us straight away on 07769064971.<br><br>
+  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Arrivals after 20 minutes may result in cancellation and forfeiture of your deposit. Running late? WhatsApp us straight away on {{WA_DISPLAY}}.<br><br>
   ❌ <strong>Cancellation Policy:</strong> Cancellations must be made at least <strong>48 hours</strong> before your appointment. Deposits are non-refundable.
 </div>
 <p>We'll send you a reminder the day before and on the morning of your appointment. See you soon! 💕</p>
@@ -368,7 +372,7 @@ function emailBookingRejected(array $booking, array $customer, array $service, s
 <p style="text-align:center;margin-top:28px;">
   <a href="{$siteUrl}/booking" class="cta-btn">Book Again</a>
   &nbsp;&nbsp;
-  <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">WhatsApp Us</a>
+  <a href="{{WA_URL}}" class="cta-btn" style="background:#25D366;">WhatsApp Us</a>
 </p>
 HTML;
         $mail->Body = emailWrapper($content);
@@ -402,7 +406,7 @@ function emailBookingRescheduled(array $booking, array $customer, array $service
   </table>
 </div>
 <div class="policy-box">
-  ⏰ Please remember to arrive within <strong>20 minutes</strong> of your appointment time. If you have any concerns about the new date, please WhatsApp us on 07769064971.
+  ⏰ Please remember to arrive within <strong>20 minutes</strong> of your appointment time. If you have any concerns about the new date, please WhatsApp us on {{WA_DISPLAY}}.
 </div>
 HTML;
         $mail->Body = emailWrapper($content);
@@ -437,7 +441,7 @@ function emailReminder24hr(array $booking, array $customer, array $service): boo
   </table>
 </div>
 <div class="policy-box">
-  ⏰ <strong>Late Arrival Reminder:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. If you're running late, please WhatsApp us straight away on <a href="https://wa.me/447769064971">07769064971</a>.<br><br>
+  ⏰ <strong>Late Arrival Reminder:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. If you're running late, please WhatsApp us straight away on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a>.<br><br>
   ❌ <strong>Cancellation:</strong> If you need to cancel, you must do so at least <strong>48 hours</strong> before your appointment. Your deposit is non-refundable.
 </div>
 <p>We can't wait to create your perfect look! 🌟</p>
@@ -463,11 +467,11 @@ function emailReminder2hr(array $booking, array $customer, array $service): bool
 <h2>Your appointment is in 2 hours! ✨</h2>
 <p>Hi {$name}, this is your final reminder! Your <strong>{$svc}</strong> appointment is at <strong>{$time}</strong> today.</p>
 <div class="policy-box">
-  ⏰ <strong>Important:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Running late? Please WhatsApp us immediately on <a href="https://wa.me/447769064971">07769064971</a> so we can do our best to accommodate you.
+  ⏰ <strong>Important:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Running late? Please WhatsApp us immediately on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a> so we can do our best to accommodate you.
 </div>
 <p>See you very soon — get ready to love your new look! 💜</p>
 <p style="text-align:center;margin-top:24px;">
-  <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">I'm on my way!</a>
+  <a href="{{WA_URL}}" class="cta-btn" style="background:#25D366;">I'm on my way!</a>
 </p>
 HTML;
         $mail->Body = emailWrapper($content);
@@ -507,7 +511,7 @@ HTML;
 <p style="text-align:center;margin-top:28px;">
   <a href="{$link}" class="cta-btn">Leave My Review ★★★★★</a>
 </p>
-<p style="font-size:13px;color:#9B8BA5;margin-top:20px;">This review link is personal to you and expires in 7 days. If you have any questions, just WhatsApp us on 07769064971.</p>
+<p style="font-size:13px;color:#9B8BA5;margin-top:20px;">This review link is personal to you and expires in 7 days. If you have any questions, just WhatsApp us on {{WA_DISPLAY}}.</p>
 HTML;
         $mail->Body = emailWrapper($content);
         return $mail->send();
@@ -551,7 +555,7 @@ function emailOrderConfirmation(array $order, array $customer, array $items): bo
     {$itemsHtml}
   </table>
 </div>
-<p>We'll send you another email as soon as your order is on its way. If you have any questions, WhatsApp us on 07769064971.</p>
+<p>We'll send you another email as soon as your order is on its way. If you have any questions, WhatsApp us on {{WA_DISPLAY}}.</p>
 HTML;
         $mail->Body = emailWrapper($content);
         return $mail->send();
@@ -644,7 +648,7 @@ HTML;
 <h2>Your order is on its way! 📦</h2>
 <p>Hi {$name}, great news — your BraidedbyAGB order <strong>{$ref}</strong> has been dispatched!</p>
 {$trackingBlock}
-<p>Please allow 2–5 working days for UK standard delivery. If you have any questions, WhatsApp us on 07769064971.</p>
+<p>Please allow 2–5 working days for UK standard delivery. If you have any questions, WhatsApp us on {{WA_DISPLAY}}.</p>
 <p>Enjoy your hair products, and don't forget to tag us in your finished looks on Instagram — <strong>@BraidedbyAGB</strong> 💜</p>
 HTML;
         $mail->Body = emailWrapper($content);
@@ -945,7 +949,7 @@ function emailCustomRequestReceived(array $req): bool {
 <p>In the meantime, if you'd like to chat or share any more inspiration, feel free to WhatsApp us directly — we'd love to hear from you.</p>
 <p>We'll get back to you very soon! 💜</p>
 <p style="text-align:center;margin-top:28px;">
-  <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
+  <a href="{{WA_URL}}" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
   &nbsp;&nbsp;
   <a href="{$siteUrl}/booking" class="cta-btn">Browse Standard Services</a>
 </p>
@@ -1030,10 +1034,10 @@ function emailCustomRequestReply(array $req, string $reply, string $status): boo
             ? "<p style=\"text-align:center;margin-top:28px;\">
                  <a href=\"{$siteUrl}/booking\" class=\"cta-btn\">Book Your Appointment →</a>
                  &nbsp;&nbsp;
-                 <a href=\"https://wa.me/447769064971\" class=\"cta-btn\" style=\"background:#25D366;\">💬 WhatsApp Us</a>
+                 <a href=\"{{WA_URL}}\" class=\"cta-btn\" style=\"background:#25D366;\">💬 WhatsApp Us</a>
                </p>"
             : "<p style=\"text-align:center;margin-top:28px;\">
-                 <a href=\"https://wa.me/447769064971\" class=\"cta-btn\" style=\"background:#25D366;\">💬 WhatsApp Us</a>
+                 <a href=\"{{WA_URL}}\" class=\"cta-btn\" style=\"background:#25D366;\">💬 WhatsApp Us</a>
                  &nbsp;&nbsp;
                  <a href=\"{$siteUrl}/booking\" class=\"cta-btn\">Browse Our Services</a>
                </p>";
@@ -1108,13 +1112,13 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
 {$locationBlock}
 
 <div class="policy-box">
-  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Running late? WhatsApp us straight away on 07769064971.<br><br>
+  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of your appointment time. Running late? WhatsApp us straight away on {{WA_DISPLAY}}.<br><br>
   ❌ <strong>Cancellation Policy:</strong> Cancellations must be made at least <strong>48 hours</strong> before your appointment. Deposits are non-refundable.
 </div>
 
 <p>We'll send you a reminder the day before and 2 hours before your appointment. See you soon! 💕</p>
 <p style="text-align:center;margin-top:28px;">
-  <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
+  <a href="{{WA_URL}}" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
 </p>
 HTML;
         $mail->Body    = emailWrapper($content . accountCtaHtml());
@@ -1189,7 +1193,7 @@ function emailBankTransferConfirm(array $booking, array $customer): bool {
 
 <p>Once you've sent the transfer, feel free to let us know via WhatsApp — it helps us confirm faster!</p>
 <p style="text-align:center;margin-top:28px;">
-  <a href="https://wa.me/447769064971?text={$waRef}" class="cta-btn" style="background:#25D366;">💬 Let Us Know via WhatsApp</a>
+  <a href="{{WA_URL}}?text={$waRef}" class="cta-btn" style="background:#25D366;">💬 Let Us Know via WhatsApp</a>
 </p>
 HTML;
         $mail->Body    = emailWrapper($content);
@@ -1330,12 +1334,12 @@ HTML;
 {$bankNote}
 {$locationBlock}
 <div class="policy-box">
-  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of each appointment time. Running late? WhatsApp us straight away on 07769064971.<br><br>
+  ⏰ <strong>Late Arrival Policy:</strong> Please arrive within <strong>20 minutes</strong> of each appointment time. Running late? WhatsApp us straight away on {{WA_DISPLAY}}.<br><br>
   ❌ <strong>Cancellation Policy:</strong> Cancellations must be made at least <strong>48 hours</strong> before the appointment. Deposits are non-refundable.
 </div>
 <p>We'll send reminders the day before and 2 hours before each appointment. See you soon! 💕</p>
 <p style="text-align:center;margin-top:28px;">
-  <a href="https://wa.me/447769064971" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
+  <a href="{{WA_URL}}" class="cta-btn" style="background:#25D366;">💬 WhatsApp Us</a>
 </p>
 HTML;
 
@@ -1562,7 +1566,7 @@ function emailPortalPasswordChanged(string $email, string $name): bool {
 <h2>Password changed</h2>
 <p>{$greeting}</p>
 <p>The password on your BraidedbyAGB account was just set or changed. If this was you, no action is needed.</p>
-<p style="font-size:13px;color:#7A4A70;">If this <strong>wasn't</strong> you, please WhatsApp us on 07769064971 straight away — and remember you can always sign in with a one-time emailed code instead of a password.</p>
+<p style="font-size:13px;color:#7A4A70;">If this <strong>wasn't</strong> you, please WhatsApp us on {{WA_DISPLAY}} straight away — and remember you can always sign in with a one-time emailed code instead of a password.</p>
 HTML;
         $mail->Body = emailWrapper($content, 'Password changed');
         return $mail->send();

@@ -263,7 +263,7 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
       Please contact us if you need to make a payment.
     </p>
     <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap">
-      <a href="https://wa.me/447769064971?text=Hi%2C%20I%20need%20help%20with%20my%20booking%20payment"
+      <a href="<?= waUrl() ?>?text=Hi%2C%20I%20need%20help%20with%20my%20booking%20payment"
          class="btn btn-primary" target="_blank" rel="noopener">💬 WhatsApp Us</a>
       <a href="/contact" class="btn btn-outline-primary">Contact Page</a>
     </div>
@@ -294,7 +294,7 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
         <div class="bank-detail-row"><span class="bdl">Amount:</span><span class="bdv" style="color:var(--color-primary)"><?= formatPrice($bk['deposit_amount']) ?></span></div>
         <div class="bank-detail-row"><span class="bdl">Reference:</span><span class="bdv"><?= htmlspecialchars($bankRef) ?></span></div>
       </div>
-      <a href="https://wa.me/447769064971?text=Hi%2C%20I%20have%20sent%20my%20deposit%20transfer%20for%20booking%20<?= urlencode($bk['booking_ref']) ?>"
+      <a href="<?= waUrl() ?>?text=Hi%2C%20I%20have%20sent%20my%20deposit%20transfer%20for%20booking%20<?= urlencode($bk['booking_ref']) ?>"
          class="btn btn-primary" target="_blank" rel="noopener">
         Let Us Know via WhatsApp
       </a>

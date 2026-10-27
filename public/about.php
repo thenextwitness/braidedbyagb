@@ -138,7 +138,7 @@ require_once __DIR__ . '/../includes/helpers.php';
             <p class="font-accent" style="font-size:2rem;color:var(--color-gold);display:block;margin-bottom:var(--space-4)">"Get the Look<br>You Deserve!"</p>
             <p style="color:rgba(255,255,255,0.75);line-height:1.7;margin-bottom:var(--space-8)">Specializing in flawless, long-lasting braids — authentic African hair braiding designs just for you.</p>
             <a href="/booking" class="btn btn-gold btn-lg">Book Now</a>
-            <p style="margin-top:var(--space-5);font-family:var(--font-primary);font-weight:800;font-size:1.2rem">07769 064 971</p>
+            <p style="margin-top:var(--space-5);font-family:var(--font-primary);font-weight:800;font-size:1.2rem"><?= waNumberDisplay() ?></p>
             <p style="font-size:var(--text-sm);color:rgba(255,255,255,0.5);margin-top:var(--space-1)">Farnborough, Hampshire, UK</p>
           </div>
         </div>

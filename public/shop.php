@@ -135,7 +135,7 @@ sort($categories);
           <p style="font-size:3rem;margin-bottom:var(--space-4)">🛍️</p>
           <h3 style="color:var(--color-deep-purple);margin-bottom:var(--space-3)">Products Coming Soon</h3>
           <p style="color:var(--color-text-muted);margin-bottom:var(--space-6)">We're adding our product range. Check back soon or WhatsApp us to enquire.</p>
-          <a href="https://wa.me/447769064971" class="btn btn-primary">WhatsApp to Enquire</a>
+          <a href="<?= waUrl() ?>" class="btn btn-primary">WhatsApp to Enquire</a>
         </div>
         <?php else: ?>
         <div class="shop-grid" id="shop-grid">

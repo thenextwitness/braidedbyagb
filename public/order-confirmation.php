@@ -180,7 +180,7 @@ $items = $items->fetchAll();
     <!-- Actions -->
     <div style="display:flex;gap:var(--space-4);flex-wrap:wrap">
       <a href="/shop" class="btn btn-primary flex-1">Continue Shopping</a>
-      <a href="https://wa.me/447769064971" class="btn btn-outline-primary flex-1" target="_blank">
+      <a href="<?= waUrl() ?>" class="btn btn-outline-primary flex-1" target="_blank">
         💬 WhatsApp Support
       </a>
     </div>

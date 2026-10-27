@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
                 $mail->send();
                 $formSent = true;
             } catch (Exception $e) {
-                $formError = 'Message could not be sent. Please WhatsApp or call us directly on 07769 064 971.';
+                $formError = 'Message could not be sent. Please WhatsApp or call us directly on ' . waNumberDisplay() . '.';
             }
         }
     }
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     "name": "BraidedbyAGB",
     "description": "Professional African hair braiding specialist in Farnborough, Hampshire. Knotless braids, box braids, cornrows, starter locs and more.",
     "url": "https://braidedbyagb.co.uk",
-    "telephone": "+447769064971",
+    "telephone": "+<?= waNumberIntl() ?>",
     "email": "hello@braidedbyagb.co.uk",
     "image": "https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png",
     "priceRange": "££",
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     ],
     "sameAs": [
       "https://instagram.com/BraidedbyAGB",
-      "https://wa.me/447769064971"
+      "<?= waUrl() ?>"
     ]
   }
   </script>
@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
       </div>
       <div class="sp-custom-cta">
         <p>Get in touch to discuss your vision</p>
-        <a href="https://wa.me/447769064971?text=Hi!%20I%27d%20like%20to%20enquire%20about%20a%20custom%20braid%20style%20%E2%80%94%20" target="_blank" rel="noopener" class="btn btn-gold">
+        <a href="<?= waUrl() ?>?text=Hi!%20I%27d%20like%20to%20enquire%20about%20a%20custom%20braid%20style%20%E2%80%94%20" target="_blank" rel="noopener" class="btn btn-gold">
           <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="margin-right:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
           Chat on WhatsApp
         </a>
@@ -348,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
         <p>We're here to help you achieve your perfect hairstyle. Reach out and let's create something beautiful together.</p>
         <div class="sp-contact-items">
           <div class="sp-ci"><span>📍</span><div><strong>Location</strong><em><?= htmlspecialchars(salonAddress()) ?></em><small>Serving Hampshire &amp; Surrey</small></div></div>
-          <div class="sp-ci"><span>📞</span><div><strong>Phone / WhatsApp</strong><a href="tel:07769064971">07769 064 971</a></div></div>
+          <div class="sp-ci"><span>📞</span><div><strong>Phone / WhatsApp</strong><a href="tel:<?= waNumberLocal() ?>"><?= waNumberDisplay() ?></a></div></div>
           <div class="sp-ci"><span>✉️</span><div><strong>Email</strong><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a><small>We'll respond within 24 hours</small></div></div>
         </div>
         <div class="sp-social">
@@ -358,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
               <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
               Instagram
             </a>
-            <a href="https://wa.me/447769064971" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <a href="<?= waUrl() ?>" target="_blank" rel="noopener" aria-label="WhatsApp">
               <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
               WhatsApp
             </a>
@@ -421,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
   </div>
 </footer>
 
-<a href="https://wa.me/447769064971?text=Hi%2C%20I%27d%20like%20to%20book%20an%20appointment%20at%20BraidedbyAGB" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+<a href="<?= waUrl() ?>?text=Hi%2C%20I%27d%20like%20to%20book%20an%20appointment%20at%20BraidedbyAGB" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
   <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
 </a>
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>

@@ -131,6 +131,45 @@ function getSetting(string $key, string $default = ''): string {
     return $cache[$key];
 }
 
+// ── Business WhatsApp / phone number ──────────────────────
+// ONE source of truth: the `whatsapp_number` setting (Admin → Settings). Every
+// page, link and email reads it through these helpers, so changing the number
+// never needs a code change. Emails use {{WA_*}} placeholders, swapped in by
+// sendMail() via waApplyTokens().
+const WA_DEFAULT_NUMBER = '07312017135';
+
+/** UK local form, digits only: 07312017135 */
+function waNumberLocal(): string {
+    // Never fail: if settings can't be read (DB down, offline page), use the default.
+    try { $raw = preg_replace('/\D/', '', getSetting('whatsapp_number', WA_DEFAULT_NUMBER)); }
+    catch (Throwable $e) { $raw = WA_DEFAULT_NUMBER; }
+    if ($raw === '') $raw = WA_DEFAULT_NUMBER;
+    if (strncmp($raw, '44', 2) === 0)      $raw = '0' . substr($raw, 2);
+    elseif ($raw[0] !== '0')               $raw = '0' . $raw;
+    return $raw;
+}
+/** International form for wa.me / tel: 447312017135 */
+function waNumberIntl(): string   { return '44' . substr(waNumberLocal(), 1); }
+/** Human form: 07312 017135 */
+function waNumberDisplay(): string {
+    $l = waNumberLocal();
+    return strlen($l) === 11 ? substr($l, 0, 5) . ' ' . substr($l, 5) : $l;
+}
+/** https://wa.me/447312017135 (optionally with a prefilled message) */
+function waUrl(string $text = ''): string {
+    return 'https://wa.me/' . waNumberIntl() . ($text !== '' ? '?text=' . rawurlencode($text) : '');
+}
+/** Swap {{WA_URL}} / {{WA_INTL}} / {{WA_LOCAL}} / {{WA_DISPLAY}} for the live number. */
+function waApplyTokens(string $s): string {
+    if (strpos($s, '{{WA_') === false) return $s;
+    return strtr($s, [
+        '{{WA_URL}}'     => waUrl(),
+        '{{WA_INTL}}'    => waNumberIntl(),
+        '{{WA_LOCAL}}'   => waNumberLocal(),
+        '{{WA_DISPLAY}}' => waNumberDisplay(),
+    ]);
+}
+
 function setSetting(string $key, string $value): void {
     $db   = getDB();
     $stmt = $db->prepare("

@@ -297,12 +297,12 @@ $isGroup = count($groupBookings) > 1;
       <strong style="color:var(--color-deep-purple)">Important reminders:</strong><br>
       ⏰ Please arrive within <strong>20 minutes</strong> of your appointment time.<br>
       ❌ Cancellations must be made at least <strong>48 hours</strong> in advance.<br>
-      💬 Running late? WhatsApp us immediately on <a href="https://wa.me/447769064971" style="color:var(--color-primary)">07769 064 971</a>.
+      💬 Running late? WhatsApp us immediately on <a href="<?= waUrl() ?>" style="color:var(--color-primary)"><?= waNumberDisplay() ?></a>.
     </div>
 
     <!-- Actions -->
     <div style="display:flex;gap:var(--space-4);flex-wrap:wrap">
-      <a href="https://wa.me/447769064971" class="btn btn-primary flex-1" target="_blank" rel="noopener">
+      <a href="<?= waUrl() ?>" class="btn btn-primary flex-1" target="_blank" rel="noopener">
         💬 WhatsApp Us
       </a>
       <a href="/shop" class="btn btn-outline-primary flex-1">Shop Extensions</a>

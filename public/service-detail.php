@@ -92,7 +92,7 @@ $duration = formatDuration((int)$svc['duration_mins']);
     "provider": {
       "@type": "LocalBusiness",
       "name": "BraidedbyAGB",
-      "telephone": "07769064971",
+      "telephone": "<?= waNumberDisplay() ?>",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Farnborough",
@@ -681,7 +681,7 @@ $duration = formatDuration((int)$svc['duration_mins']);
       <div class="cta-strip-inner">
         <h3 class="cta-strip-title">Ready to book your <?= htmlspecialchars($svc['name']) ?>?</h3>
         <a href="/booking/<?= htmlspecialchars($svc['slug']) ?>" class="btn btn-gold btn-lg">
-          Book Now — 07769 064 971
+          Book Now — <?= waNumberDisplay() ?>
         </a>
       </div>
     </div>

@@ -76,7 +76,7 @@ require_once __DIR__ . '/../includes/helpers.php';
             <div class="policy-highlight">
               <strong>Cancellations must be made at least 48 hours before your appointment.</strong> Cancellations made within 48 hours of the appointment will result in the deposit being forfeited.
             </div>
-            <p>To cancel your appointment, please WhatsApp us on <a href="https://wa.me/447769064971">07769 064 971</a> with your booking reference number.</p>
+            <p>To cancel your appointment, please WhatsApp us on <a href="<?= waUrl() ?>"><?= waNumberDisplay() ?></a> with your booking reference number.</p>
             <p>If you cancel with more than 48 hours' notice and wish to rebook, your deposit will be transferred to a new appointment within 30 days.</p>
           </div>
 
@@ -86,7 +86,7 @@ require_once __DIR__ . '/../includes/helpers.php';
               <strong>Clients are expected to arrive within 20 minutes of their scheduled appointment time.</strong> Arrivals after 20 minutes may result in your appointment being cancelled and your deposit being forfeited.
             </div>
             <p>We operate on a tight schedule to ensure every client receives the full time and care they deserve. Late arrivals affect not only your appointment but those of other clients.</p>
-            <p><strong>If you are running late, please WhatsApp us immediately on <a href="https://wa.me/447769064971">07769 064 971</a></strong> so we can do our best to accommodate you. Communication is key — we are always willing to work with you where possible.</p>
+            <p><strong>If you are running late, please WhatsApp us immediately on <a href="<?= waUrl() ?>"><?= waNumberDisplay() ?></a></strong> so we can do our best to accommodate you. Communication is key — we are always willing to work with you where possible.</p>
             <p>Persistent late arrivals (more than twice) may result in being required to pay a full upfront payment for future bookings.</p>
           </div>
 
@@ -142,7 +142,7 @@ require_once __DIR__ . '/../includes/helpers.php';
     <div class="container">
       <div class="cta-strip-inner">
         <h3 class="cta-strip-title">Questions about our policies?</h3>
-        <a href="https://wa.me/447769064971" class="btn btn-gold btn-lg">WhatsApp Us — 07769 064 971</a>
+        <a href="<?= waUrl() ?>" class="btn btn-gold btn-lg">WhatsApp Us — <?= waNumberDisplay() ?></a>
       </div>
     </div>
   </section>

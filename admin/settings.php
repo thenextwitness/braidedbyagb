@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'save_settings') {
         $fields = [
-            'site_name', 'site_email', 'site_phone', 'site_address',
+            'site_name', 'site_email', 'whatsapp_number', 'site_address',
             'deposit_percent', 'booking_buffer_hours',
             'bank_account_name', 'bank_sort_code', 'bank_account_number',
             'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
@@ -168,7 +168,8 @@ $isError = str_starts_with($msg, 'ERROR:');
         <div class="admin-form-row">
           <div class="admin-form-group">
             <label class="admin-label">Phone / WhatsApp</label>
-            <input class="admin-input" type="text" name="site_phone" value="<?= htmlspecialchars($g('site_phone','07769 064 971')) ?>">
+            <input class="admin-input" type="tel" name="whatsapp_number" value="<?= htmlspecialchars(waNumberDisplay()) ?>" placeholder="07312 017135">
+            <small style="color:var(--admin-muted)">Used for every WhatsApp button, link and email across the site.</small>
           </div>
           <div class="admin-form-group">
             <label class="admin-label">Studio Location (public — town only)</label>

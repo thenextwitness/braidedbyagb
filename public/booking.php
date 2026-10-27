@@ -661,7 +661,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
         <!-- Need help -->
         <div style="margin-top:var(--space-5);text-align:center">
           <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-3)">Questions? Get in touch:</p>
-          <a href="https://wa.me/447769064971" class="btn btn-outline-primary w-full" target="_blank" rel="noopener">
+          <a href="<?= waUrl() ?>" class="btn btn-outline-primary w-full" target="_blank" rel="noopener">
             💬 WhatsApp Us
           </a>
         </div>

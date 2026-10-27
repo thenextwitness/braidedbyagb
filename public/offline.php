@@ -5,6 +5,8 @@
 // Self-contained: all CSS is inline so it renders with no network, since the
 // worker precaches only this page (not the stylesheets).
 // ============================================================
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 header('Cache-Control: no-cache');
 ?><!DOCTYPE html>
 <html lang="en">
@@ -45,7 +47,7 @@ header('Cache-Control: no-cache');
     <h1>You're offline</h1>
     <p>We couldn't reach BraidedbyAGB just now. Check your connection and try again — your place isn't lost.</p>
     <button onclick="location.reload()">Try again</button>
-    <p class="hint">Need us urgently? WhatsApp <a href="https://wa.me/447769064971">07769 064971</a>.</p>
+    <p class="hint">Need us urgently? WhatsApp <a href="<?= waUrl() ?>"><?= waNumberDisplay() ?></a>.</p>
   </div>
 </body>
 </html>
