@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
             'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
-            'auto_cancel_bank_transfer_hours',
+            'auto_cancel_bank_transfer_hours', 'rebook_default_weeks',
             'loyalty_earn_rate', 'loyalty_redeem_rate', 'loyalty_min_redeem',
             'home_service_min', 'travel_fee_farnborough', 'travel_fee_camberley_aldershot', 'travel_fee_further',
         ];
@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'admin_notify_30min',
             'loyalty_enabled',
             'multi_stylist_enabled',
+            'rebook_reminders_enabled',
         ];
         foreach ($checkboxes as $key) {
             $val = isset($_POST[$key]) ? '1' : '0';
@@ -230,6 +231,15 @@ $isError = str_starts_with($msg, 'ERROR:');
         <div class="admin-form-group">
           <label class="admin-label">Auto-cancel unpaid bank transfer bookings after (hours)</label>
           <input class="admin-input" type="number" name="auto_cancel_bank_transfer_hours" value="<?= htmlspecialchars($g('auto_cancel_bank_transfer_hours','24')) ?>" min="1" max="72" style="max-width:120px">
+        </div>
+        <div class="admin-form-group" style="margin-top:14px">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input type="checkbox" name="rebook_reminders_enabled" <?= $g('rebook_reminders_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>Rebook reminders</strong> — email clients a one-tap 'Book again' link some weeks after their appointment</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Default reminder after (weeks)</label>
+          <input class="admin-input" type="number" name="rebook_default_weeks" value="<?= htmlspecialchars($g('rebook_default_weeks','6')) ?>" min="1" max="52" style="max-width:120px">
+          <small style="color:var(--admin-muted)">Each service can override this in Services (0 = never). Only clients who allow emails get them, and never if they've already booked again.</small>
         </div>
       </div>
 

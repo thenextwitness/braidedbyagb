@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $desc     = sanitize($_POST['description'] ?? '');
             $duration = (int)($_POST['duration_mins'] ?? 120);
             $price    = (float)($_POST['price_from'] ?? 0);
-            $category = sanitize($_POST['category'] ?? '');
+            $category = trim(strip_tags($_POST['category'] ?? ''));
             $prep     = sanitize($_POST['prep_notes'] ?? '');
             if (!$name) { $error = 'Service name is required.'; }
             else {
@@ -75,17 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (!$error) {
-                $db->prepare("UPDATE services SET name=?,description=?,duration_mins=?,price_from=?,category=?,prep_notes=?,image_url=?,is_new=?,is_active=? WHERE id=?")
+                $rebookRaw = trim((string)($_POST['rebook_weeks'] ?? ''));
+                $rebookWeeks = $rebookRaw === '' ? null : max(0, min(52, (int)$rebookRaw));
+                $db->prepare("UPDATE services SET name=?,description=?,duration_mins=?,price_from=?,category=?,prep_notes=?,image_url=?,is_new=?,is_active=?,rebook_weeks=? WHERE id=?")
                    ->execute([
                        sanitize($_POST['name']),
                        sanitize($_POST['description'] ?? ''),
                        (int)$_POST['duration_mins'],
                        (float)$_POST['price_from'],
-                       sanitize($_POST['category'] ?? ''),
+                       trim(strip_tags($_POST['category'] ?? '')),
                        sanitize($_POST['prep_notes'] ?? ''),
                        $img,
                        isset($_POST['is_new'])    ? 1 : 0,
                        isset($_POST['is_active']) ? 1 : 0,
+                       $rebookWeeks,
                        $id,
                    ]);
                 $msg = 'Service updated.';

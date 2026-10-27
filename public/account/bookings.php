@@ -12,7 +12,7 @@ $db  = getDB();
 $cid = currentClientId();
 
 $rows = $db->prepare("
-    SELECT b.booking_ref, b.booked_date, b.booked_time, b.status, b.total_price,
+    SELECT b.id, b.booking_ref, b.booked_date, b.booked_time, b.status, b.total_price,
            b.deposit_paid, b.remaining_balance, b.confirm_token,
            COALESCE(NULLIF(b.custom_style_name,''), s.name) AS service_name
     FROM bookings b
@@ -55,6 +55,9 @@ require_once __DIR__ . '/../../includes/account-head.php';
           </div>
           <span class="<?= acctPill($b['status']) ?>"><?= htmlspecialchars($b['status']) ?></span>
         </a>
+        <?php if ($b['status'] === 'completed' && ($again = rebookUrl($db, (int)$b['id']))): ?>
+          <div style="text-align:right;margin:-4px 0 10px"><a class="auth-link" href="<?= htmlspecialchars($again) ?>">↻ Book this again</a></div>
+        <?php endif; ?>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>

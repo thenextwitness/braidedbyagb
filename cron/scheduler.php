@@ -444,6 +444,58 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
+// 10. REBOOK REMINDERS  (daytime only, 10:00–19:00 UK)
+//     Some weeks after a completed appointment (services.rebook_weeks, else the
+//     default in Settings; 0 = never) email a one-tap "Book again" link —
+//     unless they've already booked again or turned emails off. Only bookings
+//     that came DUE in the last 7 days are considered, so the first run never
+//     emails a client's whole history. One email per client per run.
+// ─────────────────────────────────────────────────────────
+try {
+    $hrNow = (int)$now->format('H');
+    if ($hrNow >= 10 && $hrNow < 19 && getSetting('rebook_reminders_enabled', '1') === '1') {
+        $defWeeks  = max(0, min(52, (int)getSetting('rebook_default_weeks', '6')));
+        $weeksExpr = "COALESCE(s.rebook_weeks, {$defWeeks})";   // trusted int, inlined
+        $today     = $now->format('Y-m-d');
+        $since     = (clone $now)->modify('-7 days')->format('Y-m-d');
+        $stmt = $db->prepare("
+            SELECT b.id, b.customer_id, b.booked_date, s.name AS s_name,
+                   c.name AS c_name, c.email AS c_email
+            FROM bookings b
+            JOIN services  s ON s.id = b.service_id
+            JOIN customers c ON c.id = b.customer_id
+            WHERE b.status = 'completed'
+              AND b.rebook_reminder_sent_at IS NULL
+              AND {$weeksExpr} > 0
+              AND DATE_ADD(b.booked_date, INTERVAL {$weeksExpr} WEEK) BETWEEN ? AND ?
+              AND c.email_optin = 1
+              AND COALESCE(c.is_blocked, 0) = 0
+              AND NOT EXISTS (
+                  SELECT 1 FROM bookings nb
+                  WHERE nb.customer_id = b.customer_id AND nb.id <> b.id
+                    AND nb.booked_date > b.booked_date
+                    AND nb.status IN ('pending','confirmed','completed')
+              )
+            ORDER BY b.customer_id, b.booked_date DESC
+        ");
+        $stmt->execute([$since, $today]);
+        $byCustomer = [];
+        foreach ($stmt->fetchAll() as $r) $byCustomer[(int)$r['customer_id']][] = $r;
+        $markSent = $db->prepare("UPDATE bookings SET rebook_reminder_sent_at = NOW() WHERE id = ?");
+        foreach ($byCustomer as $rows) {
+            $b   = $rows[0];   // their most recent due appointment
+            $url = rebookUrl($db, (int)$b['id'], true) ?: (rtrim(SITE_URL, '/') . '/booking');
+            if (emailRebookReminder(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'], $b['booked_date'], $url)) {
+                foreach ($rows as $r) $markSent->execute([(int)$r['id']]);
+                cronLog("[rebook] Reminder → {$b['c_email']} (booking #{$b['id']})");
+            }
+        }
+    }
+} catch (Throwable $e) {
+    cronLog('[ERROR] Rebook reminders: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
 // 9. PORTAL AUTH CLEANUP  (Phase A)
 //    Purge expired login codes and remember-me tokens.
 // ─────────────────────────────────────────────────────────

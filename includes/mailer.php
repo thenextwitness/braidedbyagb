@@ -454,6 +454,36 @@ HTML;
     }
 }
 
+// ── Rebook reminder ("time for a refresh") ────────────────
+// Sent by the cron some weeks after a completed appointment (per-service
+// interval). Only to clients who allow emails (customers.email_optin).
+function emailRebookReminder(array $customer, string $serviceName, string $lastDate, string $bookUrl): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($customer['email'], $customer['name']);
+        $first   = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
+        $mail->Subject = "Time for a refresh, {$first}? — BraidedbyAGB";
+        $svc     = sanitize($serviceName);
+        $when    = formatDate($lastDate);
+        $url     = htmlspecialchars($bookUrl, ENT_QUOTES, 'UTF-8');
+        $profile = htmlspecialchars(SITE_URL . '/account/profile', ENT_QUOTES, 'UTF-8');
+        $content = <<<HTML
+<h2>Ready for your next appointment? 💕</h2>
+<p>Hi {$first}, it's been a little while since your <strong>{$svc}</strong> on {$when}. Book your next one in one tap — we've saved your choices.</p>
+<p style="text-align:center;margin:28px 0">
+  <a href="{$url}" class="cta-btn" style="background:#7A0050;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700">Book again</a>
+</p>
+<p>Prefer to chat first? WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a>.</p>
+<p style="font-size:12px;color:#8A7595">Don't want these reminders? <a href="{$profile}">Turn off emails in your account</a>.</p>
+HTML;
+        $mail->Body = emailWrapper($content);
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (rebook reminder): ' . $e->getMessage());
+        return false;
+    }
+}
+
 // ── 6. 2-Hour Reminder ────────────────────────────────────
 function emailReminder2hr(array $booking, array $customer, array $service): bool {
     try {

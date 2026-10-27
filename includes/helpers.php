@@ -209,6 +209,29 @@ function groupServicesByCategory(array $services): array {
     return array_filter($groups);
 }
 
+// ── Rebooking ──────────────────────────────────────────────
+/**
+ * "Book again" link for a past booking: opens /booking/{service} with the same
+ * variant and add-ons already chosen. Returns '' if the service is no longer
+ * offered. $absolute = full URL (for emails).
+ */
+function rebookUrl(PDO $db, int $bookingId, bool $absolute = false): string {
+    $q = $db->prepare("SELECT b.variant_id, s.slug FROM bookings b JOIN services s ON s.id = b.service_id
+                       WHERE b.id = ? AND s.is_active = 1");
+    $q->execute([$bookingId]);
+    $row = $q->fetch();
+    if (!$row || $row['slug'] === '') return '';
+    $a = $db->prepare("SELECT ba.addon_id FROM booking_addons ba JOIN service_addons sa ON sa.id = ba.addon_id
+                       WHERE ba.booking_id = ? AND sa.is_active = 1");
+    $a->execute([$bookingId]);
+    $addons = array_map('intval', $a->fetchAll(PDO::FETCH_COLUMN));
+    $params = [];
+    if (!empty($row['variant_id'])) $params['variant'] = (int)$row['variant_id'];
+    if ($addons)                    $params['addons']  = implode(',', $addons);
+    $path = '/booking/' . rawurlencode($row['slug']) . ($params ? '?' . http_build_query($params) : '');
+    return $absolute ? rtrim(SITE_URL, '/') . $path : $path;
+}
+
 function setSetting(string $key, string $value): void {
     $db   = getDB();
     $stmt = $db->prepare("

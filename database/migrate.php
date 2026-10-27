@@ -1129,6 +1129,17 @@ step('whatsapp_number set to 07312017135 (one-time)',
     },
     $report);
 
+// ── Rebooking: per-service reminder interval + sent marker ──
+// services.rebook_weeks: NULL = use the default (Settings), 0 = never remind.
+step('services.rebook_weeks column',
+    fn() => columnExists($db, $dbName, 'services', 'rebook_weeks'),
+    fn() => $db->exec("ALTER TABLE services ADD COLUMN rebook_weeks TINYINT UNSIGNED DEFAULT NULL"),
+    $report);
+step('bookings.rebook_reminder_sent_at column',
+    fn() => columnExists($db, $dbName, 'bookings', 'rebook_reminder_sent_at'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN rebook_reminder_sent_at DATETIME DEFAULT NULL"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

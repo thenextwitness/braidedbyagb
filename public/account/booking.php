@@ -98,7 +98,8 @@ require_once __DIR__ . '/../../includes/account-head.php';
       <?php endif; ?>
 
       <div style="margin-top:24px;">
-        <a href="/booking" class="auth-btn" style="display:inline-block;text-decoration:none;">Book again</a>
+        <?php $again = rebookUrl($db, (int)$bk['id']) ?: '/booking'; ?>
+        <a href="<?= htmlspecialchars($again) ?>" class="auth-btn" style="display:inline-block;text-decoration:none;">Book again</a>
       </div>
     </div>
   <?php endif; ?>

@@ -77,6 +77,12 @@ $addons   = $addonsByService[$svc['id']] ?? [];
             </select>
           </div>
           <div class="admin-form-group">
+            <label class="admin-label">Rebook reminder (weeks)</label>
+            <input class="admin-input" type="number" name="rebook_weeks" min="0" max="52"
+                   value="<?= isset($svc['rebook_weeks']) && $svc['rebook_weeks'] !== '' ? (int)$svc['rebook_weeks'] : '' ?>"
+                   placeholder="default" title="Blank = use the default in Settings. 0 = never remind.">
+          </div>
+          <div class="admin-form-group">
             <label class="admin-label">Duration</label>
             <?php
               $durMins = max(0, (int)$svc['duration_mins']);

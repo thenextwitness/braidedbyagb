@@ -34,6 +34,9 @@ if ($serviceSlug) {
     $stmt->execute([$serviceSlug]);
     $preselected = $stmt->fetch();
 }
+// "Book again" prefill (?variant=&addons=): same option + add-ons as a past booking.
+$rebookVariant = (int)($_GET['variant'] ?? 0);
+$rebookAddons  = array_values(array_filter(array_map('intval', explode(',', (string)($_GET['addons'] ?? '')))));
 
 // Fetch all active services with variants
 $services = $db->query("
@@ -744,9 +747,18 @@ document.querySelectorAll('.service-select-card').forEach(card => {
   });
 });
 
+// "Book again": add-ons to tick once the chosen service's add-ons load (used once).
+let pendingRebookAddons = <?= json_encode($rebookAddons) ?>;
 <?php if ($preselected): ?>
-// Pre-select service from URL
-window.addEventListener('DOMContentLoaded', () => selectService(<?= $preselected['id'] ?>));
+// Pre-select service from URL (and, for "Book again", the same option)
+window.addEventListener('DOMContentLoaded', () => {
+  selectService(<?= (int)$preselected['id'] ?>);
+  const rebookVariant = <?= (int)$rebookVariant ?>;
+  if (rebookVariant) {
+    const vb = document.querySelector('.variant-btn[data-variant-id="' + rebookVariant + '"]');
+    if (vb) vb.click();
+  }
+});
 <?php endif; ?>
 
 function selectService(id) {
@@ -852,10 +864,17 @@ async function loadAddons(serviceId) {
           updateSummary();
         });
         addonList.appendChild(div);
+        // "Book again": re-tick the add-ons from the past booking.
+        if (pendingRebookAddons.indexOf(Number(addon.id)) !== -1) {
+          const cb = div.querySelector('input');
+          cb.checked = true;
+          cb.dispatchEvent(new Event('change'));
+        }
       });
     } else {
       addonSection.style.display = 'none';
     }
+    pendingRebookAddons = [];
   } catch(e) {
     addonSection.style.display = 'none';
   }

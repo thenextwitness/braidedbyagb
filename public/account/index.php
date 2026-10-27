@@ -44,6 +44,12 @@ function acctPill(string $status): string {
     return 'account-pill pill-' . $cls;
 }
 
+// "Book again" = their most recent completed appointment, one tap (else plain booking).
+$lastDone = $db->prepare("SELECT id FROM bookings WHERE customer_id = ? AND status = 'completed' ORDER BY booked_date DESC, booked_time DESC LIMIT 1");
+$lastDone->execute([$cid]);
+$lastDoneId = (int)$lastDone->fetchColumn();
+$bookAgainUrl = ($lastDoneId ? rebookUrl($db, $lastDoneId) : '') ?: '/booking';
+
 $firstName = trim(explode(' ', (string)$cust['name'])[0]) ?: 'there';
 $pageTitle = 'My Account';
 require_once __DIR__ . '/../../includes/account-head.php';
@@ -83,7 +89,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
       <p style="margin:6px 0 0;color:#8A7595;font-size:0.85rem;">earned so far</p>
     </div>
     <div class="account-card" style="display:flex;flex-direction:column;justify-content:center;">
-      <a href="/booking" class="auth-btn" style="text-decoration:none;text-align:center;margin:0;">Book again</a>
+      <a href="<?= htmlspecialchars($bookAgainUrl) ?>" class="auth-btn" style="text-decoration:none;text-align:center;margin:0;">Book again</a>
     </div>
   </div>
 
