@@ -494,3 +494,15 @@
   .step-nav-label      { display: none; }
   .booking-steps-nav   { gap: 0; }
 }
+
+/* Service categories on the booking page (step 1) */
+.service-category-title {
+  font-family: var(--font-primary, Montserrat, sans-serif);
+  font-size: var(--text-sm, 0.85rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary, #7A0050);
+  margin: var(--space-6, 24px) 0 var(--space-3, 12px);
+}
+.service-category-title:first-of-type { margin-top: 0; }

@@ -265,8 +265,10 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <h2 class="step-title">Choose Your Service</h2>
           </div>
 
+          <?php foreach (groupServicesByCategory($services) as $catName => $catServices): ?>
+          <h3 class="service-category-title"><?= htmlspecialchars($catName) ?></h3>
           <div class="service-select-grid">
-            <?php foreach ($services as $svc):
+            <?php foreach ($catServices as $svc):
               $isActive = $preselected && $preselected['id'] == $svc['id'];
             ?>
             <button class="service-select-card <?= $isActive ? 'selected' : '' ?>"
@@ -276,6 +278,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             </button>
             <?php endforeach; ?>
           </div>
+          <?php endforeach; ?>
 
           <!-- Service description (shown once a service is chosen) -->
           <div id="service-desc-box" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-left:4px solid var(--color-primary);border-radius:0 var(--border-radius-lg,8px) var(--border-radius-lg,8px) 0">

@@ -19,7 +19,14 @@ $services = $db->query("
     ORDER BY s.display_order ASC
 ")->fetchAll();
 
-$categories = array_unique(array_column($services, 'category'));
+// Order services + filter buttons by the configured category list (Admin →
+// Services). Blank categories file under "Other".
+$grouped    = groupServicesByCategory($services);
+$categories = array_keys($grouped);
+$services   = [];
+foreach ($grouped as $catName => $rows) {
+    foreach ($rows as $r) { $r['category'] = $catName; $services[] = $r; }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

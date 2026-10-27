@@ -67,8 +67,12 @@ $addons   = $addonsByService[$svc['id']] ?? [];
             <label class="admin-label">Category</label>
             <select class="admin-input" name="category">
               <option value="">— None —</option>
-              <?php foreach ($categories as $cat): ?>
-                <option value="<?= $cat ?>" <?= $svc['category'] === $cat ? 'selected' : '' ?>><?= $cat ?></option>
+              <?php
+                // Keep a category that isn't in the list, so saving never silently wipes it.
+                $rowCats = $categories;
+                if (!empty($svc['category']) && !in_array($svc['category'], $rowCats, true)) $rowCats[] = $svc['category'];
+                foreach ($rowCats as $cat): ?>
+                <option value="<?= htmlspecialchars($cat) ?>" <?= $svc['category'] === $cat ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
               <?php endforeach; ?>
             </select>
           </div>

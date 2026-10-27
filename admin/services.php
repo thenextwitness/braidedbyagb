@@ -50,6 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+        // ── Save the ordered category list ──────────────────
+        } elseif ($action === 'save_categories') {
+            $list = [];
+            foreach (preg_split('/[
+]+/', (string)($_POST['service_categories'] ?? '')) as $c) {
+                $c = trim(strip_tags($c));
+                if ($c !== '' && mb_strlen($c) <= 60 && !in_array($c, $list, true)) $list[] = $c;
+            }
+            if (!$list) { $error = 'Add at least one category.'; }
+            else { setSetting('service_categories', implode("
+", $list)); $msg = 'Categories saved.'; }
+
         // ── Update service ──────────────────────────────────
         } elseif ($action === 'update_service') {
             $id = (int)$_POST['id'];
@@ -182,7 +194,7 @@ try {
     $error = 'Could not load services. Check database tables are set up.';
 }
 
-$categories = ['Locs', 'Braids', 'Cornrows', 'Twists', 'Extensions', 'Other'];
+$categories = serviceCategories();   // ordered list, edited below (Categories)
 ?>
 
 <?php if ($msg):   ?><div class="alert-success"><?= $msg ?></div><?php endif; ?>
@@ -195,6 +207,24 @@ $categories = ['Locs', 'Braids', 'Cornrows', 'Twists', 'Extensions', 'Other'];
     <p style="color:var(--admin-muted);font-size:0.8rem"><?= count($services) ?> services · click a service to expand and edit</p>
   </div>
   <button class="btn-admin btn-admin-primary" onclick="toggleCreateForm()">+ New Service</button>
+</div>
+
+<!-- ── Service categories (ordered; booking + services pages group by these) ── -->
+<div class="admin-card" style="margin-bottom:20px">
+  <div class="admin-card-header" style="cursor:pointer" onclick="document.getElementById('cat-editor').style.display = document.getElementById('cat-editor').style.display === 'none' ? 'block' : 'none'">
+    <span class="admin-card-title">🗂 Categories</span>
+    <span style="font-size:0.78rem;color:var(--admin-muted)"><?= htmlspecialchars(implode(' · ', $categories)) ?> — click to edit</span>
+  </div>
+  <div class="admin-card-body" id="cat-editor" style="display:none">
+    <form method="POST" action="/admin/services">
+      <input type="hidden" name="action" value="save_categories">
+      <label class="admin-label">One category per line, in the order clients should see them</label>
+      <textarea class="admin-input admin-textarea" name="service_categories" rows="7"><?= htmlspecialchars(implode("
+", $categories)) ?></textarea>
+      <p style="font-size:0.72rem;color:var(--admin-muted);margin:6px 0 10px">Then set each service's category when you edit it. Services with no category show under “Other”.</p>
+      <button type="submit" class="btn-admin btn-admin-primary">Save Categories</button>
+    </form>
+  </div>
 </div>
 
 <!-- ── Create new service (collapsed by default) ────────── -->
@@ -217,7 +247,7 @@ $categories = ['Locs', 'Braids', 'Cornrows', 'Twists', 'Extensions', 'Other'];
             <select class="admin-input" name="category">
               <option value="">— Select —</option>
               <?php foreach ($categories as $cat): ?>
-                <option value="<?= $cat ?>"><?= $cat ?></option>
+                <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
               <?php endforeach; ?>
             </select>
           </div>

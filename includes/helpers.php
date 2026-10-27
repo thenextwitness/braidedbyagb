@@ -180,6 +180,35 @@ function multiStylistEnabled(): bool {
     catch (Throwable $e) { return false; }
 }
 
+// ── Service categories ─────────────────────────────────────
+// The ordered category list is ONE setting (service_categories, one per line),
+// edited in Admin → Services. Booking + services pages group by it.
+const SERVICE_CATEGORIES_DEFAULT = ['Locs', 'Braids', 'Cornrows', 'Twists', 'Extensions', 'Other'];
+
+function serviceCategories(): array {
+    try { $raw = getSetting('service_categories', ''); } catch (Throwable $e) { $raw = ''; }
+    $list = array_values(array_unique(array_filter(array_map('trim', preg_split('/[
+]+/', $raw)))));
+    return $list ?: SERVICE_CATEGORIES_DEFAULT;
+}
+
+/**
+ * Group service rows by category in the configured order. A blank category
+ * files under "Other"; a category not in the list keeps its own name and goes
+ * last. Empty categories are dropped. Returns [categoryName => [services...]].
+ */
+function groupServicesByCategory(array $services): array {
+    $order = serviceCategories();
+    $groups = array_fill_keys($order, []);
+    foreach ($services as $svc) {
+        $cat = trim((string)($svc['category'] ?? ''));
+        if ($cat === '') $cat = 'Other';
+        foreach ($order as $o) { if (strcasecmp($o, $cat) === 0) { $cat = $o; break; } }
+        $groups[$cat][] = $svc;
+    }
+    return array_filter($groups);
+}
+
 function setSetting(string $key, string $value): void {
     $db   = getDB();
     $stmt = $db->prepare("
