@@ -68,5 +68,6 @@ fetch('/api/finalize-payment?payment_intent=<?= urlencode($pi) ?>')
   });
 </script>
 <?php endif; ?>
+<?php include __DIR__ . '/../includes/whatsapp-float.php'; ?>
 </body>
 </html>

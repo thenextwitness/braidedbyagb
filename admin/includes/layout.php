@@ -44,12 +44,8 @@ try {
     $pendingReviews  = (int)$db->query("SELECT COUNT(*) FROM reviews  WHERE status='pending'")->fetchColumn();
     $pendingCustomReq = (int)$db->query("SELECT COUNT(*) FROM custom_requests WHERE status='new'")->fetchColumn();
     $lowStock        = (int)$db->query("SELECT COUNT(DISTINCT product_id) FROM product_variants WHERE stock_qty <= low_stock_alert AND stock_qty > 0")->fetchColumn();
-    // Live chat unread count (table may not exist yet — silently skip)
-    try {
-        $unreadChats = (int)$db->query("SELECT COALESCE(SUM(unread_admin),0) FROM chat_sessions WHERE status='active'")->fetchColumn();
-    } catch (Exception $ce) { $unreadChats = 0; }
 } catch (Exception $e) {
-    $pendingBookings = $pendingOrders = $pendingReviews = $lowStock = $unreadChats = 0;
+    $pendingBookings = $pendingOrders = $pendingReviews = $lowStock = 0;
 }
 ?>
 <!DOCTYPE html>
@@ -132,12 +128,6 @@ try {
 
       <div class="admin-nav-section">
         <p class="admin-nav-label">Clients</p>
-        <a href="/admin/livechat" class="admin-nav-link <?= $currentPage === 'livechat' ? 'active' : '' ?>">
-          <span class="nav-icon">💬</span> Live Chat
-          <?php if ($unreadChats > 0): ?>
-            <span class="admin-badge" style="background:#dc2626"><?= $unreadChats ?></span>
-          <?php endif; ?>
-        </a>
         <a href="/admin/customers" class="admin-nav-link <?= $currentPage === 'customers' ? 'active' : '' ?>">
           <span class="nav-icon">👥</span> Customers
         </a>

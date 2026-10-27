@@ -132,5 +132,6 @@ document.querySelectorAll('.filter-btn').forEach(function(btn){
   });
 });
 </script>
+<?php include __DIR__ . '/../includes/whatsapp-float.php'; ?>
 </body>
 </html>

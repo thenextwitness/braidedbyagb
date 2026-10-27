@@ -76,5 +76,6 @@ try {
     </div>
   </section>
 </main>
+<?php include __DIR__ . '/../includes/whatsapp-float.php'; ?>
 </body>
 </html>

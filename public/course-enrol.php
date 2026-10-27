@@ -166,5 +166,6 @@ function submitEnrol(){
 }
 <?php endif; ?>
 </script>
+<?php include __DIR__ . '/../includes/whatsapp-float.php'; ?>
 </body>
 </html>
