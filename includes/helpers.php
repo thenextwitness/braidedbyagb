@@ -209,6 +209,80 @@ function groupServicesByCategory(array $services): array {
     return array_filter($groups);
 }
 
+// ── Server-side prices (anti-tampering) ───────────────────
+// Checkout pages send their totals so the Stripe Payment Element can show the
+// amount, but money is NEVER taken from what the browser claims: cart-intent and
+// order-intent re-price every item here from the database and refuse requests
+// whose numbers don't match.
+
+/**
+ * Authoritative price of ONE booking cart item. Mirrors the booking page:
+ * base (the chosen option's price, else the service's "from" price) + that
+ * service's active add-ons + its linked pipeline products. Deposit uses the
+ * page's exact rounding (Math.round(total × pct/100 × 100) / 100).
+ * Returns ['total','deposit','products' => [productId => price]] or null when the
+ * item points at something not bookable (unknown/inactive service, option,
+ * add-on or product) — i.e. a stale or tampered request.
+ */
+function serverBookingItemPrice(PDO $db, array $it): ?array {
+    $sid = (int)($it['service_id'] ?? 0);
+    $q = $db->prepare("SELECT price_from FROM services WHERE id = ? AND is_active = 1");
+    $q->execute([$sid]);
+    $svc = $q->fetch();
+    if (!$svc) return null;
+    $total = (float)$svc['price_from'];
+
+    if (!empty($it['variant_id'])) {
+        $q = $db->prepare("SELECT price FROM service_variants WHERE id = ? AND service_id = ?");
+        $q->execute([(int)$it['variant_id'], $sid]);
+        $v = $q->fetch();
+        if (!$v) return null;
+        $total = (float)$v['price'];
+    }
+
+    $addonIds = array_values(array_unique(array_filter(array_map('intval', (array)($it['addons'] ?? [])))));
+    if ($addonIds) {
+        $in = implode(',', array_fill(0, count($addonIds), '?'));
+        $q = $db->prepare("SELECT price FROM service_addons WHERE is_active = 1 AND service_id = ? AND id IN ($in)");
+        $q->execute(array_merge([$sid], $addonIds));
+        $rows = $q->fetchAll(PDO::FETCH_COLUMN);
+        if (count($rows) !== count($addonIds)) return null;   // an add-on that isn't this service's
+        foreach ($rows as $p) $total += (float)$p;
+    }
+
+    $products = [];
+    foreach ((array)($it['pipeline_products'] ?? []) as $p) {
+        $pid = (int)(is_array($p) ? ($p['id'] ?? 0) : $p);
+        if ($pid <= 0 || isset($products[$pid])) continue;
+        $q = $db->prepare("SELECT p.price FROM service_product_links spl
+                           JOIN products p ON p.id = spl.product_id
+                           WHERE spl.service_id = ? AND spl.product_id = ? AND spl.is_active = 1 AND p.is_active = 1");
+        $q->execute([$sid, $pid]);
+        $price = $q->fetchColumn();
+        if ($price === false) return null;                    // not offered with this service
+        $products[$pid] = (float)$price;
+        $total += (float)$price;
+    }
+
+    $pct     = (int)getSetting('deposit_percent', '30');
+    $deposit = round($total * ($pct / 100) * 100) / 100;
+    return ['total' => round($total, 2), 'deposit' => $deposit, 'products' => $products];
+}
+
+/** Shop unit price (products.price), or null if the product isn't on sale. */
+function serverProductPrice(PDO $db, int $productId, ?int $variantId = null): ?float {
+    $q = $db->prepare("SELECT price FROM products WHERE id = ? AND is_active = 1");
+    $q->execute([$productId]);
+    $price = $q->fetchColumn();
+    if ($price === false) return null;
+    if ($variantId) {
+        $v = $db->prepare("SELECT 1 FROM product_variants WHERE id = ? AND product_id = ?");
+        $v->execute([$variantId, $productId]);
+        if (!$v->fetchColumn()) return null;                  // colour doesn't belong to it
+    }
+    return (float)$price;
+}
+
 // ── Rebooking ──────────────────────────────────────────────
 /**
  * "Book again" link for a past booking: opens /booking/{service} with the same
