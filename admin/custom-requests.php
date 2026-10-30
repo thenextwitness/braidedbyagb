@@ -364,16 +364,20 @@ require_once __DIR__ . '/includes/layout.php';
             <option value="declined">Mark as: Declined ❌</option>
           </select>
           <button type="submit" class="btn-admin btn-admin-primary">Send Reply & Update Status</button>
-          <!-- Quick mark viewed if still new -->
+          <!-- Quick mark viewed if still new. Its form lives OUTSIDE this one (form=…):
+               a nested form merged its action into the reply, so "Send Reply" used
+               to only mark the request viewed and the reply was never sent. -->
           <?php if ($req['status'] === 'new'): ?>
-          <form method="POST" action="/admin/custom-requests" style="display:inline">
-            <input type="hidden" name="action"     value="mark_viewed">
-            <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
-            <button type="submit" class="btn-admin btn-admin-outline btn-admin-sm">Mark Viewed</button>
-          </form>
+          <button type="submit" form="mark-viewed-<?= (int)$req['id'] ?>" class="btn-admin btn-admin-outline btn-admin-sm">Mark Viewed</button>
           <?php endif; ?>
         </div>
       </form>
+      <?php if ($req['status'] === 'new'): ?>
+      <form id="mark-viewed-<?= (int)$req['id'] ?>" method="POST" action="/admin/custom-requests" style="display:none">
+        <input type="hidden" name="action"     value="mark_viewed">
+        <input type="hidden" name="request_id" value="<?= (int)$req['id'] ?>">
+      </form>
+      <?php endif; ?>
     </div>
     <?php else: ?>
     <!-- Already actioned — show re-reply option collapsed -->

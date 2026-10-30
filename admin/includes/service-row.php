@@ -148,15 +148,18 @@ $addons   = $addonsByService[$svc['id']] ?? [];
 
         <div style="display:flex;gap:8px">
           <button type="submit" class="btn-admin btn-admin-primary btn-admin-sm">Save Changes</button>
-          <form method="POST" action="/admin/services" style="display:inline">
-            <input type="hidden" name="action" value="delete_service_permanent">
-            <input type="hidden" name="id"     value="<?= $svc['id'] ?>">
-            <button type="submit" class="btn-admin btn-admin-danger btn-admin-sm"
+          <!-- Belongs to the separate delete form below (form=…). It must NOT be a
+               nested <form>: browsers merge a nested form's fields into the edit
+               form, so "Save Changes" used to send action=delete_service_permanent. -->
+            <button type="submit" form="del-perm-<?= (int)$svc['id'] ?>" class="btn-admin btn-admin-danger btn-admin-sm"
                     onclick="return confirm('PERMANENTLY delete <?= addslashes($svc['name']) ?>? This cannot be undone.\n\nIf it has existing bookings, this will fail — hide it instead.')">
               Delete Permanently
             </button>
-          </form>
         </div>
+      </form>
+      <form id="del-perm-<?= (int)$svc['id'] ?>" method="POST" action="/admin/services" style="display:none">
+        <input type="hidden" name="action" value="delete_service_permanent">
+        <input type="hidden" name="id"     value="<?= (int)$svc['id'] ?>">
       </form>
 
       <!-- Price variants panel -->
