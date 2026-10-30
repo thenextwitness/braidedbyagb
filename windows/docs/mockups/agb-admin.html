@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>BraidedbyAGB Admin — mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#000;--fg:#fff;--line:#fff;--accent:#CC1A8A;--gold:#D4AF37;}
+  *{box-sizing:border-box} body{margin:0;background:#000;color:var(--fg);font:13px/1.45 "DM Sans",Segoe UI,sans-serif;width:1440px}
+  .cap{border:2px solid var(--fg);margin:14px;padding:10px 14px;font-size:13px}
+  .cap b{color:var(--accent)}
+  .menu{padding:6px 12px;font-size:12px;border-bottom:1px solid #222}
+  .win{display:grid;grid-template-columns:280px 1fr;min-height:760px}
+  .side{border-right:2px solid var(--line);padding:16px 14px;display:flex;flex-direction:column;gap:8px}
+  .logo{display:flex;align-items:center;gap:8px;font:700 19px "Cormorant Garamond",serif}
+  .logo .mk{background:var(--accent);border-radius:6px;font:700 12px "DM Sans";padding:3px 6px}
+  .logo .pill{background:var(--accent);border-radius:8px;padding:2px 10px}
+  .search{border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px;display:flex;justify-content:space-between;margin:10px 0}
+  .kbd{border:1.5px solid var(--fg);border-radius:8px;padding:0 6px;font-size:11px}
+  .nav{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;font-size:15px;border-radius:10px}
+  .nav.on{background:#fff;color:#000;font-weight:700}
+  .nav.on .kbd{border-color:#000}
+  .sub{margin:-2px 0 4px 18px;border-left:2px solid #fff;padding-left:10px;font-size:12.5px;display:flex;flex-direction:column;gap:6px}
+  .sub .on{border:2px solid var(--accent);border-radius:8px;padding:2px 6px;font-weight:700}
+  .grow{flex:1}
+  .who{display:flex;gap:10px;align-items:center;border-top:2px solid #fff;padding-top:12px;font-size:12px}
+  .av{width:30px;height:30px;border:2px solid #fff;border-radius:50%;display:grid;place-items:center;font-weight:700}
+  .main{padding:0}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:2px solid var(--line)}
+  .crumb{font-weight:700} .crumb u{font-weight:400}
+  .pills{display:flex;gap:10px} .pills span{border:2px solid #fff;border-radius:16px;padding:3px 12px;font-size:12px}
+  .pills span.hot{border-color:var(--accent);color:#fff;background:var(--accent)}
+  .page{padding:18px 26px}
+  h1{font:700 36px "Cormorant Garamond",serif;margin:0} .lede{margin:2px 0 16px}
+  .cols{display:grid;grid-template-columns:3fr 2fr;gap:18px}
+  .card{border:2px solid var(--line);border-radius:14px;padding:12px 14px}
+  .card.hot{border-color:var(--accent)}
+  .ch{font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .ch::after{content:"";flex:1;border-top:2px solid #fff}
+  .card.hot .ch{color:#fff}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+  .stat .n{font:700 30px "Cormorant Garamond",serif} .stat .gold{color:var(--gold)}
+  .row{display:flex;justify-content:space-between;align-items:center;border:2px solid #fff;border-radius:10px;padding:8px 12px;margin-bottom:8px}
+  .row b{font-size:14px} .t{font:700 20px "Cormorant Garamond",serif;width:62px}
+  .tag{border:1.5px solid #fff;border-radius:12px;padding:1px 9px;font-size:11px;white-space:nowrap}
+  .tag.ok{border-color:var(--gold);color:var(--gold)} .tag.hot{border-color:var(--accent);background:var(--accent)}
+  .wait{border:2px solid #fff;border-radius:10px;padding:8px 12px;margin-bottom:8px}
+  .wait .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+  .btn{display:inline-block;border:2px solid #fff;border-radius:10px;padding:5px 12px;font-size:12px;margin:6px 6px 0 0}
+  .btn.p{background:var(--accent);border-color:var(--accent);font-weight:700}
+  .tabs{display:flex;gap:18px;border-bottom:2px solid #fff;margin-bottom:10px}
+  .tabs span{padding:4px 0} .tabs .on{border-bottom:3px solid var(--accent);font-weight:700}
+  .facts{width:100%;border-collapse:collapse;font-size:12.5px} .facts td{padding:6px 4px;border-top:1px solid #333;vertical-align:top} .facts td:first-child{width:38%}
+  .field{border:2px solid #fff;border-radius:10px;padding:6px 10px;margin:4px 0 10px;font-size:12.5px}
+  .ex{border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;font-size:9.5px;padding:0 5px;margin-left:6px}
+</style></head><body>
+
+<!-- ═══════════════ FRAME 1 — TODAY ═══════════════ -->
+<div class="cap"><b>Frame 1 — Today</b> (opens here). Left: today's appointments in time order — tap one to open it. Right: <b>waiting on you</b> — only what needs your decision (bookings to confirm, bank transfers to check, new requests, reviews). The pills at the top are the same counts, on every screen. Numbers are live from the website; if the internet drops, the page says <b>"as last seen 10:42"</b> and changes wait until you're back online. <span class="ex">EXAMPLE</span> data.</div>
+<div class="menu">File &nbsp; Go &nbsp; Help</div>
+<div class="win">
+  <aside class="side">
+    <div class="logo"><span class="mk">AGB</span>BraidedbyAGB <span class="pill">Admin</span></div>
+    <div class="search"><span>🔍 Search, or say what to do</span><span class="kbd">Ctrl K</span></div>
+    <div class="nav on">☰ Today <span class="kbd">Ctrl 1</span></div>
+    <div class="nav">📅 Bookings <span class="kbd">Ctrl 2</span></div>
+    <div class="nav">👥 Clients <span class="kbd">Ctrl 3</span></div>
+    <div class="nav">✂ Catalogue <span class="kbd">Ctrl 4</span></div>
+    <div class="nav">🛍 Shop <span class="kbd">Ctrl 5</span></div>
+    <div class="nav">🎓 Academy <span class="kbd">Ctrl 6</span></div>
+    <div class="nav">£ Money <span class="kbd">Ctrl 7</span></div>
+    <div class="grow"></div>
+    <div class="nav">⚙ System <span class="kbd">Ctrl 0</span></div>
+    <div class="who"><span class="av">T</span><div><b>Tolu</b><br>BraidedbyAGB · online</div></div>
+  </aside>
+  <main class="main">
+    <div class="top"><span class="crumb">Today</span>
+      <div class="pills"><span class="hot">3 to confirm</span><span>2 transfers to check</span><span>1 request</span></div></div>
+    <div class="page">
+      <h1>Today</h1><div class="lede">Thursday 30 October · 4 appointments · first at 10:00</div>
+      <div class="stats">
+        <div class="card stat"><div class="ch">Taken today</div><div class="n">£185</div>2 completed</div>
+        <div class="card stat"><div class="ch">This week</div><div class="n">£1,240</div>11 completed</div>
+        <div class="card stat"><div class="ch">Balance still due today</div><div class="n gold">£210</div>on the day, 2 clients</div>
+      </div>
+      <div class="cols">
+        <div class="card">
+          <div class="ch">Today's appointments</div>
+          <div class="row"><span class="t">10:00</span><div style="flex:1"><b>Amara Okafor</b><br>Knotless braids — waist length · 6h</div><span class="tag ok">completed</span></div>
+          <div class="row"><span class="t">13:00</span><div style="flex:1"><b>Jade Bello</b><br>Cornrows + beads · 2h · deposit paid</div><span class="tag ok">completed</span></div>
+          <div class="row"><span class="t">15:30</span><div style="flex:1"><b>Chioma Eze</b><br>Box braids — medium · 5h · £90 due on the day</div><span class="tag">confirmed</span></div>
+          <div class="row"><span class="t">17:00</span><div style="flex:1"><b>Sarah (for Ruth Ade)</b><br>Kids cornrows · 1h30 · paid in full (Klarna)</div><span class="tag">confirmed</span></div>
+        </div>
+        <div class="card hot">
+          <div class="ch">Waiting on you</div>
+          <div class="wait"><div class="k">CONFIRM · BOOKING</div><b>Tomi A. — Locs retwist, Sat 1 Nov 11:00</b><br>deposit £27 paid by card<br><span class="btn p">Confirm booking</span><span class="btn">Open</span></div>
+          <div class="wait"><div class="k">CHECK · BANK TRANSFER</div><b>Funmi L. — £36 deposit</b><br>said she paid on 29 Oct · ref FUNMI-20261102<br><span class="btn p">Mark received</span><span class="btn">Open</span></div>
+          <div class="wait"><div class="k">REPLY · CUSTOM REQUEST</div><b>Zig-zag cornrows with heart part</b><br>from Kemi · 2 photos<br><span class="btn">Reply…</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════ FRAME 2 — BOOKINGS ═══════════════ -->
+<div class="cap" style="margin-top:28px"><b>Frame 2 — Bookings › a booking opened.</b> Left: the list with status tabs and search. Right: the booking itself — client, service, money, and every action. Pressing an action never just happens: it shows <b>what will change, who is told, and when</b>, and the button names the action ("Confirm booking", not "Yes"). After saving, the page says <b>"Saved."</b> or <b>"Not saved: reason"</b> — nothing fails silently. <span class="ex">EXAMPLE</span> data.</div>
+<div class="menu">File &nbsp; Go &nbsp; Help</div>
+<div class="win">
+  <aside class="side">
+    <div class="logo"><span class="mk">AGB</span>BraidedbyAGB <span class="pill">Admin</span></div>
+    <div class="search"><span>🔍 Search, or say what to do</span><span class="kbd">Ctrl K</span></div>
+    <div class="nav">☰ Today <span class="kbd">Ctrl 1</span></div>
+    <div class="nav on">📅 Bookings <span class="kbd">Ctrl 2</span></div>
+    <div class="sub"><span class="on">All bookings</span><span>New booking</span><span>Calendar &amp; blocked dates</span></div>
+    <div class="nav">👥 Clients <span class="kbd">Ctrl 3</span></div>
+    <div class="nav">✂ Catalogue <span class="kbd">Ctrl 4</span></div>
+    <div class="nav">🛍 Shop <span class="kbd">Ctrl 5</span></div>
+    <div class="nav">🎓 Academy <span class="kbd">Ctrl 6</span></div>
+    <div class="nav">£ Money <span class="kbd">Ctrl 7</span></div>
+    <div class="grow"></div>
+    <div class="nav">⚙ System <span class="kbd">Ctrl 0</span></div>
+    <div class="who"><span class="av">T</span><div><b>Tolu</b><br>BraidedbyAGB · online</div></div>
+  </aside>
+  <main class="main">
+    <div class="top"><span class="crumb"><u>Bookings</u> › AGB-2026-0418</span>
+      <div class="pills"><span class="hot">3 to confirm</span><span>2 transfers to check</span><span>1 request</span></div></div>
+    <div class="page">
+      <h1>Bookings</h1><div class="lede">Every booking, newest appointment first. Search by name, email or reference.</div>
+      <div class="cols">
+        <div class="card">
+          <div class="tabs"><span class="on">Pending 3</span><span>Confirmed 12</span><span>Completed</span><span>Incomplete</span><span>Cancelled</span></div>
+          <div class="field">🔍 Search name, email or AGB-…</div>
+          <div class="row" style="border-color:var(--accent)"><div style="flex:1"><b>Tomi Adewale</b> · AGB-2026-0418<br>Locs retwist · Sat 1 Nov 11:00 · deposit £27 paid</div><span class="tag hot">pending</span></div>
+          <div class="row"><div style="flex:1"><b>Funmi Lawal</b> · AGB-2026-0421<br>Box braids · Sun 2 Nov 10:00 · bank transfer, not yet seen</div><span class="tag">pending</span></div>
+          <div class="row"><div style="flex:1"><b>Grace Obi</b> · AGB-2026-0422<br>Knotless braids · Tue 4 Nov 09:00 · deposit £45 paid</div><span class="tag">pending</span></div>
+        </div>
+        <div class="card hot">
+          <div class="ch">Tomi Adewale · AGB-2026-0418</div>
+          <table class="facts">
+            <tr><td>Service</td><td><b>Locs retwist — shoulder length</b> + scalp oil treatment</td></tr>
+            <tr><td>When</td><td>Saturday 1 November, 11:00 → 13:30 (2h30)</td></tr>
+            <tr><td>Money</td><td>£90 total · <span style="color:var(--gold)">£27 deposit paid by card</span> · £63 on the day</td></tr>
+            <tr><td>Client</td><td>07xxx xxx xxx · tomi@… · 3rd visit · 140 loyalty points</td></tr>
+            <tr><td>Notes</td><td>"Sensitive scalp, please"</td></tr>
+          </table>
+          <div class="ch" style="margin-top:12px">What changes when you confirm</div>
+          <table class="facts">
+            <tr><td>The booking</td><td>pending → <b>confirmed</b>; the 11:00 slot stays held</td></tr>
+            <tr><td>Who is told</td><td>Tomi gets the confirmation email now</td></tr>
+            <tr><td>Money</td><td>nothing moves now; the £27 deposit stays held until you mark it completed</td></tr>
+          </table>
+          <span class="btn p">Confirm booking</span><span class="btn">Reschedule…</span><span class="btn">Payment link</span><span class="btn">WhatsApp Tomi</span><span class="btn">Cancel booking…</span>
+          <div style="margin-top:10px">Saved. <span style="color:var(--gold)">✓</span> Confirmed at 10:44 — Tomi was emailed.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body></html>
