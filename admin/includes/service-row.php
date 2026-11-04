@@ -150,11 +150,14 @@ $addons   = $addonsByService[$svc['id']] ?? [];
           <button type="submit" class="btn-admin btn-admin-primary btn-admin-sm">Save Changes</button>
           <!-- Belongs to the separate delete form below (form=…). It must NOT be a
                nested <form>: browsers merge a nested form's fields into the edit
-               form, so "Save Changes" used to send action=delete_service_permanent. -->
+               form, so "Save Changes" used to send action=delete_service_permanent.
+               Only offered once the service is hidden (the server enforces this too). -->
+          <?php if (!$svc['is_active']): ?>
             <button type="submit" form="del-perm-<?= (int)$svc['id'] ?>" class="btn-admin btn-admin-danger btn-admin-sm"
                     onclick="return confirm('PERMANENTLY delete <?= addslashes($svc['name']) ?>? This cannot be undone.\n\nIf it has existing bookings, this will fail — hide it instead.')">
               Delete Permanently
             </button>
+          <?php endif; ?>
         </div>
       </form>
       <form id="del-perm-<?= (int)$svc['id'] ?>" method="POST" action="/admin/services" style="display:none">

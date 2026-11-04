@@ -151,7 +151,7 @@ fun GalleryScreen(onBack: () -> Unit) {
                             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                         }
                         if (bytes == null) { snackState.showSnackbar("Couldn't read that image."); uploading = false; return@launch }
-                        val body = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+                        val body = bytes.toRequestBody((context.contentResolver.getType(uri) ?: "image/jpeg").toMediaTypeOrNull())
                         val part = MultipartBody.Part.createFormData("image", "upload.jpg", body)
                         val sid  = serviceId?.let { it.toString().toRequestBody("text/plain".toMediaTypeOrNull()) }
                         val cap  = caption.toRequestBody("text/plain".toMediaTypeOrNull())

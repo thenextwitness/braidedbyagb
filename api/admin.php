@@ -737,7 +737,6 @@ switch ($endpoint) {
                 $type  = $delta > 0 ? 'manual_add' : 'manual_remove';
                 if ($delta === 0) { http_response_code(400); echo json_encode(['error' => 'Points cannot be zero']); exit; }
                 adjustLoyaltyPoints($id, $delta, $type, $desc);
-                $pts = (int)$db->prepare("SELECT loyalty_points FROM customers WHERE id=?")->query([$id])?->fetchColumn();
                 $pstmt = $db->prepare("SELECT loyalty_points FROM customers WHERE id=?");
                 $pstmt->execute([$id]); $pts = (int)$pstmt->fetchColumn();
                 echo json_encode(['success' => true, 'loyalty_points' => $pts]); exit;
@@ -1208,7 +1207,7 @@ switch ($endpoint) {
 
         // ── GET — list ALL services with variants + per-service addons ────
         if ($method === 'GET' && $action === '') {
-            $services  = $db->query("SELECT id, name, description, price_from, duration_mins, category, is_active, display_order FROM services ORDER BY display_order ASC, id ASC")->fetchAll();
+            $services  = $db->query("SELECT id, name, description, price_from, duration_mins, category, is_active, display_order, image_url, prep_notes, is_new, rebook_weeks FROM services ORDER BY display_order ASC, id ASC")->fetchAll();
             $variants  = $db->query("SELECT id, service_id, variant_name, price, duration_mins FROM service_variants ORDER BY display_order ASC")->fetchAll();
             // Per-service add-ons only (retired global rows have service_id = NULL and are excluded).
             $allAddons = $db->query("SELECT id, service_id, name, price, is_active FROM service_addons WHERE service_id IS NOT NULL AND is_active = 1 ORDER BY id ASC")->fetchAll();
@@ -1248,16 +1247,43 @@ switch ($endpoint) {
             $id   = (int)($_GET['id'] ?? 0);
             $body = json_decode(file_get_contents('php://input'), true) ?? [];
             if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID required']); exit; }
-            $db->prepare("UPDATE services SET name=?, description=?, price_from=?, duration_mins=?, category=? WHERE id=?")
-               ->execute([
-                   trim($body['name']          ?? ''),
-                   trim($body['description']   ?? '') ?: null,
-                   (float)($body['price_from']   ?? 0),
-                   (int)($body['duration_mins']  ?? 60),
-                   trim($body['category']      ?? '') ?: null,
-                   $id
-               ]);
+            $chk = $db->prepare("SELECT COUNT(*) FROM services WHERE id=?"); $chk->execute([$id]);
+            if (!(int)$chk->fetchColumn()) { http_response_code(404); echo json_encode(['error' => 'This service no longer exists.']); exit; }
+            $name = trim($body['name'] ?? '');
+            if ($name === '') { http_response_code(400); echo json_encode(['error' => 'Name required']); exit; }
+            $set  = ['name=?', 'description=?', 'price_from=?', 'duration_mins=?', 'category=?'];
+            $vals = [
+                $name,
+                trim($body['description']   ?? '') ?: null,
+                (float)($body['price_from']   ?? 0),
+                (int)($body['duration_mins']  ?? 60),
+                trim($body['category']      ?? '') ?: null,
+            ];
+            // Optional fields: only changed when the app sends them, so an older
+            // app version can never blank them out.
+            if (array_key_exists('prep_notes', $body)) { $set[] = 'prep_notes=?'; $vals[] = trim((string)$body['prep_notes']) ?: null; }
+            if (array_key_exists('is_new', $body))     { $set[] = 'is_new=?';     $vals[] = !empty($body['is_new']) ? 1 : 0; }
+            if (array_key_exists('rebook_weeks', $body)) {
+                $set[] = 'rebook_weeks=?';
+                $vals[] = $body['rebook_weeks'] === null || $body['rebook_weeks'] === '' ? null : max(0, min(52, (int)$body['rebook_weeks']));
+            }
+            $vals[] = $id;
+            $db->prepare("UPDATE services SET " . implode(', ', $set) . " WHERE id=?")->execute($vals);
             echo json_encode(['success' => true]); exit;
+        }
+
+        // ── POST action=upload_image — set the service photo (multipart "image") ──
+        if ($method === 'POST' && $action === 'upload_image') {
+            $id = (int)($_GET['id'] ?? 0);
+            $chk = $db->prepare("SELECT COUNT(*) FROM services WHERE id=?"); $chk->execute([$id]);
+            if (!$id || !(int)$chk->fetchColumn()) { http_response_code(404); echo json_encode(['error' => 'This service no longer exists.']); exit; }
+            if (empty($_FILES['image']['name']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400); echo json_encode(['error' => 'No image uploaded']); exit;
+            }
+            $url = uploadImage($_FILES['image'], 'services');
+            if (!$url) { http_response_code(400); echo json_encode(['error' => 'Upload failed (JPG/PNG/WebP, max 5MB)']); exit; }
+            $db->prepare("UPDATE services SET image_url=? WHERE id=?")->execute([$url, $id]);
+            echo json_encode(['success' => true, 'image_url' => $url]); exit;
         }
 
         // ── POST action=toggle — toggle active ────────────────

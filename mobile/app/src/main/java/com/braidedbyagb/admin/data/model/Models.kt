@@ -339,6 +339,10 @@ data class ServiceFull(
     val category: String?,
     @SerializedName("is_active")     val isActive: Int,
     @SerializedName("display_order") val displayOrder: Int = 0,
+    @SerializedName("image_url")     val imageUrl: String? = null,
+    @SerializedName("prep_notes")    val prepNotes: String? = null,
+    @SerializedName("is_new")        val isNew: Int = 0,
+    @SerializedName("rebook_weeks")  val rebookWeeks: Int? = null,
     val variants: List<ServiceVariantFull> = emptyList(),
     val addons:   List<ServiceAddonFull>   = emptyList()
 )
@@ -376,7 +380,11 @@ data class ServiceUpdateRequest(
     val description: String? = null,
     @SerializedName("price_from")    val priceFrom: Double,
     @SerializedName("duration_mins") val durationMins: Int,
-    val category: String? = null
+    val category: String? = null,
+    @SerializedName("prep_notes")    val prepNotes: String = "",
+    @SerializedName("is_new")        val isNew: Boolean = false,
+    // "" = use the default from Settings; "0" = never remind
+    @SerializedName("rebook_weeks")  val rebookWeeks: String = ""
 )
 
 data class VariantCreateRequest(
@@ -400,7 +408,9 @@ data class AddonUpdateRequest(
 data class ServiceMutateResponse(
     val success: Boolean,
     val id: Int? = null,
-    @SerializedName("is_active") val isActive: Int? = null
+    @SerializedName("is_active") val isActive: Int? = null,
+    @SerializedName("image_url") val imageUrl: String? = null,
+    val error: String? = null
 )
 
 // ── Maintenance ──────────────────────────────────────────

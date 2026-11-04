@@ -69,12 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Logo upload
         if (!empty($_FILES['brand_logo']['name']) && $_FILES['brand_logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['image/jpeg','image/png','image/webp','image/svg+xml'];
+            // Extension comes from the detected content, never the uploaded name
+            // (same rule as uploadImage()), so a logo can't be saved as a script.
+            $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/svg+xml' => 'svg'];
             $finfo   = finfo_open(FILEINFO_MIME_TYPE);
             $mime    = finfo_file($finfo, $_FILES['brand_logo']['tmp_name']);
             finfo_close($finfo);
-            if (in_array($mime, $allowed) && $_FILES['brand_logo']['size'] < 2 * 1024 * 1024) {
-                $ext  = pathinfo($_FILES['brand_logo']['name'], PATHINFO_EXTENSION);
+            if (isset($allowed[$mime]) && $_FILES['brand_logo']['size'] < 2 * 1024 * 1024) {
+                $ext  = $allowed[$mime];
                 $dir  = __DIR__ . '/../uploads/brand/';
                 if (!is_dir($dir)) mkdir($dir, 0755, true);
                 $dest = $dir . 'logo.' . strtolower($ext);

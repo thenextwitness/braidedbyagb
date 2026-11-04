@@ -35,3 +35,6 @@ deployment:
     - /bin/mkdir -p $DEPLOYPATH/assets   && /bin/cp -Rf assets/.   $DEPLOYPATH/assets/
     - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
     - /bin/cp -f site.webmanifest $DEPLOYPATH/site.webmanifest
+    # Stamp which commit is live, so "is the fix deployed?" is one fetch of
+    # /version.txt instead of a guess. Never fails the deploy.
+    - (git rev-parse --short HEAD 2>/dev/null || echo unknown) > $DEPLOYPATH/version.txt

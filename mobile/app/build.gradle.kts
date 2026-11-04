@@ -14,8 +14,8 @@ android {
         applicationId = "com.braidedbyagb.admin"
         minSdk        = 26
         targetSdk     = 35
-        versionCode   = 2
-        versionName   = "1.1.0"
+        versionCode   = 3
+        versionName   = "1.2.0"
 
         // Base URL can be overridden per build variant
         buildConfigField("String", "API_BASE_URL", "\"https://braidedbyagb.co.uk/\"")

@@ -65,10 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ── Update service ──────────────────────────────────
         } elseif ($action === 'update_service') {
             $id = (int)$_POST['id'];
+            $chk = $db->prepare("SELECT COUNT(*) FROM services WHERE id=?"); $chk->execute([$id]);
+            if (!(int)$chk->fetchColumn()) $error = 'Not saved: that service no longer exists.';
 
             // Image: file upload takes priority, then URL field, then keep existing
             $img = sanitize($_POST['image_url'] ?? '');
-            if (!empty($_FILES['image_file']['name']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+            if (!$error && !empty($_FILES['image_file']['name']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
                 $up = uploadImage($_FILES['image_file'], 'services');
                 if ($up) { $img = $up; }
                 else { $error = 'Image upload failed — use JPG/PNG/WebP max 5MB.'; }
@@ -104,9 +106,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ── Permanently delete ──────────────────────────────
         } elseif ($action === 'delete_service_permanent') {
             $id = (int)$_POST['id'];
-            $inUse = (int)$db->prepare("SELECT COUNT(*) FROM bookings WHERE service_id=?")->execute([$id]) ?
-                     $db->query("SELECT COUNT(*) FROM bookings WHERE service_id=$id")->fetchColumn() : 0;
-            if ($inUse > 0) {
+            $q  = $db->prepare("SELECT is_active FROM services WHERE id=?"); $q->execute([$id]);
+            $isActive = $q->fetchColumn();
+            $q  = $db->prepare("SELECT COUNT(*) FROM bookings WHERE service_id=?"); $q->execute([$id]);
+            $inUse = (int)$q->fetchColumn();
+            // Two guards so a save can never delete a service again (it did, via a
+            // nested form): a real delete request carries no edit fields, and only
+            // a service already hidden from the website can be deleted for good.
+            if (isset($_POST['name']) || isset($_POST['price_from'])) {
+                $error = 'Not deleted: that request looked like a save, not a delete. Nothing was changed — please try again.';
+            } elseif ($isActive === false) {
+                $error = 'That service no longer exists.';
+            } elseif ((int)$isActive === 1) {
+                $error = 'Hide the service first, then delete it permanently.';
+            } elseif ($inUse > 0) {
                 $error = 'Cannot delete — this service has existing bookings. Hide it instead.';
             } else {
                 $db->prepare("DELETE FROM service_variants WHERE service_id=?")->execute([$id]);

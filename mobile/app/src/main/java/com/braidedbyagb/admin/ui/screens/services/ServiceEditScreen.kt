@@ -1,5 +1,8 @@
 package com.braidedbyagb.admin.ui.screens.services
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,18 +15,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import coil.compose.AsyncImage
 import com.braidedbyagb.admin.data.model.*
 import com.braidedbyagb.admin.data.remote.ApiClient
 import com.braidedbyagb.admin.ui.theme.Primary
 import com.braidedbyagb.admin.ui.theme.Purple800
 import com.braidedbyagb.admin.ui.theme.TextMuted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+
+private const val SITE = "https://braidedbyagb.co.uk"
 
 /**
  * Unified create / edit screen for a service.
@@ -47,6 +62,15 @@ fun ServiceEditScreen(
     var priceFrom    by remember { mutableStateOf("") }
     var durationMins by remember { mutableStateOf("60") }
     var category     by remember { mutableStateOf("") }
+    var prepNotes    by remember { mutableStateOf("") }
+    var rebookWeeks  by remember { mutableStateOf("") }
+    var showNewBadge by remember { mutableStateOf(false) }
+    var imageUrl     by remember { mutableStateOf<String?>(null) }
+    var uploading    by remember { mutableStateOf(false) }
+    // Set when an existing service couldn't be loaded. Saving is then blocked, so a
+    // half-empty form can never overwrite the real service.
+    var loadError    by remember { mutableStateOf<String?>(null) }
+    val context      = LocalContext.current
 
     // Variant + add-on lists (loaded from API when editing)
     var variants     by remember { mutableStateOf<List<ServiceVariantFull>>(emptyList()) }
@@ -82,11 +106,21 @@ fun ServiceEditScreen(
                     priceFrom    = svc.priceFrom.toString()
                     durationMins = svc.durationMins.toString()
                     category     = svc.category ?: ""
+                    prepNotes    = svc.prepNotes ?: ""
+                    rebookWeeks  = svc.rebookWeeks?.toString() ?: ""
+                    showNewBadge = svc.isNew == 1
+                    imageUrl     = svc.imageUrl?.takeIf { it.isNotBlank() }
                     variants     = svc.variants
                     addons       = svc.addons      // per-service add-ons
+                } else {
+                    loadError = "This service no longer exists on the website."
                 }
+            } else {
+                loadError = "Couldn't load this service (error ${res.code()}). Go back and try again."
             }
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            loadError = "Couldn't load this service. Check your connection, then go back and try again."
+        }
         loading = false
     }
 
@@ -95,6 +129,7 @@ fun ServiceEditScreen(
         val price = priceFrom.toDoubleOrNull() ?: 0.0
         val dur   = durationMins.toIntOrNull() ?: 60
         if (name.isBlank()) { scope.launch { snack.showSnackbar("Name is required") }; return }
+        if (loadError != null) { scope.launch { snack.showSnackbar("Not saved: $loadError") }; return }
 
         scope.launch {
             saving = true
@@ -127,19 +162,52 @@ fun ServiceEditScreen(
                             description  = description.trim().takeIf { it.isNotBlank() },
                             priceFrom    = price,
                             durationMins = dur,
-                            category     = category.trim().takeIf { it.isNotBlank() }
+                            category     = category.trim().takeIf { it.isNotBlank() },
+                            prepNotes    = prepNotes.trim(),
+                            isNew        = showNewBadge,
+                            rebookWeeks  = rebookWeeks.trim()
                         )
                     )
                     if (res.isSuccessful) {
                         snack.showSnackbar("Saved")
                         onSaved(savedId!!)
+                    } else if (res.code() == 404) {
+                        snack.showSnackbar("Not saved: this service no longer exists on the website.")
                     } else {
-                        snack.showSnackbar("Failed to save")
+                        snack.showSnackbar("Not saved (error ${res.code()}). Nothing was changed.")
                     }
                 }
             } catch (_: Exception) { snack.showSnackbar("Connection error") }
             saving = false
         }
+    }
+
+    // ── Service photo ─────────────────────────────────────
+    fun uploadPhoto(uri: Uri) {
+        val id = savedId ?: return
+        scope.launch {
+            uploading = true
+            try {
+                val bytes = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                }
+                if (bytes == null) { snack.showSnackbar("Couldn't read that photo."); uploading = false; return@launch }
+                if (bytes.size > 5 * 1024 * 1024) { snack.showSnackbar("Not uploaded: photo is over 5 MB."); uploading = false; return@launch }
+                val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+                val part = MultipartBody.Part.createFormData("image", "service-photo", bytes.toRequestBody(mime.toMediaTypeOrNull()))
+                val res  = ApiClient.api.uploadServiceImage(id, part)
+                if (res.isSuccessful && res.body()?.imageUrl != null) {
+                    imageUrl = res.body()!!.imageUrl
+                    snack.showSnackbar("Photo saved")
+                } else {
+                    snack.showSnackbar("Photo not saved (error ${res.code()}). Use a JPG, PNG or WebP under 5 MB.")
+                }
+            } catch (_: Exception) { snack.showSnackbar("Photo not saved: connection error") }
+            uploading = false
+        }
+    }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) uploadPhoto(uri)
     }
 
     // ── Add variant ───────────────────────────────────────
@@ -246,6 +314,13 @@ fun ServiceEditScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Primary)
             }
+        } else if (loadError != null) {
+            Box(Modifier.fillMaxSize().padding(padding).padding(24.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(loadError ?: "", color = Purple800, fontWeight = FontWeight.SemiBold)
+                    OutlinedButton(onClick = onBack) { Text("Back to services") }
+                }
+            }
         } else {
 
         LazyColumn(
@@ -305,6 +380,60 @@ fun ServiceEditScreen(
                                 modifier      = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
+                        }
+
+                        OutlinedTextField(
+                            value         = prepNotes,
+                            onValueChange = { prepNotes = it },
+                            label         = { Text("Prep notes (shown to clients)") },
+                            modifier      = Modifier.fillMaxWidth(),
+                            minLines      = 2,
+                            maxLines      = 5
+                        )
+
+                        OutlinedTextField(
+                            value         = rebookWeeks,
+                            onValueChange = { v -> rebookWeeks = v.filter { it.isDigit() }.take(2) },
+                            label         = { Text("Rebook reminder (weeks)") },
+                            supportingText = { Text("Blank = default from Settings. 0 = never remind.", fontSize = 11.sp) },
+                            singleLine    = true,
+                            modifier      = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = showNewBadge, onCheckedChange = { showNewBadge = it })
+                            Text("Show the \"New\" badge on the website")
+                        }
+                    }
+                }
+            }
+
+            // ── Photo (once the service exists) ──────────
+            if (savedId != null) {
+                item {
+                    SectionHeader("Photo")
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            val url = imageUrl
+                            if (url != null) {
+                                AsyncImage(
+                                    model = if (url.startsWith("http")) url else SITE + url,
+                                    contentDescription = "Service photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(84.dp).clip(RoundedCornerShape(8.dp))
+                                )
+                            } else {
+                                Text("No photo yet", color = TextMuted, fontSize = 13.sp, modifier = Modifier.width(84.dp))
+                            }
+                            Button(
+                                onClick = { photoPicker.launch("image/*") },
+                                enabled = !uploading,
+                                colors  = ButtonDefaults.buttonColors(containerColor = Primary)
+                            ) {
+                                if (uploading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                                else Text(if (url != null) "Change photo" else "Add photo")
+                            }
                         }
                     }
                 }

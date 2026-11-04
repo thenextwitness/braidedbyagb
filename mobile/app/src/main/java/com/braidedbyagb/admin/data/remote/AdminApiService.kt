@@ -148,6 +148,13 @@ interface AdminApiService {
         @Body req: ServiceUpdateRequest
     ): Response<ServiceMutateResponse>
 
+    @Multipart
+    @POST("api/admin.php?endpoint=services&action=upload_image")
+    suspend fun uploadServiceImage(
+        @Query("id") id: Int,
+        @Part image: MultipartBody.Part
+    ): Response<ServiceMutateResponse>
+
     @POST("api/admin.php?endpoint=services&action=toggle")
     suspend fun toggleService(@Query("id") id: Int): Response<ServiceMutateResponse>
 

@@ -621,15 +621,29 @@ function journalOwnerDraw(int $drawId, float $amount, string $date): void {
 // redeclaration when auth.php is included on admin pages.
 
 // ── Image helper ──────────────────────────────────────────
+// The file's real content decides what it is: the browser/app's declared type
+// and file name are never trusted (a script labelled "image/jpeg" used to be
+// saved with its own .php extension). The extension is always set here from
+// the detected image type, so an upload can never become runnable code.
 function uploadImage(array $file, string $folder): string|false {
-    $allowed = ['image/jpeg','image/png','image/webp'];
-    if (!in_array($file['type'], $allowed)) return false;
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) return false;
+    if (!is_uploaded_file($file['tmp_name'] ?? '')) return false;
     if ($file['size'] > 5 * 1024 * 1024) return false;  // 5MB limit
 
-    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = generateToken(16) . '.' . strtolower($ext);
-    $dir      = __DIR__ . '/../uploads/' . $folder . '/';
+    $types = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
+    $info  = @getimagesize($file['tmp_name']);
+    if (!$info || !isset($types[$info[2]])) return false;
+
+    $folder   = preg_replace('/[^a-z0-9_-]/', '', strtolower($folder));
+    $filename = generateToken(16) . '.' . $types[$info[2]];
+    $root     = __DIR__ . '/../uploads/';
+    $dir      = $root . $folder . '/';
     if (!is_dir($dir)) mkdir($dir, 0755, true);
+    // Belt and braces: nothing under /uploads may run as a script.
+    if (!is_file($root . '.htaccess')) {
+        @file_put_contents($root . '.htaccess', "# Written by uploadImage(): uploads are data, never code.\n"
+            . "<FilesMatch \"\\.(php[0-9]?|phtml|phar|pl|py|cgi|sh)$\">\n  Require all denied\n</FilesMatch>\n");
+    }
 
     $dest = $dir . $filename;
     if (move_uploaded_file($file['tmp_name'], $dest)) {
