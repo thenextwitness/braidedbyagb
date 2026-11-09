@@ -103,6 +103,46 @@ fun ServicesScreen(
         }
     }
 
+    // ── Delete (hidden services only; the website enforces the same rules) ──
+    var confirmDelete by remember { mutableStateOf<ServiceFull?>(null) }
+    var deletingId    by remember { mutableStateOf<Int?>(null) }
+    fun deleteService(service: ServiceFull) {
+        if (!isOnline) { scope.launch { snackState.showSnackbar("You're offline. Connect to delete services.") }; return }
+        scope.launch {
+            deletingId = service.id
+            try {
+                val res = ApiClient.api.deleteService(service.id)
+                if (res.isSuccessful) {
+                    services = services.filterNot { it.id == service.id }
+                    snackState.showSnackbar("${service.name} deleted")
+                } else {
+                    // The reason (e.g. "has bookings, kept for their history") comes from the server.
+                    val why = try {
+                        Gson().fromJson(res.errorBody()?.string(), com.braidedbyagb.admin.data.model.ServiceMutateResponse::class.java)?.error
+                    } catch (_: Exception) { null }
+                    snackState.showSnackbar(why ?: "Not deleted (error ${res.code()})")
+                }
+            } catch (_: Exception) {
+                snackState.showSnackbar("Not deleted: connection error")
+            }
+            deletingId = null
+        }
+    }
+
+    confirmDelete?.let { svc ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete ${svc.name}?") },
+            text  = { Text("This permanently removes the service, its options and add-ons. It cannot be undone.\n\nIf it has bookings, it is kept (hidden) for their history.") },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = null; deleteService(svc) }) {
+                    Text("Delete permanently", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Keep it") } }
+        )
+    }
+
     // ── UI ────────────────────────────────────────────────
     Scaffold(
         snackbarHost = { SnackbarHost(snackState) },
@@ -141,16 +181,28 @@ fun ServicesScreen(
                         }
                     }
 
-                    val sorted = services.sortedWith(compareByDescending<ServiceFull> { it.isActive }.thenBy { it.displayOrder })
+                    val visible = services.filter { it.isActive == 1 }.sortedBy { it.displayOrder }
+                    val hidden  = services.filter { it.isActive != 1 }.sortedBy { it.displayOrder }
 
-                    items(sorted, key = { it.id }) { svc ->
-                        ServiceCard(
-                            service    = svc,
-                            toggling   = togglingId == svc.id,
-                            isOnline   = isOnline,
-                            onEdit     = { if (isOnline) onEditService(svc.id) else scope.launch { snackState.showSnackbar("You're offline. Connect to edit services.") } },
-                            onToggle   = { toggleActive(svc) }
-                        )
+                    for ((heading, list) in listOf(
+                        "On the website (${visible.size})" to visible,
+                        "Hidden — not on the website (${hidden.size})" to hidden
+                    )) {
+                        if (list.isEmpty()) continue
+                        item(key = heading) {
+                            Text(heading, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextMuted,
+                                 modifier = Modifier.padding(top = 6.dp))
+                        }
+                        items(list, key = { it.id }) { svc ->
+                            ServiceCard(
+                                service    = svc,
+                                toggling   = togglingId == svc.id || deletingId == svc.id,
+                                isOnline   = isOnline,
+                                onEdit     = { if (isOnline) onEditService(svc.id) else scope.launch { snackState.showSnackbar("You're offline. Connect to edit services.") } },
+                                onToggle   = { toggleActive(svc) },
+                                onDelete   = { confirmDelete = svc }
+                            )
+                        }
                     }
                 }
             }
@@ -164,7 +216,8 @@ private fun ServiceCard(
     toggling: Boolean,
     isOnline: Boolean,
     onEdit:   () -> Unit,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val isActive = service.isActive == 1
     Card(
@@ -185,7 +238,7 @@ private fun ServiceCard(
                         Text(service.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Purple800)
                         if (!isActive) {
                             Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.extraSmall) {
-                                Text("Inactive", fontSize = 10.sp, color = MaterialTheme.colorScheme.onErrorContainer,
+                                Text("Hidden", fontSize = 10.sp, color = MaterialTheme.colorScheme.onErrorContainer,
                                      modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                             }
                         }
@@ -205,18 +258,22 @@ private fun ServiceCard(
                     IconButton(onClick = onEdit, enabled = isOnline) {
                         Icon(Icons.Default.Edit, "Edit", tint = if (isOnline) Primary else TextMuted, modifier = Modifier.size(20.dp))
                     }
-                    if (toggling) {
-                        CircularProgressIndicator(Modifier.size(24.dp).padding(4.dp), strokeWidth = 2.dp, color = Primary)
-                    } else {
-                        Switch(
-                            checked         = isActive,
-                            onCheckedChange = { onToggle() },
-                            enabled         = isOnline,
-                            colors          = SwitchDefaults.colors(
-                                checkedThumbColor  = Primary,
-                                checkedTrackColor  = Primary.copy(alpha = 0.4f)
-                            )
-                        )
+                }
+            }
+
+            // Labelled actions (the old unlabelled switch was easy to miss).
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (toggling) {
+                    CircularProgressIndicator(Modifier.size(24.dp).padding(4.dp), strokeWidth = 2.dp, color = Primary)
+                } else if (isActive) {
+                    OutlinedButton(onClick = onToggle, enabled = isOnline) { Text("Hide from website", fontSize = 12.sp) }
+                } else {
+                    Button(onClick = onToggle, enabled = isOnline, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
+                        Text("Show on website", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = onDelete, enabled = isOnline) {
+                        Text("Delete", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }

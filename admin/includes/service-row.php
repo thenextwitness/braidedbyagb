@@ -37,15 +37,20 @@ $addons   = $addonsByService[$svc['id']] ?? [];
     <span class="status-badge <?= $svc['is_active'] ? 'status-confirmed' : 'status-cancelled' ?>">
       <?= $svc['is_active'] ? 'Active' : 'Hidden' ?>
     </span>
-    <!-- Quick delete -->
-    <form method="POST" action="/admin/services" onclick="event.stopPropagation()">
-      <input type="hidden" name="action" value="delete_service">
-      <input type="hidden" name="id"     value="<?= $svc['id'] ?>">
-      <button class="btn-admin btn-admin-danger btn-admin-sm"
-              onclick="return confirm('Hide \'<?= addslashes($svc['name']) ?>\' from the website? (You can re-enable it by editing the service)')"
-              title="Hide service">
-        <?= $svc['is_active'] ? 'Hide' : 'Unhide' ?>
-      </button>
+    <!-- Hide / show (this used to always hide, even when it said "Unhide") -->
+    <form method="POST" action="/admin/services" onclick="event.stopPropagation()" style="display:flex;gap:6px">
+      <input type="hidden" name="action"  value="set_visibility">
+      <input type="hidden" name="id"      value="<?= (int)$svc['id'] ?>">
+      <input type="hidden" name="visible" value="<?= $svc['is_active'] ? '0' : '1' ?>">
+      <?php if ($svc['is_active']): ?>
+        <button class="btn-admin btn-admin-danger btn-admin-sm" title="Hide from the website (keeps its history)"
+                onclick="return confirm('Hide <?= htmlspecialchars(addslashes($svc['name']), ENT_QUOTES) ?> from the website? You can show it again any time.')">Hide</button>
+      <?php else: ?>
+        <button class="btn-admin btn-admin-primary btn-admin-sm" title="Show on the website again">Show on website</button>
+        <!-- Submits the separate delete form further down (form=…), never nested. -->
+        <button type="submit" form="del-perm-<?= (int)$svc['id'] ?>" class="btn-admin btn-admin-danger btn-admin-sm"
+                onclick="return confirm('PERMANENTLY delete <?= htmlspecialchars(addslashes($svc['name']), ENT_QUOTES) ?>? This cannot be undone.\n\nIf it has bookings it is kept (hidden) for their history.')">Delete</button>
+      <?php endif; ?>
     </form>
   </div>
 
@@ -154,7 +159,7 @@ $addons   = $addonsByService[$svc['id']] ?? [];
                Only offered once the service is hidden (the server enforces this too). -->
           <?php if (!$svc['is_active']): ?>
             <button type="submit" form="del-perm-<?= (int)$svc['id'] ?>" class="btn-admin btn-admin-danger btn-admin-sm"
-                    onclick="return confirm('PERMANENTLY delete <?= addslashes($svc['name']) ?>? This cannot be undone.\n\nIf it has existing bookings, this will fail — hide it instead.')">
+                    onclick="return confirm('PERMANENTLY delete <?= htmlspecialchars(addslashes($svc['name']), ENT_QUOTES) ?>? This cannot be undone.\n\nIf it has bookings it is kept (hidden) for their history.')">
               Delete Permanently
             </button>
           <?php endif; ?>

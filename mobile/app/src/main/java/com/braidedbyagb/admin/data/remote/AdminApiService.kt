@@ -155,6 +155,9 @@ interface AdminApiService {
         @Part image: MultipartBody.Part
     ): Response<ServiceMutateResponse>
 
+    @POST("api/admin.php?endpoint=services&action=delete")
+    suspend fun deleteService(@Query("id") id: Int): Response<ServiceMutateResponse>
+
     @POST("api/admin.php?endpoint=services&action=toggle")
     suspend fun toggleService(@Query("id") id: Int): Response<ServiceMutateResponse>
 

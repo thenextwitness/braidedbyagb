@@ -1295,6 +1295,15 @@ switch ($endpoint) {
             echo json_encode(['success' => true, 'is_active' => $active]); exit;
         }
 
+        // ── POST action=delete — permanently delete a HIDDEN service ──
+        // Same rules as the web admin (deleteServicePermanently): hidden first, no bookings.
+        if ($method === 'POST' && $action === 'delete') {
+            $id = (int)($_GET['id'] ?? 0);
+            if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID required']); exit; }
+            if ($why = deleteServicePermanently($db, $id)) { http_response_code(409); echo json_encode(['success' => false, 'error' => $why]); exit; }
+            echo json_encode(['success' => true]); exit;
+        }
+
         // ── POST action=add_variant ───────────────────────────
         if ($method === 'POST' && $action === 'add_variant') {
             $id   = (int)($_GET['id'] ?? 0);

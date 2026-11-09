@@ -209,6 +209,34 @@ function groupServicesByCategory(array $services): array {
     return array_filter($groups);
 }
 
+// ── Permanently delete a service (web admin + app share this) ──
+// Returns null on success, or the reason it was refused. Rules: the service must
+// already be hidden (so a save can never delete a live service) and must have no
+// bookings (their history needs it). Variants, add-ons, product links and
+// availability rows go with it (ON DELETE CASCADE); gallery photos and reviews
+// are kept, just unlinked.
+function deleteServicePermanently(PDO $db, int $id): ?string {
+    $q = $db->prepare("SELECT is_active FROM services WHERE id=?"); $q->execute([$id]);
+    $isActive = $q->fetchColumn();
+    if ($isActive === false)   return 'That service no longer exists.';
+    if ((int)$isActive === 1)  return 'Hide the service first, then delete it permanently.';
+    $q = $db->prepare("SELECT COUNT(*) FROM bookings WHERE service_id=?"); $q->execute([$id]);
+    if ((int)$q->fetchColumn() > 0) return 'This service has bookings, so it is kept for their history. It stays hidden from the website.';
+    try {
+        $db->beginTransaction();
+        $db->prepare("UPDATE reviews SET service_id=NULL WHERE service_id=?")->execute([$id]);
+        $db->prepare("UPDATE gallery_images SET service_id=NULL WHERE service_id=?")->execute([$id]);
+        $db->prepare("DELETE FROM service_variants WHERE service_id=?")->execute([$id]);
+        $db->prepare("DELETE FROM services WHERE id=?")->execute([$id]);
+        $db->commit();
+    } catch (PDOException $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('deleteServicePermanently(' . $id . '): ' . $e->getMessage());
+        return 'Not deleted: something else still uses this service. It stays hidden.';
+    }
+    return null;
+}
+
 // ── Server-side prices (anti-tampering) ───────────────────
 // Checkout pages send their totals so the Stripe Payment Element can show the
 // amount, but money is NEVER taken from what the browser claims: cart-intent and

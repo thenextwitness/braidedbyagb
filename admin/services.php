@@ -97,33 +97,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
         // ── Delete service ──────────────────────────────────
-        } elseif ($action === 'delete_service') {
-            $id = (int)$_POST['id'];
-            // Soft delete — just hide it (preserve booking history)
-            $db->prepare("UPDATE services SET is_active=0 WHERE id=?")->execute([$id]);
-            $msg = 'Service hidden from website.';
+        } elseif ($action === 'delete_service' || $action === 'set_visibility') {
+            // Hide / show on the website (hiding keeps booking history). The button
+            // says which way; 'delete_service' is the old name and always hides.
+            $id   = (int)$_POST['id'];
+            $show = $action === 'set_visibility' && ($_POST['visible'] ?? '') === '1';
+            $db->prepare("UPDATE services SET is_active=? WHERE id=?")->execute([$show ? 1 : 0, $id]);
+            $msg = $show ? 'Service is visible on the website again.' : 'Service hidden from website.';
 
         // ── Permanently delete ──────────────────────────────
         } elseif ($action === 'delete_service_permanent') {
             $id = (int)$_POST['id'];
-            $q  = $db->prepare("SELECT is_active FROM services WHERE id=?"); $q->execute([$id]);
-            $isActive = $q->fetchColumn();
-            $q  = $db->prepare("SELECT COUNT(*) FROM bookings WHERE service_id=?"); $q->execute([$id]);
-            $inUse = (int)$q->fetchColumn();
-            // Two guards so a save can never delete a service again (it did, via a
-            // nested form): a real delete request carries no edit fields, and only
-            // a service already hidden from the website can be deleted for good.
+            // A real delete request carries no edit fields; if it does, a form
+            // merged into the edit form (that bug deleted services on Save).
             if (isset($_POST['name']) || isset($_POST['price_from'])) {
                 $error = 'Not deleted: that request looked like a save, not a delete. Nothing was changed — please try again.';
-            } elseif ($isActive === false) {
-                $error = 'That service no longer exists.';
-            } elseif ((int)$isActive === 1) {
-                $error = 'Hide the service first, then delete it permanently.';
-            } elseif ($inUse > 0) {
-                $error = 'Cannot delete — this service has existing bookings. Hide it instead.';
+            } elseif ($why = deleteServicePermanently($db, $id)) {
+                $error = $why;
             } else {
-                $db->prepare("DELETE FROM service_variants WHERE service_id=?")->execute([$id]);
-                $db->prepare("DELETE FROM services WHERE id=?")->execute([$id]);
                 $msg = 'Service permanently deleted.';
             }
 
