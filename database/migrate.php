@@ -1147,6 +1147,29 @@ step('bookings.rebook_reminder_sent_at column',
     fn() => $db->exec("ALTER TABLE bookings ADD COLUMN rebook_reminder_sent_at DATETIME DEFAULT NULL"),
     $report);
 
+// ── Follow-ups (owner request 2026-11) ──
+// bookings.rebook_on: a follow-up date the owner picked when completing the
+//   appointment (NULL = automatic: the service's weeks, else the default).
+// bookings.rebook_off: 1 = no rebook reminder for this appointment.
+// bookings.aftercare_sent_at: the "how are your braids settling?" message.
+// customers.winback_sent_at: last "we miss you" email (once per lapse).
+step('bookings.rebook_on column',
+    fn() => columnExists($db, $dbName, 'bookings', 'rebook_on'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN rebook_on DATE DEFAULT NULL"),
+    $report);
+step('bookings.rebook_off column',
+    fn() => columnExists($db, $dbName, 'bookings', 'rebook_off'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN rebook_off TINYINT(1) NOT NULL DEFAULT 0"),
+    $report);
+step('bookings.aftercare_sent_at column',
+    fn() => columnExists($db, $dbName, 'bookings', 'aftercare_sent_at'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN aftercare_sent_at DATETIME DEFAULT NULL"),
+    $report);
+step('customers.winback_sent_at column',
+    fn() => columnExists($db, $dbName, 'customers', 'winback_sent_at'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN winback_sent_at DATETIME DEFAULT NULL"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

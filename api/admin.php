@@ -192,6 +192,11 @@ switch ($endpoint) {
             $astmt->execute([$id]); $bk['addons'] = $astmt->fetchAll();
             $pstmt = $db->prepare("SELECT * FROM payments WHERE booking_id=? ORDER BY created_at DESC");
             $pstmt->execute([$id]); $bk['payments'] = $pstmt->fetchAll();
+            // Rebook follow-up (same rules as the web page: rebookPlan()).
+            if ($bk['status'] === 'completed') {
+                $bk['rebook'] = rebookPlan($db, (int)$id);
+                $bk['rebook']['book_again_url'] = rebookUrl($db, (int)$id, true) ?: rtrim(SITE_URL, '/') . '/booking';
+            }
             echo json_encode($bk);
             exit;
         }
@@ -330,6 +335,13 @@ switch ($endpoint) {
         }
 
         // ── Update admin notes ────────────────────────────────
+        // ── Rebook follow-up: body {mode: auto|custom|off, rebook_on?: Y-m-d} ──
+        if ($method === 'POST' && $id && $action === 'rebook') {
+            $why = setRebookPlan($db, (int)$id, (string)($body['mode'] ?? ''), $body['rebook_on'] ?? null);
+            if ($why) { http_response_code(400); echo json_encode(['success' => false, 'error' => $why]); exit; }
+            echo json_encode(['success' => true, 'rebook' => rebookPlan($db, (int)$id)]); exit;
+        }
+
         if ($method === 'POST' && $id && $action === 'notes') {
             $notes = trim($body['notes'] ?? '');
             $db->prepare("UPDATE bookings SET admin_notes=? WHERE id=?")->execute([$notes ?: null, $id]);

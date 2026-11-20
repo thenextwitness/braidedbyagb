@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
             'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
             'auto_cancel_bank_transfer_hours', 'rebook_default_weeks',
+            'aftercare_delay_hours', 'winback_after_days',
             'loyalty_earn_rate', 'loyalty_redeem_rate', 'loyalty_min_redeem',
             'home_service_min', 'travel_fee_farnborough', 'travel_fee_camberley_aldershot', 'travel_fee_further',
         ];
@@ -42,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'loyalty_enabled',
             'multi_stylist_enabled',
             'rebook_reminders_enabled',
+            'aftercare_enabled',
+            'winback_enabled',
         ];
         foreach ($checkboxes as $key) {
             $val = isset($_POST[$key]) ? '1' : '0';
@@ -54,6 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bizAddr = trim(strip_tags($_POST['business_address'] ?? ''));
         $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('business_address',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
            ->execute([$bizAddr]);
+        // Aftercare tips — multiline, one tip per line; stored raw and escaped
+        // when the email is built (emailAftercare), so no sanitize() here.
+        if (isset($_POST['aftercare_tips'])) {
+            $tips = trim(strip_tags((string)$_POST['aftercare_tips']));
+            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('aftercare_tips',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
+               ->execute([$tips !== '' ? $tips : AFTERCARE_TIPS_DEFAULT]);
+        }
         $msg = 'Settings saved.';
 
     } elseif ($action === 'save_brand') {
@@ -253,7 +263,31 @@ $isError = str_starts_with($msg, 'ERROR:');
           </label>
           <label class="admin-label" style="margin-top:8px">Default reminder after (weeks)</label>
           <input class="admin-input" type="number" name="rebook_default_weeks" value="<?= htmlspecialchars($g('rebook_default_weeks','6')) ?>" min="1" max="52" style="max-width:120px">
-          <small style="color:var(--admin-muted)">Each service can override this in Services (0 = never). Only clients who allow emails get them, and never if they've already booked again.</small>
+          <small style="color:var(--admin-muted)">Each service can override this in Services (0 = never), and you can pick a date for each appointment when you mark it completed. Only clients who allow emails get them, and never if they've already booked again.</small>
+        </div>
+      </div>
+
+      <!-- Follow-ups -->
+      <div class="settings-section admin-form-card" id="followups">
+        <div class="settings-section-title">💌 Follow-ups</div>
+        <div class="admin-form-group">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input type="checkbox" name="aftercare_enabled" <?= $g('aftercare_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>Aftercare message</strong> — after each completed appointment, email the client aftercare tips and a "message us if anything's wrong"</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Send it this many hours after the appointment</label>
+          <input class="admin-input" type="number" name="aftercare_delay_hours" value="<?= htmlspecialchars($g('aftercare_delay_hours','48')) ?>" min="1" max="336" style="max-width:120px">
+          <label class="admin-label" style="margin-top:8px">Aftercare tips (one per line)</label>
+          <textarea class="admin-input admin-textarea" name="aftercare_tips" rows="6"><?= htmlspecialchars($g('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) ?></textarea>
+        </div>
+        <div class="admin-form-group" style="margin-top:14px">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input type="checkbox" name="winback_enabled" <?= $g('winback_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>"We miss you" emails</strong> — contact clients who haven't booked in a while</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Contact them after this many days without a visit</label>
+          <input class="admin-input" type="number" name="winback_after_days" value="<?= htmlspecialchars($g('winback_after_days','60')) ?>" min="14" max="365" style="max-width:120px">
+          <small style="color:var(--admin-muted)">One email per client each time they lapse, only to clients who allow emails and have nothing booked. 60 days ≈ 2 months, 90 ≈ 3 months. Clients lapsed for up to a year are included. You can also message them yourself from Clients → Haven't booked lately.</small>
         </div>
       </div>
 

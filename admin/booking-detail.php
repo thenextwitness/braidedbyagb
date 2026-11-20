@@ -75,6 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // (loyalty + revenue for 'completed' are handled by onBookingStatusChanged above)
+            if ($status === 'completed') {
+                // Straight to the rebook follow-up card, with the suggestion ready.
+                header("Location: /admin/bookings/$bookingId?msg=" . urlencode('Marked completed. Check the rebook follow-up below.') . '#rebook');
+                exit;
+            }
 
             if ($status === 'cancelled') {
                 try {
@@ -160,6 +165,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: /admin/bookings?msg=Booking+deleted.");
             exit;
         }
+    } elseif ($action === 'set_rebook') {
+        // The rebook follow-up the owner chose (rules in setRebookPlan()).
+        $why = setRebookPlan($db, (int)$bookingId, (string)($_POST['mode'] ?? ''), $_POST['rebook_on'] ?? null);
+        $plan = $why ? null : rebookPlan($db, (int)$bookingId);
+        $redir = $why ? 'Not saved: ' . $why
+               : ($plan['mode'] === 'off' ? 'No rebook follow-up for this appointment.'
+               : ($plan['date'] ? 'Rebook reminder set for ' . formatDate($plan['date']) . '.' : 'Saved.'));
+        header("Location: /admin/bookings/$bookingId?msg=" . urlencode($redir) . '#rebook'); exit;
     } elseif ($action === 'update_notes') {
         $notes = sanitize($_POST['admin_notes'] ?? '');
         $db->prepare("UPDATE bookings SET admin_notes=? WHERE id=?")->execute([$notes, $bookingId]);
@@ -429,6 +442,85 @@ function copyPayLink() {
   </p>
 </div>
 <style>#reschedulePanel.hidden{display:none}</style>
+
+<?php if ($bk['status'] === 'completed'):
+  // ── Follow-ups for a completed appointment ──
+  $plan      = rebookPlan($db, (int)$bookingId);
+  $firstName = trim(explode(' ', (string)$bk['c_name'])[0]) ?: 'there';
+  $bookAgain = rebookUrl($db, (int)$bookingId, true) ?: rtrim(SITE_URL, '/') . '/booking';
+  $waRebook  = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}! It's nearly time to refresh your {$bk['s_name']} 💕 You can book your next appointment here (your choices are saved): {$bookAgain}");
+  $waCare    = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}, just checking in: how are your braids settling? 💕 Any tenderness, itching or a loose braid, just let me know and I'll sort it.");
+  $afterOn   = getSetting('aftercare_enabled', '1') === '1';
+  $afterDue  = date('Y-m-d H:i', strtotime($bk['booked_date'] . ' ' . $bk['booked_time']) + max(1, (int)getSetting('aftercare_delay_hours', '48')) * 3600);
+  $srcWord   = $plan['source'] === 'service' ? "this service's setting" : 'your default in Settings';
+?>
+<div id="rebook" class="detail-card" style="margin-bottom:20px;border:2px solid var(--admin-primary)">
+  <div class="detail-card-title">🔁 Rebooking follow-up</div>
+  <p style="font-size:0.82rem;margin:0 0 6px">
+    <?php if ($plan['suggested']): ?>
+      Suggested: <strong>in <?= (int)$plan['weeks'] ?> week<?= $plan['weeks'] == 1 ? '' : 's' ?></strong>
+      (<?= formatDate($plan['suggested'], 'D j M Y') ?>), from <?= $srcWord ?>.
+    <?php else: ?>
+      No automatic suggestion: <?= $srcWord ?> is 0 weeks (never). You can still pick a date.
+    <?php endif; ?>
+  </p>
+  <p style="font-size:0.82rem;margin:0 0 12px;font-weight:600">
+    <?php if ($plan['sent_at']): ?>
+      ✓ Reminder emailed on <?= formatDate(substr($plan['sent_at'], 0, 10), 'j M Y') ?>.
+    <?php elseif ($plan['mode'] === 'off'): ?>
+      No follow-up for this appointment.
+    <?php elseif ($plan['date']): ?>
+      📧 A "book again" email will go out on <?= formatDate($plan['date'], 'D j M Y') ?><?= $plan['mode'] === 'custom' ? ' (your chosen date)' : '' ?>, unless they book before then.
+    <?php else: ?>
+      No reminder is scheduled.
+    <?php endif; ?>
+  </p>
+  <form method="POST" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:0">
+    <input type="hidden" name="action" value="set_rebook">
+    <div class="admin-form-group" style="margin:0">
+      <label class="admin-label" style="font-size:0.72rem">Follow-up date</label>
+      <input type="date" name="rebook_on" id="rebookOn" class="admin-input" style="width:170px"
+             value="<?= htmlspecialchars($plan['date'] ?? $plan['suggested'] ?? '') ?>"
+             min="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d', strtotime('+1 year')) ?>">
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <?php foreach ([4, 6, 8, 12] as $w): ?>
+        <button type="button" class="btn-admin btn-admin-outline btn-admin-sm" onclick="rebookWeeks(<?= $w ?>)"><?= $w ?> wks</button>
+      <?php endforeach; ?>
+    </div>
+    <button type="submit" name="mode" value="custom" class="btn-admin btn-admin-primary btn-admin-sm">Save this date</button>
+    <?php if ($plan['suggested'] && $plan['mode'] !== 'auto'): ?>
+      <button type="submit" name="mode" value="auto" class="btn-admin btn-admin-outline btn-admin-sm">Use suggestion</button>
+    <?php endif; ?>
+    <?php if ($plan['mode'] !== 'off'): ?>
+      <button type="submit" name="mode" value="off" class="btn-admin btn-admin-outline btn-admin-sm" style="color:#991b1b">No follow-up</button>
+    <?php endif; ?>
+  </form>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--admin-border)">
+    <?php if ($waRebook): ?>
+    <a href="<?= htmlspecialchars($waRebook) ?>" target="_blank" class="btn-admin btn-admin-outline btn-admin-sm">💬 Send rebook message now</a>
+    <a href="<?= htmlspecialchars($waCare) ?>" target="_blank" class="btn-admin btn-admin-outline btn-admin-sm">💬 Send aftercare check-in</a>
+    <?php else: ?><span class="td-muted" style="font-size:0.75rem">No phone number on file for WhatsApp.</span><?php endif; ?>
+  </div>
+  <p style="font-size:0.72rem;color:var(--admin-muted);margin:8px 0 0">
+    Aftercare email:
+    <?php if (!empty($bk['aftercare_sent_at'])): ?>sent <?= date('j M Y', strtotime($bk['aftercare_sent_at'])) ?>.
+    <?php elseif (!$afterOn): ?>switched off in Settings → Follow-ups.
+    <?php elseif (strtotime($bk['booked_date']) < strtotime('-7 days')): ?>not sent (only appointments from the last 7 days get one).
+    <?php else: ?>goes out automatically around <?= date('D j M, g:ia', strtotime($afterDue)) ?>.
+    <?php endif; ?>
+  </p>
+</div>
+<script>
+function rebookWeeks(w) {
+  var d = new Date(<?= json_encode($bk['booked_date']) ?> + 'T12:00:00');
+  d.setDate(d.getDate() + w * 7);
+  var today = new Date(); today.setHours(12, 0, 0, 0);
+  if (d < today) d = today;
+  document.getElementById('rebookOn').value = d.toISOString().slice(0, 10);
+}
+</script>
+<?php endif; ?>
 
 <div class="detail-grid">
 

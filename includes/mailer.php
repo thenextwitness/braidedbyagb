@@ -484,6 +484,64 @@ HTML;
     }
 }
 
+// ── Aftercare follow-up (cron job 11) ─────────────────────
+// Tips come from the aftercare_tips setting (default: AFTERCARE_TIPS_DEFAULT in helpers.php).
+function emailAftercare(array $customer, string $serviceName): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($customer['email'], $customer['name']);
+        $first = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
+        $svc   = sanitize($serviceName);
+        $mail->Subject = "How are your braids settling, {$first}? — BraidedbyAGB";
+        $tips = '';
+        foreach (preg_split('/\R/', (string)getSetting('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) as $t) {
+            $t = trim($t);
+            if ($t !== '') $tips .= '<li style="margin-bottom:6px">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</li>';
+        }
+        $content = <<<HTML
+<h2>Thank you for coming in 💕</h2>
+<p>Hi {$first}, we hope you're loving your <strong>{$svc}</strong>! Here are a few tips to keep it looking fresh for longer:</p>
+<ul style="padding-left:20px">{$tips}</ul>
+<p>Any tenderness, itching or a loose braid? Just WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a> and we'll sort you out.</p>
+<p>Thank you for choosing BraidedbyAGB. 💜</p>
+HTML;
+        $mail->Body = emailWrapper($content);
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (aftercare): ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Win-back "we miss you" (cron job 12) ──────────────────
+function emailWinBack(array $customer, string $lastVisit, int $customerId): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($customer['email'], $customer['name']);
+        $first   = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
+        $mail->Subject = "We miss you, {$first}! 💕 — BraidedbyAGB";
+        $when    = formatDate($lastVisit);
+        $book    = htmlspecialchars(rtrim(SITE_URL, '/') . '/booking', ENT_QUOTES, 'UTF-8');
+        $profile = htmlspecialchars(SITE_URL . '/account/profile', ENT_QUOTES, 'UTF-8');
+        $extra   = function_exists('winBackExtraHtml') ? winBackExtraHtml($customerId) : '';
+        $content = <<<HTML
+<h2>It's been a while! 💕</h2>
+<p>Hi {$first}, we haven't seen you since {$when} and we'd love to have you back in the chair. Whether it's your usual style or something new, there are times available now.</p>
+<p style="text-align:center;margin:28px 0">
+  <a href="{$book}" class="cta-btn" style="background:#7A0050;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700">See available times</a>
+</p>
+{$extra}
+<p>Want to chat about a new look first? WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a>.</p>
+<p style="font-size:12px;color:#8A7595">Don't want emails like this? <a href="{$profile}">Turn off emails in your account</a>.</p>
+HTML;
+        $mail->Body = emailWrapper($content);
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (win-back): ' . $e->getMessage());
+        return false;
+    }
+}
+
 // ── 6. 2-Hour Reminder ────────────────────────────────────
 function emailReminder2hr(array $booking, array $customer, array $service): bool {
     try {

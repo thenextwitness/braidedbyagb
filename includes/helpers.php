@@ -334,6 +334,78 @@ function rebookUrl(PDO $db, int $bookingId, bool $absolute = false): string {
     return $absolute ? rtrim(SITE_URL, '/') . $path : $path;
 }
 
+/**
+ * WhatsApp link to a CLIENT's number with a ready-typed message. Accepts
+ * 07…, +44 7…, 44 7…, with spaces or dashes. Returns '' if there's no usable number.
+ */
+function waClientLink(?string $phone, string $text = ''): string {
+    $d = preg_replace('/\D+/', '', (string)$phone);
+    if ($d === '') return '';
+    if (str_starts_with($d, '00')) $d = substr($d, 2);
+    if (str_starts_with($d, '0'))  $d = '44' . substr($d, 1);
+    elseif (!str_starts_with($d, '44') && strlen($d) === 10) $d = '44' . $d;   // 7xxxxxxxxx
+    return 'https://wa.me/' . $d . ($text !== '' ? '?text=' . rawurlencode($text) : '');
+}
+
+// ── Follow-ups ─────────────────────────────────────────────
+// Default aftercare tips; the owner can replace them in Settings → Follow-ups (one per line).
+const AFTERCARE_TIPS_DEFAULT = "Sleep with a satin bonnet or scarf, or on a satin pillowcase, to keep your braids neat.\n"
+    . "Keep your scalp moisturised with a light oil or braid spray, focusing on the parting.\n"
+    . "Avoid heavy products that build up; a gentle cleanse every 1–2 weeks is plenty.\n"
+    . "Don't pull or retie too tightly: if anything feels sore or itchy, message us.\n"
+    . "Most styles last 4–8 weeks. Leaving them in much longer can strain your hair.";
+
+
+/**
+ * The rebook follow-up for one booking — the ONE place the rule lives (admin
+ * page, app API and the rebook-reminder cron all agree through it).
+ * Returns:
+ *   'mode'    'custom' (owner picked a date) | 'auto' | 'off' (owner turned it off) | 'never' (service/default = 0)
+ *   'date'    Y-m-d the reminder is due, or null
+ *   'weeks'   the automatic interval in weeks (service's, else the default)
+ *   'source'  'service' | 'default' — where the automatic interval came from
+ *   'suggested' Y-m-d of the automatic date (null if weeks = 0)
+ *   'sent_at' when the reminder went out, or null
+ */
+function rebookPlan(PDO $db, int $bookingId): ?array {
+    $q = $db->prepare("SELECT b.booked_date, b.rebook_on, b.rebook_off, b.rebook_reminder_sent_at, s.rebook_weeks
+                       FROM bookings b JOIN services s ON s.id = b.service_id WHERE b.id = ?");
+    $q->execute([$bookingId]);
+    $r = $q->fetch();
+    if (!$r) return null;
+    $def    = max(0, min(52, (int)getSetting('rebook_default_weeks', '6')));
+    $source = ($r['rebook_weeks'] === null || $r['rebook_weeks'] === '') ? 'default' : 'service';
+    $weeks  = $source === 'service' ? max(0, min(52, (int)$r['rebook_weeks'])) : $def;
+    $suggested = $weeks > 0 ? date('Y-m-d', strtotime($r['booked_date'] . " +{$weeks} weeks")) : null;
+    if ((int)($r['rebook_off'] ?? 0) === 1) { $mode = 'off';    $date = null; }
+    elseif (!empty($r['rebook_on']))        { $mode = 'custom'; $date = $r['rebook_on']; }
+    elseif ($weeks > 0)                     { $mode = 'auto';   $date = $suggested; }
+    else                                    { $mode = 'never';  $date = null; }
+    return ['mode' => $mode, 'date' => $date, 'weeks' => $weeks, 'source' => $source,
+            'suggested' => $suggested, 'sent_at' => $r['rebook_reminder_sent_at'] ?: null];
+}
+
+/**
+ * Save the owner's choice for a booking's rebook follow-up.
+ * $mode: 'auto' (use the suggestion), 'custom' (with $date Y-m-d, today or later), 'off'.
+ * Returns null on success or the reason it was refused.
+ */
+function setRebookPlan(PDO $db, int $bookingId, string $mode, ?string $date = null): ?string {
+    if ($mode === 'custom') {
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || strtotime($date) === false) return 'Pick a valid date.';
+        if ($date < date('Y-m-d')) return 'The follow-up date must be today or later.';
+        if ($date > date('Y-m-d', strtotime('+1 year'))) return 'Pick a date within the next year.';
+        $db->prepare("UPDATE bookings SET rebook_on = ?, rebook_off = 0, rebook_reminder_sent_at = NULL WHERE id = ?")->execute([$date, $bookingId]);
+    } elseif ($mode === 'auto') {
+        $db->prepare("UPDATE bookings SET rebook_on = NULL, rebook_off = 0 WHERE id = ?")->execute([$bookingId]);
+    } elseif ($mode === 'off') {
+        $db->prepare("UPDATE bookings SET rebook_on = NULL, rebook_off = 1 WHERE id = ?")->execute([$bookingId]);
+    } else {
+        return 'Unknown choice.';
+    }
+    return null;
+}
+
 function setSetting(string $key, string $value): void {
     $db   = getDB();
     $stmt = $db->prepare("

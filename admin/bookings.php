@@ -45,6 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 error_log('Cancel email error: ' . $e->getMessage());
             }
         }
+        if ($action === 'complete') {
+            // Same as the detail page: go straight to the rebook follow-up card.
+            header("Location: /admin/bookings/$id?msg=" . urlencode('Marked completed. Check the rebook follow-up below.') . '#rebook');
+            exit;
+        }
         header('Location: /admin/bookings?msg=' . urlencode("Booking $newStatus."));
         exit;
     }

@@ -445,8 +445,10 @@ try {
 
 // ─────────────────────────────────────────────────────────
 // 10. REBOOK REMINDERS  (daytime only, 10:00–19:00 UK)
-//     Some weeks after a completed appointment (services.rebook_weeks, else the
-//     default in Settings; 0 = never) email a one-tap "Book again" link —
+//     On the follow-up date the owner picked when completing the appointment
+//     (bookings.rebook_on), else some weeks after it (services.rebook_weeks,
+//     else the default in Settings; 0 = never; bookings.rebook_off = skip),
+//     email a one-tap "Book again" link —
 //     unless they've already booked again or turned emails off. Only bookings
 //     that came DUE in the last 7 days are considered, so the first run never
 //     emails a client's whole history. One email per client per run.
@@ -466,8 +468,10 @@ try {
             JOIN customers c ON c.id = b.customer_id
             WHERE b.status = 'completed'
               AND b.rebook_reminder_sent_at IS NULL
-              AND {$weeksExpr} > 0
-              AND DATE_ADD(b.booked_date, INTERVAL {$weeksExpr} WEEK) BETWEEN ? AND ?
+              AND COALESCE(b.rebook_off, 0) = 0
+              AND (b.rebook_on IS NOT NULL OR {$weeksExpr} > 0)
+              -- the owner's chosen date wins (rebookPlan()); else service/default weeks
+              AND COALESCE(b.rebook_on, DATE_ADD(b.booked_date, INTERVAL {$weeksExpr} WEEK)) BETWEEN ? AND ?
               AND c.email_optin = 1
               AND COALESCE(c.is_blocked, 0) = 0
               AND NOT EXISTS (
@@ -493,6 +497,86 @@ try {
     }
 } catch (Throwable $e) {
     cronLog('[ERROR] Rebook reminders: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
+// 11. AFTERCARE FOLLOW-UP  (daytime only, 10:00–19:00 UK)
+//     A "how are your braids settling?" message with aftercare tips, some
+//     hours after a completed appointment (aftercare_delay_hours, default 48).
+//     Only appointments from the last 7 days, so switching this on never
+//     emails old clients. A service message, so it doesn't need email_optin.
+// ─────────────────────────────────────────────────────────
+try {
+    $hrNow = (int)$now->format('H');
+    if ($hrNow >= 10 && $hrNow < 19 && getSetting('aftercare_enabled', '1') === '1') {
+        $delay  = max(1, min(336, (int)getSetting('aftercare_delay_hours', '48')));
+        $dueBy  = (clone $now)->modify("-{$delay} hours")->format('Y-m-d H:i:s');
+        $oldest = (clone $now)->modify('-7 days')->format('Y-m-d H:i:s');
+        $stmt = $db->prepare("
+            SELECT b.id, b.booking_ref, s.name AS s_name, c.name AS c_name, c.email AS c_email
+            FROM bookings b
+            JOIN services  s ON s.id = b.service_id
+            JOIN customers c ON c.id = b.customer_id
+            WHERE b.status = 'completed'
+              AND b.aftercare_sent_at IS NULL
+              AND TIMESTAMP(b.booked_date, b.booked_time) BETWEEN ? AND ?
+              AND c.email IS NOT NULL AND c.email <> ''
+              AND COALESCE(c.is_blocked, 0) = 0
+            LIMIT 30
+        ");
+        $stmt->execute([$oldest, $dueBy]);
+        $mark = $db->prepare("UPDATE bookings SET aftercare_sent_at = NOW() WHERE id = ?");
+        foreach ($stmt->fetchAll() as $b) {
+            if (emailAftercare(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'])) {
+                $mark->execute([(int)$b['id']]);
+                cronLog("[aftercare] → {$b['c_email']} ({$b['booking_ref']})");
+            }
+        }
+    }
+} catch (Throwable $e) {
+    cronLog('[ERROR] Aftercare: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
+// 12. WIN-BACK: "WE MISS YOU"  (daytime only, 10:00–19:00 UK)
+//     Clients whose last completed appointment was winback_after_days ago
+//     (default 60) or more — up to a year — with nothing booked since, get one
+//     friendly email per lapse. Skips clients who turned emails off, blocked
+//     clients, and anyone sent a rebook reminder in the last 21 days. At most
+//     15 per run (the scheduler runs every 30 min), so a first run spreads out.
+// ─────────────────────────────────────────────────────────
+try {
+    $hrNow = (int)$now->format('H');
+    if ($hrNow >= 10 && $hrNow < 19 && getSetting('winback_enabled', '1') === '1') {
+        $after = max(14, min(365, (int)getSetting('winback_after_days', '60')));
+        $stmt = $db->prepare("
+            SELECT c.id, c.name, c.email, MAX(b.booked_date) AS last_visit
+            FROM customers c
+            JOIN bookings b ON b.customer_id = c.id AND b.status = 'completed'
+            WHERE c.email IS NOT NULL AND c.email <> ''
+              AND c.email_optin = 1
+              AND COALESCE(c.is_blocked, 0) = 0
+              AND NOT EXISTS (SELECT 1 FROM bookings f WHERE f.customer_id = c.id AND f.status IN ('pending','confirmed'))
+              AND NOT EXISTS (SELECT 1 FROM bookings r WHERE r.customer_id = c.id
+                              AND r.rebook_reminder_sent_at > DATE_SUB(NOW(), INTERVAL 21 DAY))
+            GROUP BY c.id, c.name, c.email, c.winback_sent_at
+            HAVING last_visit <= DATE_SUB(CURDATE(), INTERVAL {$after} DAY)
+               AND last_visit >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)
+               AND (c.winback_sent_at IS NULL OR c.winback_sent_at < last_visit)
+            ORDER BY last_visit DESC
+            LIMIT 15
+        ");
+        $stmt->execute();
+        $mark = $db->prepare("UPDATE customers SET winback_sent_at = NOW() WHERE id = ?");
+        foreach ($stmt->fetchAll() as $c) {
+            if (emailWinBack(['name' => $c['name'], 'email' => $c['email']], $c['last_visit'], (int)$c['id'])) {
+                $mark->execute([(int)$c['id']]);
+                cronLog("[winback] → {$c['email']} (last visit {$c['last_visit']})");
+            }
+        }
+    }
+} catch (Throwable $e) {
+    cronLog('[ERROR] Win-back: ' . $e->getMessage());
 }
 
 // ─────────────────────────────────────────────────────────
