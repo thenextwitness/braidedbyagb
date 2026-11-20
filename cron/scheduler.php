@@ -102,38 +102,71 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
-// 3. POST-APPOINTMENT REVIEW REQUESTS
+// 3. POST-APPOINTMENT REVIEW REQUESTS  (daytime only, 09:00–20:00 UK)
+//    review_delay_hours after the appointment is marked completed (default:
+//    next day). Website + Google buttons, never a discount. The link is saved
+//    only once the email has gone, so a failed send never leaves duplicates.
+// 3b. ONE REMINDER 4 days after the request (≈ 5 days after the appointment),
+//    only if no website review came back and the link is still valid.
 // ─────────────────────────────────────────────────────────
 try {
-    $reviewDelay = (int)getSetting('review_delay_hours', '3');
-    $cutoff      = (clone $now)->modify("-{$reviewDelay} hours")->format('Y-m-d H:i:s');
+    $hrNow = (int)$now->format('H');
+    if ($hrNow >= 9 && $hrNow < 20 && getSetting('review_requests_enabled', '1') === '1') {
+        $reviewDelay = max(1, min(336, (int)getSetting('review_delay_hours', '24')));
+        $cutoff      = (clone $now)->modify("-{$reviewDelay} hours")->format('Y-m-d H:i:s');
+        $stmt = $db->prepare("
+            SELECT b.*, c.name as c_name, c.email as c_email, s.name as s_name
+            FROM bookings b
+            JOIN customers c ON c.id = b.customer_id
+            JOIN services  s ON s.id = b.service_id
+            WHERE b.status = 'completed'
+              AND b.review_request_sent = 0
+              AND b.updated_at <= ?
+              AND c.email IS NOT NULL AND c.email <> ''
+              AND COALESCE(c.is_blocked, 0) = 0
+            LIMIT 30
+        ");
+        $stmt->execute([$cutoff]);
+        foreach ($stmt->fetchAll() as $b) {
+            $token    = generateToken(64);
+            $customer = ['name' => $b['c_name'], 'email' => $b['c_email']];
+            $service  = ['name' => $b['s_name']];
+            if (emailReviewRequest($b, $customer, $service, $token)) {
+                $expiresAt = (clone $now)->modify('+7 days')->format('Y-m-d H:i:s');
+                $db->prepare("
+                    INSERT INTO review_requests (customer_id, booking_id, review_type, token, sent_at, expires_at)
+                    VALUES (?, ?, 'service', ?, NOW(), ?)
+                ")->execute([$b['customer_id'], $b['id'], $token, $expiresAt]);
+                $db->prepare("UPDATE bookings SET review_request_sent = 1 WHERE id = ?")->execute([$b['id']]);
+                cronLog("[review] Request → {$b['c_email']} ({$b['booking_ref']})");
+            }
+        }
 
-    $stmt = $db->prepare("
-        SELECT b.*, c.name as c_name, c.email as c_email, s.name as s_name
-        FROM bookings b
-        JOIN customers c ON c.id = b.customer_id
-        JOIN services  s ON s.id = b.service_id
-        WHERE b.status = 'completed'
-          AND b.review_request_sent = 0
-          AND b.updated_at <= ?
-    ");
-    $stmt->execute([$cutoff]);
-    foreach ($stmt->fetchAll() as $b) {
-        $token     = generateToken(64);
-        $expiresAt = (clone $now)->modify('+7 days')->format('Y-m-d H:i:s');
-        $db->prepare("
-            INSERT INTO review_requests (customer_id, booking_id, review_type, token, sent_at, expires_at)
-            VALUES (?, ?, 'service', ?, NOW(), ?)
-        ")->execute([$b['customer_id'], $b['id'], $token, $expiresAt]);
-
-        $customer = ['name' => $b['c_name'], 'email' => $b['c_email']];
-        $service  = ['name' => $b['s_name']];
-        if (emailReviewRequest($b, $customer, $service, $token)) {
-            $db->prepare("UPDATE bookings SET review_request_sent = 1 WHERE id = ?")->execute([$b['id']]);
-            cronLog("[review] Request → {$b['c_email']} ({$b['booking_ref']})");
+        if (getSetting('review_reminder_enabled', '1') === '1') {
+            $rem = $db->query("
+                SELECT rr.id, rr.token, b.*, c.name AS c_name, c.email AS c_email, s.name AS s_name
+                FROM review_requests rr
+                JOIN bookings  b ON b.id = rr.booking_id
+                JOIN customers c ON c.id = rr.customer_id
+                JOIN services  s ON s.id = b.service_id
+                WHERE rr.review_type = 'service'
+                  AND rr.submitted_at IS NULL
+                  AND rr.reminder_sent_at IS NULL
+                  AND rr.sent_at <= DATE_SUB(NOW(), INTERVAL 4 DAY)
+                  AND rr.expires_at > NOW()
+                  AND COALESCE(c.is_blocked, 0) = 0
+                LIMIT 30
+            ")->fetchAll();
+            $markRem = $db->prepare("UPDATE review_requests SET reminder_sent_at = NOW() WHERE id = ?");
+            foreach ($rem as $r) {
+                if (emailReviewRequest($r, ['name' => $r['c_name'], 'email' => $r['c_email']], ['name' => $r['s_name']], $r['token'], true)) {
+                    $markRem->execute([(int)$r['id']]);
+                    cronLog("[review] Reminder → {$r['c_email']} ({$r['booking_ref']})");
+                }
+            }
         }
     }
-} catch (Exception $e) {
+} catch (Throwable $e) {
     cronLog('[ERROR] Review requests: ' . $e->getMessage());
 }
 
@@ -500,16 +533,16 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
-// 11. AFTERCARE FOLLOW-UP  (daytime only, 10:00–19:00 UK)
-//     A "how are your braids settling?" message with aftercare tips, some
-//     hours after a completed appointment (aftercare_delay_hours, default 48).
+// 11. THANK-YOU MESSAGE  (daytime only, 10:00–19:00 UK)
+//     "Thank you for coming in" with aftercare tips + social pages, some
+//     hours after a completed appointment (aftercare_delay_hours, default 2).
 //     Only appointments from the last 7 days, so switching this on never
 //     emails old clients. A service message, so it doesn't need email_optin.
 // ─────────────────────────────────────────────────────────
 try {
     $hrNow = (int)$now->format('H');
     if ($hrNow >= 10 && $hrNow < 19 && getSetting('aftercare_enabled', '1') === '1') {
-        $delay  = max(1, min(336, (int)getSetting('aftercare_delay_hours', '48')));
+        $delay  = max(1, min(336, (int)getSetting('aftercare_delay_hours', '2')));
         $dueBy  = (clone $now)->modify("-{$delay} hours")->format('Y-m-d H:i:s');
         $oldest = (clone $now)->modify('-7 days')->format('Y-m-d H:i:s');
         $stmt = $db->prepare("
@@ -519,7 +552,9 @@ try {
             JOIN customers c ON c.id = b.customer_id
             WHERE b.status = 'completed'
               AND b.aftercare_sent_at IS NULL
-              AND TIMESTAMP(b.booked_date, b.booked_time) BETWEEN ? AND ?
+              -- appointment in the last 7 days, marked completed at least N hours ago
+              AND TIMESTAMP(b.booked_date, b.booked_time) >= ?
+              AND b.updated_at <= ?
               AND c.email IS NOT NULL AND c.email <> ''
               AND COALESCE(c.is_blocked, 0) = 0
             LIMIT 30

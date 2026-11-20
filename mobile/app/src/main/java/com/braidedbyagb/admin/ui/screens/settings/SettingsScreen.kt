@@ -60,7 +60,7 @@ private val GROUPS = listOf(
 
 private val TOGGLE_KEYS = setOf(
     "admin_notify_morning", "admin_notify_evening", "admin_notify_30min",
-    "review_incentive_enabled", "loyalty_enabled"
+    "loyalty_enabled"
 )
 
 private fun keyLabel(key: String): String = when (key) {

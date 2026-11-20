@@ -347,6 +347,22 @@ function waClientLink(?string $phone, string $text = ''): string {
     return 'https://wa.me/' . $d . ($text !== '' ? '?text=' . rawurlencode($text) : '');
 }
 
+/** The business's Google review link (Settings → Follow-ups), or '' if not set / not a web link. */
+function googleReviewUrl(): string {
+    $u = trim((string)getSetting('google_review_url', ''));
+    return preg_match('#^https://#i', $u) ? $u : '';
+}
+
+/** Social pages that are set in Settings → Social: [['label','url','colour','icon'], …] in a fixed order. */
+function socialLinks(): array {
+    $out = [];
+    foreach ([['Instagram', 'instagram_url', '#800080', '📷'], ['TikTok', 'tiktok_url', '#1A0014', '🎵'], ['Facebook', 'facebook_url', '#4B0082', '📘']] as [$label, $key, $colour, $icon]) {
+        $u = trim((string)getSetting($key, $key === 'instagram_url' ? 'https://instagram.com/BraidedbyAGB' : ''));
+        if (preg_match('#^https?://#i', $u)) $out[] = ['label' => $label, 'url' => $u, 'colour' => $colour, 'icon' => $icon];
+    }
+    return $out;
+}
+
 // ── Follow-ups ─────────────────────────────────────────────
 // Default aftercare tips; the owner can replace them in Settings → Follow-ups (one per line).
 const AFTERCARE_TIPS_DEFAULT = "Sleep with a satin bonnet or scarf, or on a satin pillowcase, to keep your braids neat.\n"

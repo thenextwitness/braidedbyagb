@@ -453,9 +453,19 @@ function copyPayLink() {
   $firstName = trim(explode(' ', (string)$bk['c_name'])[0]) ?: 'there';
   $bookAgain = rebookUrl($db, (int)$bookingId, true) ?: rtrim(SITE_URL, '/') . '/booking';
   $waRebook  = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}! It's nearly time to refresh your {$bk['s_name']} 💕 You can book your next appointment here (your choices are saved): {$bookAgain}");
-  $waCare    = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}, just checking in: how are your braids settling? 💕 Any tenderness, itching or a loose braid, just let me know and I'll sort it.");
-  $afterOn   = getSetting('aftercare_enabled', '1') === '1';
-  $afterDue  = date('Y-m-d H:i', strtotime($bk['booked_date'] . ' ' . $bk['booked_time']) + max(1, (int)getSetting('aftercare_delay_hours', '48')) * 3600);
+  // Thank-you + reviews card (cron jobs 11 and 3/3b; both count from completion = updated_at).
+  $completedAt = strtotime((string)($bk['updated_at'] ?? 'now'));
+  $thanksOn  = getSetting('aftercare_enabled', '1') === '1';
+  $thanksDue = $completedAt + max(1, (int)getSetting('aftercare_delay_hours', '2')) * 3600;
+  $reviewOn  = getSetting('review_requests_enabled', '1') === '1';
+  $reviewDue = $completedAt + max(1, (int)getSetting('review_delay_hours', '24')) * 3600;
+  $rrq = $db->prepare("SELECT sent_at, reminder_sent_at, submitted_at, expires_at FROM review_requests WHERE booking_id = ? AND review_type = 'service' ORDER BY id DESC LIMIT 1");
+  $rrq->execute([(int)$bookingId]);
+  $rr = $rrq->fetch() ?: null;
+  $googleUrl = googleReviewUrl();
+  $waGoogle  = $googleUrl ? waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}! Thank you again for coming in 💕 If you have 30 seconds, a Google review would mean the world to me: {$googleUrl}") : '';
+  $waThanks  = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}, thank you so much for coming in 💜 I hope you love your {$bk['s_name']}! Any tenderness, itching or a loose braid, just message me.");
+  $when      = fn($ts) => date('D j M, g:i A', is_int($ts) ? $ts : strtotime($ts));
   $srcWord   = $plan['source'] === 'service' ? "this service's setting" : 'your default in Settings';
 ?>
 <div id="rebook" class="detail-card" style="margin-bottom:20px;border:2px solid var(--admin-primary)">
@@ -503,17 +513,33 @@ function copyPayLink() {
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--admin-border)">
     <?php if ($waRebook): ?>
     <a href="<?= htmlspecialchars($waRebook) ?>" target="_blank" class="btn-admin btn-admin-outline btn-admin-sm">💬 Send rebook message now</a>
-    <a href="<?= htmlspecialchars($waCare) ?>" target="_blank" class="btn-admin btn-admin-outline btn-admin-sm">💬 Send aftercare check-in</a>
     <?php else: ?><span class="td-muted" style="font-size:0.75rem">No phone number on file for WhatsApp.</span><?php endif; ?>
   </div>
-  <p style="font-size:0.72rem;color:var(--admin-muted);margin:8px 0 0">
-    Aftercare email:
-    <?php if (!empty($bk['aftercare_sent_at'])): ?>sent <?= date('j M Y', strtotime($bk['aftercare_sent_at'])) ?>.
-    <?php elseif (!$afterOn): ?>switched off in Settings → Follow-ups.
-    <?php elseif (strtotime($bk['booked_date']) < strtotime('-7 days')): ?>not sent (only appointments from the last 7 days get one).
-    <?php else: ?>goes out automatically around <?= date('D j M, g:ia', strtotime($afterDue)) ?>.
+</div>
+
+<div class="detail-card" style="margin-bottom:20px">
+  <div class="detail-card-title">⭐ Thank-you &amp; reviews</div>
+  <div style="font-size:0.82rem;line-height:1.9">
+    <div><?php if (!empty($bk['aftercare_sent_at'])): ?><span style="color:#16a34a;font-weight:700">✓</span> Thank-you email sent — <?= $when($bk['aftercare_sent_at']) ?>
+      <?php elseif (!$thanksOn): ?>Thank-you email: switched off in Settings → Follow-ups
+      <?php elseif (strtotime($bk['booked_date']) < strtotime('-7 days')): ?>Thank-you email: not sent (only appointments from the last 7 days get one)
+      <?php else: ?>⏳ Thank-you email due around <?= $when($thanksDue) ?><?php endif; ?></div>
+    <div><?php if ($rr && $rr['sent_at']): ?><span style="color:#16a34a;font-weight:700">✓</span> Review request sent — <?= $when($rr['sent_at']) ?>
+      <?php elseif (!$reviewOn): ?>Review request: switched off in Settings → Follow-ups
+      <?php else: ?>⏳ Review request due around <?= $when(max($reviewDue, time())) ?> (sent between 9 AM and 8 PM)<?php endif; ?></div>
+    <?php if ($rr && $rr['sent_at'] && !$rr['submitted_at']): ?>
+    <div><?php if ($rr['reminder_sent_at']): ?><span style="color:#16a34a;font-weight:700">✓</span> Reminder sent — <?= $when($rr['reminder_sent_at']) ?>
+      <?php elseif (getSetting('review_reminder_enabled', '1') !== '1'): ?>Reminder: switched off
+      <?php elseif (strtotime($rr['expires_at']) < time()): ?>Reminder: not sent (the review link has expired)
+      <?php else: ?>⏳ Reminder due around <?= $when(strtotime($rr['sent_at']) + 4 * 86400) ?> (cancelled automatically if they review first)<?php endif; ?></div>
     <?php endif; ?>
-  </p>
+    <div>Website review: <strong><?= ($rr && $rr['submitted_at']) ? 'left on ' . $when($rr['submitted_at']) : 'not yet' ?></strong></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+    <?php if ($waGoogle): ?><a href="<?= htmlspecialchars($waGoogle) ?>" target="_blank" class="btn-admin btn-admin-primary btn-admin-sm">💬 Ask for a Google review on WhatsApp</a><?php endif; ?>
+    <?php if ($waThanks): ?><a href="<?= htmlspecialchars($waThanks) ?>" target="_blank" class="btn-admin btn-admin-outline btn-admin-sm">💬 Send thank-you on WhatsApp</a><?php endif; ?>
+    <?php if (!$waThanks): ?><span class="td-muted" style="font-size:0.75rem">No phone number on file for WhatsApp.</span><?php endif; ?>
+  </div>
 </div>
 <script>
 function rebookWeeks(w) {

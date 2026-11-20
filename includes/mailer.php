@@ -484,33 +484,47 @@ HTML;
     }
 }
 
-// ── Aftercare follow-up (cron job 11) ─────────────────────
-// Tips come from the aftercare_tips setting (default: AFTERCARE_TIPS_DEFAULT in helpers.php).
+// ── Thank-you message (cron job 11) ───────────────────────
+// Sent a couple of hours after a completed appointment: thanks, aftercare tips
+// (Settings → Follow-ups), WhatsApp, and "Please follow our social media pages".
+// Replaced the old 48-hour aftercare email (same setting keys + sent marker).
 function emailAftercare(array $customer, string $serviceName, int $customerId = 0): bool {
     try {
         $mail = createMailer();
         $mail->addAddress($customer['email'], $customer['name']);
         $first = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
         $svc   = sanitize($serviceName);
-        $mail->Subject = "How are your braids settling, {$first}? — BraidedbyAGB";
+        $mail->Subject = "Thank you for coming in, {$first} 💜";
         $tips = '';
         foreach (preg_split('/\R/', (string)getSetting('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) as $t) {
             $t = trim($t);
             if ($t !== '') $tips .= '<li style="margin-bottom:6px">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</li>';
         }
-        $bestie = $customerId > 0 ? referralEmailBlock($customerId) : '';
+        $social = '';
+        foreach (socialLinks() as $l) {
+            $social .= '<a href="' . htmlspecialchars($l['url'], ENT_QUOTES, 'UTF-8') . '" class="cta-btn" style="background:' . $l['colour']
+                     . ';padding:9px 14px;font-size:11px;margin:3px">' . $l['icon'] . ' ' . $l['label'] . '</a>';
+        }
+        $socialBlock = $social === '' ? '' : <<<HTML
+<div style="background:#F9EEF9;border-radius:10px;padding:16px 18px;margin:20px 0 14px;text-align:center">
+  <p style="margin:0 0 4px;font-weight:700;color:#4B0082;font-size:15px">Please follow our social media pages 💕</p>
+  <p style="margin:0 0 12px;font-size:13px;color:#6B5575">New styles, client transformations and open dates, first.</p>
+  {$social}
+</div>
+HTML;
         $content = <<<HTML
-<h2>Thank you for coming in 💕</h2>
-<p>Hi {$first}, we hope you're loving your <strong>{$svc}</strong>! Here are a few tips to keep it looking fresh for longer:</p>
+<h2>Thank you for coming in, {$first}! 💜</h2>
+<p>It was a joy doing your <strong>{$svc}</strong>. Thank you for trusting BraidedbyAGB with your hair.</p>
+<p>A few tips to keep it looking fresh for longer:</p>
 <ul style="padding-left:20px">{$tips}</ul>
-<p>Any tenderness, itching or a loose braid? Just WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a> and we'll sort you out.</p>
-{$bestie}
-<p>Thank you for choosing BraidedbyAGB. 💜</p>
+<p style="text-align:center;margin:22px 0 6px"><a href="{{WA_URL}}" class="cta-btn" style="background:#25D366">💬 WhatsApp me</a></p>
+{$socialBlock}
+<p style="font-size:13px;color:#6B5575;text-align:center">Love, AGB 💕</p>
 HTML;
         $mail->Body = emailWrapper($content);
         return $mail->send();
     } catch (Exception $e) {
-        error_log('Email error (aftercare): ' . $e->getMessage());
+        error_log('Email error (thank-you): ' . $e->getMessage());
         return false;
     }
 }
@@ -601,35 +615,29 @@ HTML;
 }
 
 // ── 7. Post-Appointment Review Request ────────────────────
-function emailReviewRequest(array $booking, array $customer, array $service, string $token): bool {
+function emailReviewRequest(array $booking, array $customer, array $service, string $token, bool $isReminder = false): bool {
     try {
         $mail = createMailer();
         $mail->addAddress($customer['email'], $customer['name']);
-        $mail->Subject = 'How was your BraidedbyAGB experience? 💕';
-        $name     = sanitize($customer['name']);
-        $svc      = sanitize($service['name']);
-        $siteUrl  = SITE_URL;
-        $link     = $siteUrl . '/review?token=' . urlencode($token);
-        $incentiveEnabled = getSetting('review_incentive_enabled', '0') === '1';
-        $incentiveHtml = '';
-        if ($incentiveEnabled) {
-            $discount = getSetting('review_incentive_discount', '10');
-            $incentiveHtml = <<<HTML
-<div style="background:#F9EEF9;border:1px solid #E8D8EE;padding:16px;margin:20px 0;text-align:center;border-radius:4px;">
-  <p style="margin:0;color:#4B0082;font-weight:700;">🎁 Leave a review and get <span class="gold-text">{$discount}% off</span> your next booking!</p>
-  <p style="margin:4px 0 0;font-size:13px;color:#6B5575;">Your personal discount code will be emailed to you once your review is submitted.</p>
-</div>
-HTML;
-        }
+        $first = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
+        $svc   = sanitize($service['name']);
+        $link  = htmlspecialchars(SITE_URL . '/review?token=' . urlencode($token), ENT_QUOTES, 'UTF-8');
+        $mail->Subject = $isReminder ? "A quick favour, {$first}? ⭐" : "How are you loving your braids, {$first}? ⭐";
+        // No discount for reviews (owner's rule; Google forbids rewarding reviews).
+        $google = googleReviewUrl();
+        $googleHtml = $google === '' ? '' :
+            '<p style="text-align:center;margin:6px 0 4px"><a href="' . htmlspecialchars($google, ENT_QUOTES, 'UTF-8')
+            . '" class="cta-btn" style="background:#ffffff;color:#1A0014 !important;border:2px solid #4B0082">Review us on Google</a></p>'
+            . '<p style="font-size:13px;color:#6B5575;text-align:center;margin-top:8px">Google reviews take 30 seconds and help people nearby find BraidedbyAGB.</p>';
+        $intro = $isReminder
+            ? "<p>Hi {$first}, just a gentle reminder: if you have a minute, a short review of your <strong>{$svc}</strong> would mean so much to us.</p>"
+            : "<p>Hi {$first}, I hope you're loving your <strong>{$svc}</strong>! A quick review helps other clients find us and means the world to a small business like mine.</p>";
         $content = <<<HTML
-<h2>Hope you're loving your new look! 💜</h2>
-<p>Hi {$name}, it was such a pleasure having you at BraidedbyAGB for your <strong>{$svc}</strong>!</p>
-<p>We'd love to hear what you thought about your experience. It only takes 60 seconds and your feedback means the world to us — and helps other clients feel confident choosing BraidedbyAGB. 🌟</p>
-{$incentiveHtml}
-<p style="text-align:center;margin-top:28px;">
-  <a href="{$link}" class="cta-btn">Leave My Review ★★★★★</a>
-</p>
-<p style="font-size:13px;color:#9B8BA5;margin-top:20px;">This review link is personal to you and expires in 7 days. If you have any questions, just WhatsApp us on {{WA_DISPLAY}}.</p>
+<h2>Would you leave us a review? ⭐</h2>
+{$intro}
+<p style="text-align:center;margin:22px 0 10px"><a href="{$link}" class="cta-btn">⭐ Review on our website</a></p>
+{$googleHtml}
+<p style="font-size:12px;color:#9B8BA5;margin-top:16px">Your website review link is personal to you and lasts 7 days. Any questions? WhatsApp us on {{WA_DISPLAY}}.</p>
 HTML;
         $mail->Body = emailWrapper($content);
         return $mail->send();

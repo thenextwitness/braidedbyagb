@@ -100,18 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log('Review admin email error: ' . $e->getMessage());
             }
 
-            // Incentive code (for token-based only)
-            $incentiveCode = null;
-            if ($request && getSetting('review_incentive_enabled', '0') === '1') {
-                $discount = (int)getSetting('review_incentive_discount', '10');
-                $code = 'THANKYOU' . strtoupper(substr(generateToken(6), 0, 6));
-                $db->prepare("INSERT INTO discount_codes (code, type, value, uses_limit, customer_id, expiry_date, is_active) VALUES (?, 'percent', ?, 1, ?, DATE_ADD(NOW(), INTERVAL 60 DAY), 1)")
-                   ->execute([$code, $discount, $customerId]);
-                $incentiveCode = $code;
-            }
-
+            // No reward for reviews (owner, Nov 2026; also Google's rules).
             $success     = true;
-            $successData = ['code' => $incentiveCode, 'rating' => $rating, 'name' => $name ?: ($request['c_name'] ?? '')];
+            $successData = ['rating' => $rating, 'name' => $name ?: ($request['c_name'] ?? '')];
 
         } catch (Exception $e) {
             error_log('Review submit error: ' . $e->getMessage());
@@ -168,11 +159,10 @@ $serviceName = $request['s_name'] ?? '';
       <p style="color:var(--color-text-muted);font-size:var(--text-lg);line-height:1.7;margin-bottom:var(--space-6)">
         Your review has been submitted and is awaiting approval. We truly appreciate you taking the time to share your experience! 🌟
       </p>
-      <?php if (!empty($successData['code'])): ?>
-      <div style="background:linear-gradient(135deg,var(--color-deep-purple),var(--color-primary));border-radius:var(--border-radius-lg);padding:var(--space-8);color:white;margin:var(--space-6) 0;text-align:center">
-        <p style="font-family:var(--font-primary);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold);margin-bottom:var(--space-2)">Your Exclusive Discount</p>
-        <p style="font-family:var(--font-primary);font-size:2rem;font-weight:900;letter-spacing:0.1em;margin:var(--space-2) 0"><?= htmlspecialchars($successData['code']) ?></p>
-        <p style="font-size:var(--text-sm);color:rgba(255,255,255,0.75)"><?= getSetting('review_incentive_discount','10') ?>% off your next booking — valid for 60 days</p>
+      <?php if ($googleReviewUrl = googleReviewUrl()): /* shown to EVERY reviewer, whatever the rating (Google's rules) */ ?>
+      <div style="background:var(--color-bg-light,#F9EEF9);border:1px solid #E8D8EE;border-radius:var(--border-radius-lg);padding:var(--space-6);margin:var(--space-6) auto;max-width:520px">
+        <p style="color:var(--color-deep-purple);font-weight:700;margin:0 0 var(--space-4)">Would you share it on Google too? It takes 30 seconds and helps people nearby find us.</p>
+        <a href="<?= htmlspecialchars($googleReviewUrl) ?>" target="_blank" rel="noopener" class="btn btn-outline-primary">Review us on Google</a>
       </div>
       <?php endif; ?>
       <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;margin-top:var(--space-6)">

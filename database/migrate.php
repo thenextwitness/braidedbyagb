@@ -1182,6 +1182,30 @@ step('day_end_time set to 19:00 (one-time)',
     },
     $report);
 
+// ── Thank-you + reviews (owner, 20 Nov 2026; mockup docs/mockups/2026-11-thankyou-reviews.png) ──
+step('review_requests.reminder_sent_at column',
+    fn() => columnExists($db, $dbName, 'review_requests', 'reminder_sent_at'),
+    fn() => $db->exec("ALTER TABLE review_requests ADD COLUMN reminder_sent_at DATETIME DEFAULT NULL"),
+    $report);
+// One-time: new timings, Google review link, social pages (only if still empty),
+// and review discounts off for good. A marker stops re-runs overwriting later edits.
+step('thank-you/review settings (one-time)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='thankyou_reviews_2026_11_set'")->fetchColumn() > 0,
+    function() use ($db) {
+        $up = $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?,?)
+                            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $ifEmpty = $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?,?)
+                                 ON DUPLICATE KEY UPDATE setting_value = IF(setting_value IS NULL OR setting_value = '', VALUES(setting_value), setting_value)");
+        $up->execute(['aftercare_delay_hours', '2']);        // thank-you 2 hours after completion
+        $up->execute(['review_delay_hours', '24']);          // review request the next day
+        $up->execute(['review_incentive_enabled', '0']);     // no discounts for reviews
+        $up->execute(['google_review_url', 'https://g.page/r/CeLCLpIR1r0uEBE/review']);
+        $ifEmpty->execute(['tiktok_url', 'https://www.tiktok.com/@braidedbyagb']);
+        $ifEmpty->execute(['facebook_url', 'https://www.facebook.com/BraidedbyAGB']);
+        $up->execute(['thankyou_reviews_2026_11_set', '1']);
+    },
+    $report);
+
 // ── "AGB bring your bestie" referrals (owner request 2026-11; rules in includes/referrals.php) ──
 step('customers.referral_code column (unique)',
     fn() => columnExists($db, $dbName, 'customers', 'referral_code'),

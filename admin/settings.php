@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'bank_account_name', 'bank_sort_code', 'bank_account_number',
             'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
-            'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
+            'review_delay_hours',
             'auto_cancel_bank_transfer_hours', 'rebook_default_weeks',
             'aftercare_delay_hours', 'winback_after_days',
             'referral_friend_amount', 'referral_referrer_amount',
@@ -37,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Handle checkboxes separately
         $checkboxes = [
-            'review_incentive_enabled',
+            'review_requests_enabled',
+            'review_reminder_enabled',
             'admin_notify_morning',
             'admin_notify_evening',
             'admin_notify_30min',
@@ -65,6 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tips = trim(strip_tags((string)$_POST['aftercare_tips']));
             $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('aftercare_tips',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
                ->execute([$tips !== '' ? $tips : AFTERCARE_TIPS_DEFAULT]);
+        }
+        // Google review link — stored as typed (sanitize() would HTML-encode it),
+        // and only if it's a web address; blank clears it (emails then show the
+        // website button only).
+        if (isset($_POST['google_review_url'])) {
+            $gr = trim((string)$_POST['google_review_url']);
+            if ($gr === '' || preg_match('#^https://[^\s<>"]+$#i', $gr)) {
+                $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('google_review_url',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
+                   ->execute([$gr]);
+            }
         }
         $msg = 'Settings saved.';
 
@@ -157,7 +168,8 @@ $isError = str_starts_with($msg, 'ERROR:');
     <a href="#homeservice"    class="settings-nav-link">Home Service</a>
     <a href="#loyalty"        class="settings-nav-link">Loyalty</a>
     <a href="#email"          class="settings-nav-link">Email / SMTP</a>
-    <a href="#reviews"        class="settings-nav-link">Reviews</a>
+    <a href="#referrals"      class="settings-nav-link">Bring your bestie</a>
+    <a href="#followups"      class="settings-nav-link">Follow-ups &amp; reviews</a>
     <a href="#notifications"  class="settings-nav-link">Notifications</a>
     <a href="#team"           class="settings-nav-link">Team</a>
     <a href="#social"         class="settings-nav-link">Social Links</a>
@@ -295,12 +307,28 @@ $isError = str_starts_with($msg, 'ERROR:');
         <div class="admin-form-group">
           <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
             <input type="checkbox" name="aftercare_enabled" <?= $g('aftercare_enabled','1') === '1' ? 'checked' : '' ?>>
-            <span><strong>Aftercare message</strong> — after each completed appointment, email the client aftercare tips and a "message us if anything's wrong"</span>
+            <span><strong>Thank-you message</strong> — "Thank you for coming in", with aftercare tips, WhatsApp and "Please follow our social media pages"</span>
           </label>
-          <label class="admin-label" style="margin-top:8px">Send it this many hours after the appointment</label>
-          <input class="admin-input" type="number" name="aftercare_delay_hours" value="<?= htmlspecialchars($g('aftercare_delay_hours','48')) ?>" min="1" max="336" style="max-width:120px">
+          <label class="admin-label" style="margin-top:8px">Send it this many hours after you mark the appointment completed</label>
+          <input class="admin-input" type="number" name="aftercare_delay_hours" value="<?= htmlspecialchars($g('aftercare_delay_hours','2')) ?>" min="1" max="336" style="max-width:120px">
           <label class="admin-label" style="margin-top:8px">Aftercare tips (one per line)</label>
           <textarea class="admin-input admin-textarea" name="aftercare_tips" rows="6"><?= htmlspecialchars($g('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) ?></textarea>
+          <small style="color:var(--admin-muted)">The social buttons are the pages set in Social below (Instagram, TikTok, Facebook).</small>
+        </div>
+        <div class="admin-form-group" style="margin-top:14px">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input type="checkbox" name="review_requests_enabled" <?= $g('review_requests_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>Review request</strong> — one email with two buttons: review on our website, or on Google</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Send it this many hours after the appointment is completed</label>
+          <input class="admin-input" type="number" name="review_delay_hours" value="<?= htmlspecialchars($g('review_delay_hours','24')) ?>" min="1" max="336" style="max-width:120px">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-top:10px">
+            <input type="checkbox" name="review_reminder_enabled" <?= $g('review_reminder_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>One reminder</strong> 4 days later, only if they haven't left a website review yet</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Your Google review link</label>
+          <input class="admin-input" type="url" name="google_review_url" value="<?= htmlspecialchars($g('google_review_url','')) ?>" placeholder="https://g.page/r/…/review">
+          <small style="color:var(--admin-muted)">Find it in your Google Business Profile → <strong>Ask for reviews</strong> → copy the link. Leave blank to show only the website button. Every client is asked (not just happy ones) and reviews are never rewarded with a discount: this follows Google's rules.</small>
         </div>
         <div class="admin-form-group" style="margin-top:14px">
           <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
@@ -368,33 +396,6 @@ $isError = str_starts_with($msg, 'ERROR:');
           </div>
         </div>
         <p style="font-size:0.72rem;color:var(--admin-muted)">⚠️ SMTP password is set in <code>config/database.php</code> only — not editable here for security.</p>
-      </div>
-
-      <!-- Reviews -->
-      <div class="settings-section admin-form-card" id="reviews">
-        <div class="settings-section-title">⭐ Review Incentives</div>
-        <div class="admin-form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem">
-            <input type="checkbox" name="review_incentive_enabled" value="1"
-                   <?= $g('review_incentive_enabled','0') === '1' ? 'checked' : '' ?>
-                   style="accent-color:var(--admin-primary);width:16px;height:16px">
-            <span>Auto-generate discount code when a review is submitted</span>
-          </label>
-        </div>
-        <div class="admin-form-row" style="margin-top:12px">
-          <div class="admin-form-group">
-            <label class="admin-label">Incentive Type</label>
-            <select name="review_incentive_type" class="admin-input admin-select">
-              <option value="percent" <?= $g('review_incentive_type')=='percent'?'selected':'' ?>>Percent off (%)</option>
-              <option value="fixed"   <?= $g('review_incentive_type')=='fixed'  ?'selected':'' ?>>Fixed amount (£)</option>
-            </select>
-          </div>
-          <div class="admin-form-group">
-            <label class="admin-label">Value</label>
-            <input class="admin-input" type="number" name="review_incentive_value"
-                   value="<?= htmlspecialchars($g('review_incentive_value','10')) ?>" step="0.01" min="0">
-          </div>
-        </div>
       </div>
 
       <!-- Admin Notifications -->
