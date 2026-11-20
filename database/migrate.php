@@ -1219,6 +1219,14 @@ step('customers.email_optin allows NULL (not asked)',
     fn() => strtoupper((string)$db->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . $db->quote($dbName) . " AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'email_optin'")->fetchColumn()) === 'YES',
     fn() => $db->exec("ALTER TABLE customers MODIFY COLUMN email_optin TINYINT(1) NULL DEFAULT NULL"),
     $report);
+// The step above was skipped on the live database: the column already allowed
+// NULL but still defaulted to 1, so clients created without a choice (course
+// enrolments) would count as "allowed". Check the DEFAULT itself.
+step('customers.email_optin defaults to NULL (not asked)',
+    fn() => $db->query("SELECT COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . $db->quote($dbName) . " AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'email_optin'")->fetchColumn() === null
+            || strtoupper((string)$db->query("SELECT COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . $db->quote($dbName) . " AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'email_optin'")->fetchColumn()) === 'NULL',
+    fn() => $db->exec("ALTER TABLE customers MODIFY COLUMN email_optin TINYINT(1) NULL DEFAULT NULL"),
+    $report);
 
 // ── Batch messages to clients (owner-approved 20 Nov 2026; includes/messaging.php) ──
 step('customers.unsubscribe_token column (unique)',
