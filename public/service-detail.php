@@ -87,8 +87,8 @@ $duration = formatDuration((int)$svc['duration_mins']);
   {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "<?= addslashes(htmlspecialchars_decode($svc['name'])) ?>",
-    "description": "<?= addslashes(htmlspecialchars_decode(mb_substr($svc['description'] ?? '', 0, 200))) ?>",
+    "name": <?= json_encode(htmlspecialchars_decode($svc['name'], ENT_QUOTES), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
+    "description": <?= json_encode(htmlspecialchars_decode(mb_substr($svc['description'] ?? '', 0, 200), ENT_QUOTES), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
     "provider": {
       "@type": "LocalBusiness",
       "name": "BraidedbyAGB",

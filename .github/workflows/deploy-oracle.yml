@@ -1,0 +1,58 @@
+name: Deploy to Oracle
+
+# Every push to session-improvements (the default branch) goes live on the Oracle server (mainie VM, 141.147.86.105),
+# served by Caddy + PHP-FPM. See docs/ORACLE-HOSTING.md.
+#
+# REQUIRED repo secret:
+#   ORACLE_DEPLOY_KEY - private half of the "github-actions-braided-deploy" key.
+#                       The server only lets this key rsync into /srv/braided
+#                       (rrsync), so it cannot run commands or reach other files.
+#
+# Server-only paths are never uploaded or deleted (see .deployignore):
+#   config/ (secrets)   uploads/ (customer photos + receipts)
+# Database changes are NOT run here: use /database/migrate.php?key=... after deploy.
+
+on:
+  push:
+    branches: [session-improvements]
+  workflow_dispatch:
+
+concurrency:
+  group: oracle-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP syntax check (blocks the deploy on any error)
+        run: |
+          find . -name '*.php' \
+            -not -path './vendor/*' -not -path './mobile/*' \
+            -not -path './desktop/*' -not -path './windows/*' -print0 \
+            | xargs -0 -n1 -P4 php -l > /dev/null
+
+      - name: Stamp live version
+        run: git rev-parse --short HEAD > version.txt
+
+      - name: Sync to server
+        env:
+          KEY: ${{ secrets.ORACLE_DEPLOY_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "141.147.86.105 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJG3u8KJ7jCoOJK3T2M72C6Q1fky7zOvjZmgYqLdvtNg" > ~/.ssh/known_hosts
+          rsync -rlz --delete --chmod=D755,F644 --exclude-from=.deployignore \
+            ./ deploy@141.147.86.105:/
+
+      - name: Smoke test (the live server now reports this commit)
+        run: |
+          want=$(cat version.txt)
+          got=$(curl -fsS --resolve braidedbyagb.co.uk:443:141.147.86.105 https://braidedbyagb.co.uk/version.txt)
+          echo "deployed=$want live=$got"
+          test "$want" = "$got"
+          curl -fsS -o /dev/null --resolve braidedbyagb.co.uk:443:141.147.86.105 https://braidedbyagb.co.uk/

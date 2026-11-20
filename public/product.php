@@ -62,8 +62,8 @@ $inStock    = $totalStock > 0;
   {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": "<?= addslashes(htmlspecialchars_decode($product['name'])) ?>",
-    "description": "<?= addslashes(htmlspecialchars_decode(mb_substr($product['description'] ?? '', 0, 200))) ?>",
+    "name": <?= json_encode(htmlspecialchars_decode($product['name'], ENT_QUOTES), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
+    "description": <?= json_encode(htmlspecialchars_decode(mb_substr($product['description'] ?? '', 0, 200), ENT_QUOTES), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
     "image": "<?= $product['image_url'] ? 'https://braidedbyagb.co.uk' . htmlspecialchars($product['image_url']) : '' ?>",
     "brand": { "@type": "Brand", "name": "BraidedbyAGB" },
     "offers": {
