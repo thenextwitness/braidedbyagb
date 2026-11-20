@@ -326,7 +326,6 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
 
     bookingStatusFollowOns($db, $bookingId);
 }
-}
 
 // ============================================================
 //  PHASE C3 — STYLIST EARNINGS (derived, self-healing)
