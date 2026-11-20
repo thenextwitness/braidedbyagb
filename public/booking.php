@@ -409,7 +409,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
               <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer">
                 <input type="checkbox" id="email-optin" <?= $prefill['optin'] ? 'checked' : '' ?> style="accent-color:var(--color-primary);width:16px;height:16px">
                 <span style="font-size:var(--text-sm);color:var(--color-text-muted)">
-                  I'd like to receive appointment reminders and updates by email
+                  Send me offers, rebooking reminders and news by email. (You'll always get emails about your bookings, whatever you choose.)
                 </span>
               </label>
             </div>

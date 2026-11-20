@@ -109,7 +109,8 @@ function createMessageBatch(PDO $db, string $channel, array $customerIds, string
             $get->execute([$cid]);
             $c = $get->fetch();
             if (!$c || (int)$c['blocked'] === 1)                                         $ins->execute([$bid, $cid, 'skipped', 'Not available']);
-            elseif ($channel === 'email' && ((int)$c['email_optin'] !== 1 || trim((string)$c['email']) === '')) $ins->execute([$bid, $cid, 'skipped', 'Emails turned off']);
+            elseif ($channel === 'email' && ((int)$c['email_optin'] !== 1 || trim((string)$c['email']) === ''))
+                $ins->execute([$bid, $cid, 'skipped', trim((string)$c['email']) === '' ? 'No email address' : ($c['email_optin'] === null ? 'Not asked about offers' : 'Emails turned off')]);
             elseif ($channel === 'whatsapp' && waClientLink($c['phone'], 'x') === '')     $ins->execute([$bid, $cid, 'skipped', 'No phone number']);
             else                                                                          $ins->execute([$bid, $cid, 'pending', null]);
         }

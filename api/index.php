@@ -104,7 +104,7 @@ switch ($endpoint) {
         }
         $done = false;
         if ($who && $_SERVER['REQUEST_METHOD'] === 'POST') {
-            getDB()->prepare("UPDATE customers SET email_optin = 0 WHERE id = ?")->execute([(int)$who['id']]);
+            getDB()->prepare("UPDATE customers SET email_optin = 0, email_optin_changed_at = NOW(), email_optin_source = 'unsubscribe' WHERE id = ?")->execute([(int)$who['id']]);
             $done = true;
         }
         $first = $who ? htmlspecialchars(trim(explode(' ', (string)$who['name'])[0]), ENT_QUOTES, 'UTF-8') : '';

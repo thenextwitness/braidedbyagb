@@ -51,6 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("/admin/customers/$customerId");
     }
 
+    // A "not asked" client told the owner she's happy to get offers by email.
+    // Only from "not asked": a client who turned emails off can only switch them
+    // back on herself (account page), as the law requires.
+    if ($action === 'email_consent_agree') {
+        $db->prepare("UPDATE customers SET email_optin = 1, email_optin_changed_at = NOW(), email_optin_source = 'agreed_in_person'
+                      WHERE id = ? AND email_optin IS NULL")->execute([$customerId]);
+        redirect("/admin/customers/$customerId#consent");
+    }
+
     if ($action === 'adjust_points') {
         $delta = (int)($_POST['points']      ?? 0);
         $desc  = trim($_POST['description']  ?? '') ?: ($delta > 0 ? 'Manual addition' : 'Manual removal');
@@ -226,6 +235,31 @@ function statusBadge(string $status): string {
       </div>
     </div>
   </div>
+</div>
+
+<?php
+// ── Email offers consent (Allowed / Turned off / Not asked) ──
+$optin   = $c['email_optin'] ?? null;
+$optWhen = !empty($c['email_optin_changed_at']) ? date('j M Y', strtotime($c['email_optin_changed_at'])) : '';
+$optHow  = ['booking' => 'when booking', 'account' => 'in her account', 'unsubscribe' => 'unsubscribed', 'agreed_in_person' => 'agreed in person'][$c['email_optin_source'] ?? ''] ?? '';
+?>
+<div id="consent" style="background:#fff;border:1px solid var(--admin-border,#e5e7eb);border-radius:10px;padding:16px 20px;margin-bottom:20px">
+  <h3 style="font-size:0.75rem;font-weight:700;color:var(--admin-muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">📧 Offers &amp; "we miss you" emails</h3>
+  <?php if (empty($c['email'])): ?>
+    <p style="font-size:0.82rem;margin:0">No email address on file.</p>
+  <?php elseif ($optin === null): ?>
+    <p style="font-size:0.82rem;margin:0 0 10px"><span class="status-badge" style="background:#f3f0f8;color:#6b5c78">Not asked</span> She hasn't been asked yet, so she isn't sent offers.</p>
+    <form method="POST" style="margin:0" onsubmit="return confirm('Only do this if she told you she is happy to get offers by email. Record her agreement?')">
+      <input type="hidden" name="action" value="email_consent_agree">
+      <button class="btn-admin btn-admin-primary btn-admin-sm">✓ She agreed to offers by email</button>
+    </form>
+    <p style="font-size:0.72rem;color:var(--admin-muted);margin:6px 0 0">Saved with today's date as "agreed in person".</p>
+  <?php elseif ((int)$optin === 1): ?>
+    <p style="font-size:0.82rem;margin:0"><span class="status-badge status-confirmed">Allowed</span><?= $optWhen ? ' <span style="color:var(--admin-muted)">(' . htmlspecialchars(trim($optHow . ', ' . $optWhen, ', ')) . ')</span>' : '' ?></p>
+  <?php else: ?>
+    <p style="font-size:0.82rem;margin:0 0 6px"><span class="status-badge status-cancelled">Turned off</span><?= $optWhen ? ' <span style="color:var(--admin-muted)">(' . htmlspecialchars(trim($optHow . ', ' . $optWhen, ', ')) . ')</span>' : '' ?></p>
+    <p style="font-size:0.75rem;color:var(--admin-muted);margin:0">She chose not to get offers. She still gets every email about her bookings. Only she can turn offers back on, from her account.</p>
+  <?php endif; ?>
 </div>
 
 <?php

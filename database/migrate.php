@@ -1206,6 +1206,20 @@ step('thank-you/review settings (one-time)',
     },
     $report);
 
+// ── Email-offers consent: when and how it last changed (owner-approved 20 Nov 2026) ──
+// email_optin: 1 allowed, 0 turned off, NULL not asked. Source: booking |
+// account | unsubscribe | agreed_in_person.
+step('customers.email_optin_changed_at / email_optin_source columns',
+    fn() => columnExists($db, $dbName, 'customers', 'email_optin_source'),
+    fn() => $db->exec("ALTER TABLE customers
+        ADD COLUMN email_optin_changed_at DATETIME DEFAULT NULL,
+        ADD COLUMN email_optin_source VARCHAR(40) DEFAULT NULL"),
+    $report);
+step('customers.email_optin allows NULL (not asked)',
+    fn() => strtoupper((string)$db->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = " . $db->quote($dbName) . " AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'email_optin'")->fetchColumn()) === 'YES',
+    fn() => $db->exec("ALTER TABLE customers MODIFY COLUMN email_optin TINYINT(1) NULL DEFAULT NULL"),
+    $report);
+
 // ── Batch messages to clients (owner-approved 20 Nov 2026; includes/messaging.php) ──
 step('customers.unsubscribe_token column (unique)',
     fn() => columnExists($db, $dbName, 'customers', 'unsubscribe_token'),

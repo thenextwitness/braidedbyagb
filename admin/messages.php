@@ -169,7 +169,7 @@ $money = null;
     $('sendBtn').textContent = wa ? 'Start WhatsApp queue (' + ALL + ')' : 'Send to ' + EMAILABLE + ' client' + (EMAILABLE === 1 ? '' : 's');
     $('sendBtn').disabled = !wa && EMAILABLE === 0;
     $('note').textContent = wa ? 'Each chat opens with the message typed in; you press send in WhatsApp, then tap Next.'
-      : 'You\'ll be asked to confirm. ' + (ALL - EMAILABLE ? (ALL - EMAILABLE) + ' client(s) with emails turned off are left out of the email.' : '') ;
+      : 'You\'ll be asked to confirm. ' + (ALL - EMAILABLE ? (ALL - EMAILABLE) + ' client(s) who have not agreed to offers by email (turned off or not asked) are left out.' : '') ;
     preview();
   }
   document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
@@ -218,7 +218,7 @@ $money = null;
     const sent = c.sent + c.opened, left = c.pending + c.sending, all = sent + c.failed + left;
     document.getElementById('bar').style.width = (all ? Math.round(100 * (sent + c.failed) / all) : 100) + '%';
     document.getElementById('done').textContent = left ? sent + ' of ' + all + ' sent' : '✓ ' + sent + ' sent';
-    document.getElementById('rest').textContent = c.failed + ' failed' + (skipped ? ' · ' + skipped + ' skipped (emails turned off)' : '') + (left ? ' · sending…' : '');
+    document.getElementById('rest').textContent = c.failed + ' failed' + (skipped ? ' · ' + skipped + ' skipped (no agreement to offers by email)' : '') + (left ? ' · sending…' : '');
     return left;
   }
   function step() {

@@ -94,7 +94,9 @@ $customers = $stmt->fetchAll();
       <td><?= formatDate($c['last_visit'], 'j M Y') ?><div class="td-muted" style="font-size:0.72rem"><?= $days ?> days ago</div></td>
       <td><?= (int)$c['visits'] ?></td>
       <td style="font-size:0.78rem">
-        <?php if (!(int)$c['email_optin'] || empty($c['email'])): ?><span class="status-badge status-cancelled">Turned off</span>
+        <?php if (empty($c['email'])): ?><span class="td-muted">No email</span>
+        <?php elseif ($c['email_optin'] === null): ?><span class="status-badge" style="background:#f3f0f8;color:#6b5c78">Not asked</span>
+        <?php elseif (!(int)$c['email_optin']): ?><span class="status-badge status-cancelled">Turned off</span>
         <?php else: ?><span class="status-badge status-confirmed">Allowed</span><?php endif; ?>
       </td>
       <td style="font-size:0.75rem">
@@ -122,7 +124,7 @@ $customers = $stmt->fetchAll();
     const on = boxes.filter(b => b.checked), em = on.filter(b => b.dataset.email === '1').length;
     document.getElementById('selBar').style.display = on.length ? 'flex' : 'none';
     document.getElementById('selCount').textContent = on.length + ' selected';
-    document.getElementById('selInfo').textContent = em + ' can be emailed' + (on.length - em ? ' · ' + (on.length - em) + ' have emails turned off (they can still be messaged on WhatsApp)' : '');
+    document.getElementById('selInfo').textContent = em + ' can be emailed' + (on.length - em ? ' · ' + (on.length - em) + ' cannot be emailed offers (turned off or not asked; they can still be messaged on WhatsApp)' : '');
     all.checked = on.length === boxes.length && boxes.length > 0;
   }
   boxes.forEach(b => b.addEventListener('change', upd));

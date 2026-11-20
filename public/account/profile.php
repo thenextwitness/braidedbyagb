@@ -26,6 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pc = sanitize($_POST['address_postcode'] ?? '');
         if ($name === '') { $msg = 'Please enter your name.'; $msgType = 'error'; }
         else {
+            // Record when/how the email-offers choice changed (only if it did).
+            $db->prepare("UPDATE customers SET email_optin_changed_at = NOW(), email_optin_source = 'account'
+                          WHERE id = ? AND NOT (email_optin <=> ?)")->execute([$cid, $optin]);
             $db->prepare("UPDATE customers SET name=?, phone=?, email_optin=?, address_line1=?, address_line2=?, address_city=?, address_postcode=? WHERE id=?")
                ->execute([$name, $phone ?: null, $optin, $a1 ?: null, $a2 ?: null, $ci ?: null, $pc ?: null, $cid]);
             $_SESSION['portal_user_name'] = $name;
@@ -99,7 +102,7 @@ require_once __DIR__ . '/../../includes/account-head.php';
         </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:#6B5575;margin:6px 0 18px;">
           <input type="checkbox" name="email_optin" value="1" <?= (int)($cust['email_optin'] ?? 0) ? 'checked' : '' ?>>
-          Email me offers and updates
+          Send me offers, rebooking reminders and news by email. (You'll always get emails about your bookings.)
         </label>
         <button class="auth-btn" type="submit">Save details</button>
       </form>

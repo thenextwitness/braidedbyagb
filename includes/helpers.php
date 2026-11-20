@@ -623,15 +623,30 @@ function findOrCreateCustomer(PDO $db, string $name, string $email, ?string $pho
     $name  = trim($name);
     $phone = $phone !== null ? trim($phone) : '';
 
+    // Email offers consent: 1 = allowed, 0 = turned off, NULL = never asked.
+    // $optin NULL (admin/app/review creating a client) never changes it and a
+    // new client starts as "not asked" — it used to default to 1 (allowed),
+    // marking clients as agreeing to offers they were never asked about.
+    // A client's own choice when booking: a "not asked" client takes it; an
+    // existing choice can only go DOWN (opt-out is sticky; opting back in is a
+    // deliberate act in their account or a recorded agreement in the admin).
+    // email_optin_changed_at is assigned BEFORE email_optin so it compares
+    // against the old value.
     $db->prepare("
-        INSERT INTO customers (name, email, phone, email_optin)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO customers (name, email, phone, email_optin, email_optin_changed_at, email_optin_source)
+        VALUES (?, ?, ?, ?, IF(? IS NULL, NULL, NOW()), IF(? IS NULL, NULL, 'booking'))
         ON DUPLICATE KEY UPDATE
             id          = LAST_INSERT_ID(id),
             name        = IF(VALUES(name)  <> '', VALUES(name),  name),
             phone       = IF(VALUES(phone) <> '', VALUES(phone), phone),
-            email_optin = LEAST(email_optin, VALUES(email_optin))
-    ")->execute([$name, $email, ($phone !== '' ? $phone : null), $optin ?? 1]);
+            email_optin_changed_at = IF(VALUES(email_optin) IS NOT NULL
+                                        AND (email_optin IS NULL OR VALUES(email_optin) < email_optin), NOW(), email_optin_changed_at),
+            email_optin_source     = IF(VALUES(email_optin) IS NOT NULL
+                                        AND (email_optin IS NULL OR VALUES(email_optin) < email_optin), 'booking', email_optin_source),
+            email_optin = CASE WHEN VALUES(email_optin) IS NULL THEN email_optin
+                               WHEN email_optin IS NULL THEN VALUES(email_optin)
+                               ELSE LEAST(email_optin, VALUES(email_optin)) END
+    ")->execute([$name, $email, ($phone !== '' ? $phone : null), $optin, $optin, $optin]);
 
     return (int)$db->lastInsertId();
 }
