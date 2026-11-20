@@ -1367,7 +1367,7 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
             $itPaidFull = $paymentMethod !== 'bank_transfer' && (float)$it['remaining_balance'] <= 0.005;
             // "Paid in full" only when the payment covered the price; a bestie
             // reward/credit can also bring the balance to £0 after a deposit.
-            $paidLbl    = ($itPaidFull && (float)$it['deposit_amount'] >= (float)$it['total_price'] - 0.005) ? 'Paid in Full:' : 'Deposit Paid:';
+            $paidLbl    = ($itPaidFull && (float)$it['deposit_amount'] >= (float)$it['total_price'] + (float)($it['referral_discount'] ?? 0) - 0.005) ? 'Paid in Full:' : 'Deposit Paid:';
             $balanceTxt = $itPaidFull ? 'Nothing to pay on the day' : "{$balance} (on the day)";
             $refDisc    = (float)($it['referral_discount'] ?? 0);
             $rewardRow  = $refDisc > 0.005

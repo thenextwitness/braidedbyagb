@@ -335,5 +335,9 @@ if (!empty($booking['deposit_paid'])) {
 }
 ?>
 <script src="/assets/js/main.js"></script>
+<script>
+// Booking confirmed: forget any "bring your bestie" code saved by the booking page.
+try { localStorage.removeItem('agb_ref'); } catch (e) {}
+</script>
 </body>
 </html>

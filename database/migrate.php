@@ -1275,6 +1275,22 @@ step('recurring_expenses table',
         created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
     $report);
+// The app can set an order to 'refunded' (api/admin.php) but the column never
+// allowed it. Append it to whatever values the live column has (never drops any).
+step("orders.status allows 'refunded'",
+    fn() => enumHasValue($db, $dbName, 'orders', 'status', 'refunded'),
+    function() use ($db, $dbName) {
+        $q = $db->prepare("SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS
+                           WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'status'");
+        $q->execute([$dbName]);
+        $col = $q->fetch();
+        if (!$col || !preg_match('/^enum\((.*)\)$/i', $col['COLUMN_TYPE'], $m)) throw new RuntimeException('orders.status is not an ENUM');
+        $type = 'ENUM(' . $m[1] . ",'refunded')";
+        $def  = $col['COLUMN_DEFAULT'] !== null ? ' DEFAULT ' . $db->quote(trim($col['COLUMN_DEFAULT'], "'")) : '';
+        $db->exec("ALTER TABLE orders MODIFY COLUMN status {$type}" . ($col['IS_NULLABLE'] === 'NO' ? ' NOT NULL' : ' NULL') . $def);
+    },
+    $report);
+
 step('refunds table',
     fn() => tableExists($db, $dbName, 'refunds'),
     fn() => $db->exec("CREATE TABLE refunds (

@@ -44,6 +44,22 @@ function financeEventDate(?string $when): string {
     return ($d !== '' && $d < date('Y-m-d', strtotime('-3 days'))) ? $d : date('Y-m-d');
 }
 
+/** Date the finance tracking went live. History before it is only back-filled for real, kept money. */
+const FINANCE_TRACKING_SINCE = '2026-11-20';
+
+/**
+ * Run $fn holding a named database lock, so two syncs (an admin action and the
+ * scheduler) can never post the same difference twice. Skips if the lock is busy;
+ * the next sweep catches up.
+ */
+function financeWithLock(PDO $db, string $name, callable $fn): void {
+    $got = $db->prepare("SELECT GET_LOCK(?, 5)");
+    $got->execute(['agb_fin_' . $name]);
+    if ((int)$got->fetchColumn() !== 1) { error_log("finance lock busy: $name"); return; }
+    try { $fn(); }
+    finally { $db->prepare("SELECT RELEASE_LOCK(?)")->execute(['agb_fin_' . $name]); }
+}
+
 /** Net (credit − debit) on the given account codes for one source_id across sources. */
 function financeNet(PDO $db, int $sourceId, array $sources, array $codes): float {
     $in  = implode(',', array_fill(0, count($sources), '?'));
@@ -86,9 +102,14 @@ function syncOrderStock(PDO $db, int $orderId): void {
     $q->execute([$orderId]);
     $o = $q->fetch();
     if (!$o || (int)$o['from_pipeline'] === 1) return;   // pipeline orders follow their booking
-    if (in_array($o['status'], ['cancelled', 'refunded'], true) && (int)$o['stock_deducted'] === 1) {
+    $dead = in_array($o['status'], ['cancelled', 'refunded'], true);
+    if ($dead && (int)$o['stock_deducted'] === 1) {
         adjustOrderStock($db, $orderId, +1);
-        $db->prepare("UPDATE orders SET stock_deducted = 0 WHERE id = ?")->execute([$orderId]);
+        // 3 = "we put it back": lets a reinstated order take it again (0 = never taken).
+        $db->prepare("UPDATE orders SET stock_deducted = 3 WHERE id = ?")->execute([$orderId]);
+    } elseif (!$dead && (int)$o['stock_deducted'] === 3) {
+        adjustOrderStock($db, $orderId, -1);
+        $db->prepare("UPDATE orders SET stock_deducted = 1 WHERE id = ?")->execute([$orderId]);
     }
 }
 
@@ -105,6 +126,7 @@ function syncPipelineOrders(PDO $db, int $bookingId): void {
     foreach ($os->fetchAll() as $o) {
         $oid = (int)$o['id'];
         if ($dead && $o['status'] !== 'cancelled') $db->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?")->execute([$oid]);
+        if ($live && $o['status'] === 'cancelled') $db->prepare("UPDATE orders SET status = 'pending' WHERE id = ?")->execute([$oid]);   // booking reinstated
         if ($live && ($o['payment_status'] ?? '') !== 'paid') $db->prepare("UPDATE orders SET payment_status = 'paid' WHERE id = ?")->execute([$oid]);
         // stock_deducted 2 = from before stock tracking existed: never touch its stock.
         if ((int)$o['stock_deducted'] === 2) continue;
@@ -125,6 +147,10 @@ const ORDER_LEDGER_SOURCES = ['order_payment', 'order_reversal', 'order_refund']
 
 /** Shop order income: should equal (total − refunds) while paid and live, else 0. */
 function syncOrderLedger(PDO $db, int $orderId): void {
+    financeWithLock($db, 'order_' . $orderId, fn() => syncOrderLedgerLocked($db, $orderId));
+}
+
+function syncOrderLedgerLocked(PDO $db, int $orderId): void {
     $q = $db->prepare("SELECT order_ref, total, shipping_cost, payment_status, status, payment_method, from_pipeline, created_at FROM orders WHERE id = ?");
     $q->execute([$orderId]);
     $o = $q->fetch();
@@ -163,6 +189,10 @@ function syncOrderLedger(PDO $db, int $orderId): void {
 
 /** Travel fee (paid up front with the deposit): held until the appointment, then income. */
 function syncBookingTravelLedger(PDO $db, int $bookingId): void {
+    financeWithLock($db, 'travel_' . $bookingId, fn() => syncBookingTravelLedgerLocked($db, $bookingId));
+}
+
+function syncBookingTravelLedgerLocked(PDO $db, int $bookingId): void {
     $q = $db->prepare("SELECT booking_ref, travel_fee, deposit_paid, status, payment_method, created_at, booked_date FROM bookings WHERE id = ?");
     $q->execute([$bookingId]);
     $b = $q->fetch();
@@ -171,6 +201,28 @@ function syncBookingTravelLedger(PDO $db, int $bookingId): void {
     if ($fee <= 0.005 || (int)$b['deposit_paid'] !== 1) return;
     $ref  = (string)$b['booking_ref'];
     $cash = bookingCashAccount((string)$b['payment_method']);
+
+    // Cancelled/rejected before tracking began: the fee was almost certainly
+    // refunded back then, so it doesn't belong on the books. Undo anything the
+    // first back-fill posted, on the same date it was posted.
+    if (in_array($b['status'], ['cancelled', 'rejected'], true) && substr((string)$b['created_at'], 0, 10) < FINANCE_TRACKING_SINCE) {
+        $q = $db->prepare("SELECT e.entry_date, a.code, SUM(l.debit) AS dr, SUM(l.credit) AS cr
+                           FROM journal_entries e JOIN journal_entry_lines l ON l.journal_entry_id = e.id JOIN accounts a ON a.id = l.account_id
+                           WHERE e.source = 'booking_travel' AND e.source_id = ? GROUP BY e.entry_date, a.code");
+        $q->execute([$bookingId]);
+        $net = []; $firstDate = null;
+        foreach ($q->fetchAll() as $r) {
+            $net[$r['code']] = round(($net[$r['code']] ?? 0) + (float)$r['dr'] - (float)$r['cr'], 2);
+            $firstDate = $firstDate === null ? $r['entry_date'] : min($firstDate, $r['entry_date']);
+        }
+        $lines = [];
+        foreach ($net as $code => $v) {
+            if ($v > 0.005)      $lines[] = ['account_code' => $code, 'debit' => 0,   'credit' => $v,  'memo' => 'Back-fill undone: cancelled before tracking'];
+            elseif ($v < -0.005) $lines[] = ['account_code' => $code, 'debit' => -$v, 'credit' => 0,   'memo' => 'Back-fill undone: cancelled before tracking'];
+        }
+        if ($lines) createJournalEntry($firstDate ?? date('Y-m-d'), 'Travel fee back-fill undone: ' . $ref, 'booking_travel', $bookingId, $lines, $ref);
+        return;
+    }
 
     $cashIn = -financeNet($db, $bookingId, ['booking_travel'], ['1000', '1010', '1020']);   // debits are cash in
     if ($cashIn < 0.005) {

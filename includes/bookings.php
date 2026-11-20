@@ -104,6 +104,10 @@ function journalBookingDepositOnly(PDO $db, int $bookingId): void {
     $deposit = round((float) $bk['deposit_amount'], 2);
     if ($deposit <= 0.005) return;
     if (bookingHeldDeposit($db, $bookingId) > 0.005) return;   // already held
+    // Already posted once (even if since refunded): never post the cash again.
+    $posted = $db->prepare("SELECT COUNT(*) FROM journal_entries WHERE source = 'booking_deposit' AND source_id = ?");
+    $posted->execute([$bookingId]);
+    if ((int) $posted->fetchColumn() > 0) return;
     if (bookingRevenueRecognised($db, $bookingId)) return;      // already completed
 
     $cash = bookingCashAccount((string) $bk['payment_method']);
@@ -290,7 +294,15 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
             $held = bookingHeldDeposit($db, $bookingId);
             if ($held < 0)      $held = 0.0;
             if ($held > $total) $held = $total;              // never release more than the sale
-            $balance = round($total - $held, 2);
+            // Part of the deposit refunded before the appointment? The client still
+            // pays the normal balance on the day; the refund lowers revenue instead.
+            $rq = $db->prepare("SELECT COALESCE(SUM(l.debit - l.credit), 0) FROM journal_entry_lines l
+                                JOIN journal_entries e ON e.id = l.journal_entry_id JOIN accounts a ON a.id = l.account_id
+                                WHERE e.source = 'booking_refund' AND e.source_id = ? AND a.code = '2000'");
+            $rq->execute([$bookingId]);
+            $refundedHeld = max(0.0, round((float) $rq->fetchColumn(), 2));
+            $balance = round($total - min($total, $held + $refundedHeld), 2);
+            $total   = round($held + $balance, 2);              // revenue = what was actually kept
 
             // Balance lands in the account matching how the booking is paid:
             // card/Terminal → Stripe (1000), bank transfer → Bank (1020),

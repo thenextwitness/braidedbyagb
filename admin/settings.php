@@ -286,7 +286,7 @@ $isError = str_starts_with($msg, 'ERROR:');
             <input class="admin-input" type="number" name="referral_referrer_amount" value="<?= htmlspecialchars($g('referral_referrer_amount','10')) ?>" min="0" max="100" step="0.01">
           </div>
         </div>
-        <small style="color:var(--admin-muted)">Both come off the balance paid on the day, never the online deposit. Only first-time clients qualify. The referrer's reward is earned when their bestie's appointment is marked completed, and is cancelled if that booking is cancelled. Changing the amounts affects new referrals only.</small>
+        <small style="color:var(--admin-muted)">Both come off the balance paid on the day, never the online deposit. Only first-time clients qualify. The referrer's reward is earned when their bestie's appointment is marked completed, and is taken back (if not yet spent) if that booking is cancelled or un-completed. Changing the amounts affects new referrals only.</small>
       </div>
 
       <!-- Follow-ups -->

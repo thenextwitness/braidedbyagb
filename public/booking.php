@@ -1529,7 +1529,6 @@ async function submitStripePayment() {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    clearReferralCode();   // the booking exists now; the reward (if any) is on it
 
     // 3. Confirm — cards resolve inline; Klarna/Clearpay/PayPal redirect out.
     const returnUrl = window.location.origin + '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
@@ -1540,6 +1539,7 @@ async function submitStripePayment() {
       redirect: 'if_required'
     });
     if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetStripeBtn(payLabel); return; }
+    clearReferralCode();   // paid: the reward is on the booking (redirect methods clear on the confirmation page)
 
     // No redirect required (e.g. card) — go to the confirmation page, which finalizes.
     let url = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);

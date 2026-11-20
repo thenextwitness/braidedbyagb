@@ -121,6 +121,25 @@ function applyReferralAtBooking(PDO $db, int $customerId, array $bookingIds, str
     if (!referralEnabled() || !$bookingIds) return $out;
     $amt = referralAmounts();
 
+    // A card checkout that was never paid (declined, closed, retried) must not
+    // keep this client's referral or credit tied up: release them before the
+    // new attempt. Bank-transfer bookings are left alone (they're awaiting payment).
+    $ids = implode(',', array_map('intval', $bookingIds));
+    $stale = $db->prepare("SELECT id FROM bookings WHERE customer_id = ? AND id NOT IN ($ids)
+                           AND status = 'pending' AND deposit_paid = 0 AND payment_method = 'stripe'");
+    $stale->execute([$customerId]);
+    foreach ($stale->fetchAll(PDO::FETCH_COLUMN) as $sid) {
+        $sid = (int)$sid;
+        foreach ($db->query("SELECT id FROM referrals WHERE booking_id = {$sid} AND status = 'pending'")->fetchAll(PDO::FETCH_COLUMN) as $rid) {
+            $db->prepare("UPDATE referrals SET status = 'void' WHERE id = ?")->execute([(int)$rid]);
+            $db->prepare("UPDATE referral_credits SET status = 'void' WHERE referral_id = ? AND status = 'pending'")->execute([(int)$rid]);
+        }
+        foreach ($db->query("SELECT id, credit_id, amount FROM referral_credit_uses WHERE booking_id = {$sid} AND status = 'active'")->fetchAll() as $u) {
+            $db->prepare("UPDATE referral_credit_uses SET status = 'reversed' WHERE id = ?")->execute([(int)$u['id']]);
+            $db->prepare("UPDATE referral_credits SET remaining = LEAST(amount, remaining + ?) WHERE id = ?")->execute([(float)$u['amount'], (int)$u['credit_id']]);
+        }
+    }
+
     // ── 1. New client arriving through a share link ──
     $code = strtoupper(trim(preg_replace('/[^A-Za-z0-9]/', '', $code)));
     if ($code !== '') {
@@ -194,7 +213,9 @@ function syncReferrals(PDO $db, ?int $bookingId = null): void {
     $done = $db->query("SELECT r.id, r.referrer_id, r.referred_id FROM referrals r JOIN bookings b ON b.id = r.booking_id
                         WHERE r.status = 'pending' AND b.status = 'completed'{$only}")->fetchAll();
     foreach ($done as $r) {
-        $db->prepare("UPDATE referrals SET status = 'completed', completed_at = NOW() WHERE id = ? AND status = 'pending'")->execute([(int)$r['id']]);
+        $mark = $db->prepare("UPDATE referrals SET status = 'completed', completed_at = NOW() WHERE id = ? AND status = 'pending'");
+        $mark->execute([(int)$r['id']]);
+        if ($mark->rowCount() !== 1) continue;   // another run got there first: no second email
         $db->prepare("UPDATE referral_credits SET status = 'earned', remaining = amount, earned_at = NOW() WHERE referral_id = ? AND status = 'pending'")->execute([(int)$r['id']]);
         try {
             if (!function_exists('emailReferralEarned')) require_once __DIR__ . '/mailer.php';
@@ -206,6 +227,18 @@ function syncReferrals(PDO $db, ?int $bookingId = null): void {
             $friend = trim(explode(' ', (string)$f->fetchColumn())[0]);
             if ($rc && !empty($rc['email'])) emailReferralEarned(['name' => $rc['name'], 'email' => $rc['email']], (float)$rc['amount'], $friend, (int)$r['referrer_id']);
         } catch (Throwable $e) { error_log('referral earned email: ' . $e->getMessage()); }
+    }
+
+    // A completed first appointment later undone (moved off "completed"): take
+    // back rewards not yet spent — void if it fell through, else wait again.
+    $undone = $db->query("SELECT r.id, b.status FROM referrals r JOIN bookings b ON b.id = r.booking_id
+                          WHERE r.status = 'completed' AND b.status <> 'completed'{$only}")->fetchAll();
+    foreach ($undone as $r) {
+        $isDead = in_array($r['status'], REFERRAL_DEAD_STATUSES, true);
+        $db->prepare("UPDATE referrals SET status = ?, completed_at = NULL WHERE id = ?")->execute([$isDead ? 'void' : 'pending', (int)$r['id']]);
+        $db->prepare("UPDATE referral_credits SET status = ?, remaining = 0, earned_at = NULL
+                      WHERE referral_id = ? AND status = 'earned' AND remaining >= amount")
+           ->execute([$isDead ? 'void' : 'pending', (int)$r['id']]);
     }
 
     // Friend's first appointment fell through → referral and its rewards void.
