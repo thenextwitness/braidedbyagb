@@ -115,5 +115,9 @@ details in `docs/ORACLE-HOSTING.md` → "Known gaps"):
 - A new or changed route in any `.htaccess` will 404 until the server's Caddy
   rules are updated: tell the owner it is needed.
 - Never ask for, print or commit the contents of `config/database.php`.
+- Database changes go in `database/migrate.php` as a guarded `step()`, never in
+  `database/migrations.sql` (a stub that is never run; the deploy now fails if
+  SQL appears in it). Corrected 20 Nov after the Braided session spotted that
+  the first version of these docs said the opposite.
 - The Android admin app (`mobile/`) talks to the same domain and API, so it
   needed no change for the move.

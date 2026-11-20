@@ -20,8 +20,10 @@ and what is still open. Then use `docs/ORACLE-HOSTING.md` day to day.
 - Never deploy via cPanel; never edit files directly on the server.
 - `config/` and `uploads/` are server-only: never commit secrets, never expect a
   deploy to change them.
-- Database changes: add idempotent SQL to `database/migrations.sql`, push, then
-  run `database/migrate.php?key=...` once. Deploys do not touch the database.
+- Database changes: add a guarded `step()` to the bottom of `database/migrate.php`
+  (never add SQL to `database/migrations.sql`: it is a stub that is never run, and
+  the deploy fails if SQL appears in it), push, then ask the owner to run
+  `database/migrate.php?key=...` once. Deploys do not touch the database.
 - Routes: Caddy does not read `.htaccess`. Adding or changing a route in any
   `.htaccess` also needs the server's Caddy rules updated (see the hosting doc).
   Flag this to the owner rather than assuming the new URL works.

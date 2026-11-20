@@ -35,6 +35,13 @@ jobs:
             -not -path './desktop/*' -not -path './windows/*' -print0 \
             | xargs -0 -n1 -P4 php -l > /dev/null
 
+      - name: Migrations go in migrate.php, never migrations.sql (that stub is never run)
+        run: |
+          if grep -vE '^[[:space:]]*(--.*)?$' database/migrations.sql; then
+            echo "::error file=database/migrations.sql::SQL found in migrations.sql, which is never executed. Add it as a guarded step() at the bottom of database/migrate.php instead."
+            exit 1
+          fi
+
       - name: Stamp live version
         run: git rev-parse --short HEAD > version.txt
 

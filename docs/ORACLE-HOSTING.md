@@ -16,8 +16,12 @@ Namecheap still hosts **email** (cPanel webmail, MX records) and the owner's
 
 Never deploy through cPanel any more: cPanel's copy is no longer the live site.
 
-**Database changes are not automatic.** Add the SQL to `database/migrations.sql`
-(idempotent, safe to re-run), push, then run the migration runner once:
+**Database changes are not automatic.** Add a guarded `step()` to the bottom of
+`database/migrate.php` (each step checks whether it is already applied, so the
+runner is safe to re-run), push, then run the migration runner once.
+`database/migrations.sql` is an old stub that is never executed: SQL added there
+would silently never apply, so the deploy workflow fails if any appears in it.
+Run the runner with:
 `https://braidedbyagb.co.uk/database/migrate.php?key=<MIGRATE_KEY>`
 (the key is in the server's `config/database.php`; ask the owner).
 
