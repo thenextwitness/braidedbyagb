@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Email consent wording (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:28px;align-items:flex-start}.lbl{font-family:Montserrat;font-weight:800;color:#4B0082;margin:0 0 8px;font-size:14px}
+.shot{width:640px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.15);display:block}.newo{outline:3px solid #D4AF37}
+.card{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:16px 18px;width:660px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font-size:11px;letter-spacing:.06em;color:#6b5c78;text-transform:uppercase;padding:8px;border-bottom:1px solid #e5dff0}
+td{padding:9px 8px;border-bottom:1px solid #f1ecf6}
+.pill{display:inline-block;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700}
+.ok{background:#e9f8ef;color:#16a34a}.off{background:#fde8e8;color:#b42318}.na{background:#f3f0f8;color:#6b5c78}
+.btn{display:inline-block;border:1px solid #800080;color:#800080;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;background:#fff}.btn.p{background:#800080;color:#fff}
+.muted{color:#6b5c78;font-size:12px}</style></head><body>
+<div class="cap" style="margin-top:0"><b>Frame 1 — Booking page, "Your Details" step (your real page).</b> Today the box says it's for "appointment reminders", but unticking it only stops offers and "we miss you" emails — booking reminders always go. <b>New wording</b> says exactly what it's for, and that booking emails always come. It stays ticked unless they untick it (allowed for your own clients). The client account page gets the same wording.</div>
+<div class="row">
+  <div><p class="lbl">TODAY</p><img class="shot" src="2026-11-email-consent-before.png"></div>
+  <div><p class="lbl" style="color:#8a6d00">NEW</p><img class="shot newo" src="2026-11-email-consent-after.png"></div>
+</div>
+
+<div class="cap"><b>Frame 2 — Clients lists ("Haven't booked lately" and batch messages).</b> Three clear states instead of two: <b>Allowed</b>, <b>Turned off</b> (the client said no — unticked, unsubscribed, or switched off in their account), and <b>Not asked</b> (you added them in the admin/app, so they never chose). "Not asked" clients still aren't emailed offers — but now you know you can ask them.</div>
+<div class="row">
+  <div class="card"><p class="lbl">TODAY</p><table><thead><tr><th>Client</th><th>Emails</th></tr></thead><tbody>
+    <tr><td><b>Amara Okafor</b><div class="muted">Booked online</div></td><td><span class="pill ok">Allowed</span></td></tr>
+    <tr><td><b>Chioma Eze</b><div class="muted">Clicked Unsubscribe</div></td><td><span class="pill off">Turned off</span></td></tr>
+    <tr><td><b>Grace Obi</b><div class="muted">You booked her in the app</div></td><td><span class="pill off">Turned off</span></td></tr>
+  </tbody></table></div>
+  <div class="card" style="outline:3px solid #D4AF37"><p class="lbl" style="color:#8a6d00">NEW</p><table><thead><tr><th>Client</th><th>Emails</th></tr></thead><tbody>
+    <tr><td><b>Amara Okafor</b><div class="muted">Booked online</div></td><td><span class="pill ok">Allowed</span></td></tr>
+    <tr><td><b>Chioma Eze</b><div class="muted">Clicked Unsubscribe</div></td><td><span class="pill off">Turned off</span></td></tr>
+    <tr><td><b>Grace Obi</b><div class="muted">You booked her in the app</div></td><td><span class="pill na">Not asked</span></td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="cap"><b>Frame 3 — Client's page in the admin.</b> When a "Not asked" client tells you (in person or on WhatsApp) that she's happy to get offers, one button records it, with the date, so there's a record of her agreement. For clients who turned emails off, there's no button — only they can switch it back on (from their account), as the law requires.</div>
+<div class="row">
+  <div class="card"><p class="lbl">Grace Obi — Not asked</p>
+    <p style="font-size:13px;margin:0 0 10px">📧 Offers &amp; "we miss you" emails: <span class="pill na">Not asked</span></p>
+    <span class="btn p">✓ She agreed to offers by email</span>
+    <p class="muted" style="margin-top:8px">Only press this if she said yes. Saved as "Agreed in person — 20 Nov 2026".</p></div>
+  <div class="card"><p class="lbl">Chioma Eze — Turned off</p>
+    <p style="font-size:13px;margin:0 0 10px">📧 Offers &amp; "we miss you" emails: <span class="pill off">Turned off</span> <span class="muted">(unsubscribed 2 Nov 2026)</span></p>
+    <p class="muted">She chose not to get offers. She'll still get all emails about her bookings. Only she can turn offers back on, from her account.</p></div>
+</div>
+</body></html>
