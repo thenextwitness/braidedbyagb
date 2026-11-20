@@ -333,6 +333,21 @@ switch ($endpoint) {
                 $createdIds[]      = $bookingId;
             }
 
+            // "Bring your bestie": a new client's discount and any credit the client
+            // has come off the BALANCE DUE ON THE DAY (never the amount charged now,
+            // which was fixed above). A failure here must never lose the booking:
+            // the savepoint undoes only the referral part and the booking goes ahead.
+            $referral = null;
+            $db->exec('SAVEPOINT referral_apply');
+            try {
+                $referral = applyReferralAtBooking($db, (int)$customerId, $createdIds,
+                                                   (string)($data['referral_code'] ?? ''), $payFull);
+                $db->exec('RELEASE SAVEPOINT referral_apply');
+            } catch (Throwable $e) {
+                $db->exec('ROLLBACK TO SAVEPOINT referral_apply');
+                error_log('cart-intent referral (booking kept, no reward applied): ' . $e->getMessage());
+            }
+
             $db->commit();
         } catch (Exception $e) {
             if ($db->inTransaction()) $db->rollBack();
@@ -342,7 +357,8 @@ switch ($endpoint) {
 
         if ($method === 'stripe') {
             // Payment pending — emails are sent by finalize on success.
-            jsonResponse(['success' => true, 'client_secret' => $clientSecret, 'group_ref' => $groupRef, 'ref' => $createdRefs[0] ?? '']);
+            jsonResponse(['success' => true, 'client_secret' => $clientSecret, 'group_ref' => $groupRef, 'ref' => $createdRefs[0] ?? '',
+                          'referral' => $referral]);
         }
 
         // Bank transfer — acknowledge immediately (unchanged behaviour).
@@ -351,10 +367,7 @@ switch ($endpoint) {
                 require_once __DIR__ . '/../includes/mailer.php';
                 $in    = implode(',', array_fill(0, count($createdIds), '?'));
                 $eStmt = $db->prepare("
-                    SELECT b.booking_ref, b.guest_name, b.booked_date, b.booked_time,
-                           b.total_price, b.deposit_amount, b.remaining_balance,
-                           b.service_location, b.travel_area, b.travel_fee, b.service_address, b.media_consent,
-                           s.name AS service_name, sv.variant_name
+                    SELECT b.*, s.name AS service_name, sv.variant_name
                     FROM bookings b
                     JOIN services s ON s.id = b.service_id
                     LEFT JOIN service_variants sv ON sv.id = b.variant_id

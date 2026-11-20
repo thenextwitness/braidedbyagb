@@ -1170,6 +1170,61 @@ step('customers.winback_sent_at column',
     fn() => $db->exec("ALTER TABLE customers ADD COLUMN winback_sent_at DATETIME DEFAULT NULL"),
     $report);
 
+// ── "AGB bring your bestie" referrals (owner request 2026-11; rules in includes/referrals.php) ──
+step('customers.referral_code column (unique)',
+    fn() => columnExists($db, $dbName, 'customers', 'referral_code'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN referral_code VARCHAR(20) DEFAULT NULL, ADD UNIQUE KEY uq_customers_referral_code (referral_code)"),
+    $report);
+step('bookings.referral_discount column',
+    fn() => columnExists($db, $dbName, 'bookings', 'referral_discount'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN referral_discount DECIMAL(8,2) NOT NULL DEFAULT 0.00"),
+    $report);
+step('referrals table',
+    fn() => (bool)$db->query("SHOW TABLES LIKE 'referrals'")->fetchColumn(),
+    fn() => $db->exec("CREATE TABLE referrals (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        referrer_id  INT NOT NULL,
+        referred_id  INT NOT NULL,
+        booking_id   INT NOT NULL,
+        code         VARCHAR(20) NOT NULL,
+        status       ENUM('pending','completed','void') NOT NULL DEFAULT 'pending',
+        created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME DEFAULT NULL,
+        KEY idx_ref_referrer (referrer_id),
+        KEY idx_ref_referred (referred_id),
+        KEY idx_ref_booking (booking_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+step('referral_credits table',
+    fn() => (bool)$db->query("SHOW TABLES LIKE 'referral_credits'")->fetchColumn(),
+    fn() => $db->exec("CREATE TABLE referral_credits (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        referral_id INT DEFAULT NULL,
+        role        ENUM('referrer','friend') NOT NULL,
+        amount      DECIMAL(8,2) NOT NULL,
+        remaining   DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+        status      ENUM('pending','earned','void') NOT NULL DEFAULT 'pending',
+        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        earned_at   DATETIME DEFAULT NULL,
+        KEY idx_rc_customer (customer_id, status),
+        KEY idx_rc_referral (referral_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+step('referral_credit_uses table',
+    fn() => (bool)$db->query("SHOW TABLES LIKE 'referral_credit_uses'")->fetchColumn(),
+    fn() => $db->exec("CREATE TABLE referral_credit_uses (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        credit_id  INT NOT NULL,
+        booking_id INT NOT NULL,
+        amount     DECIMAL(8,2) NOT NULL,
+        status     ENUM('active','reversed') NOT NULL DEFAULT 'active',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_rcu_credit (credit_id),
+        KEY idx_rcu_booking (booking_id, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

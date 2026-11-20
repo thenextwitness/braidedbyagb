@@ -688,6 +688,27 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
 // All services data from PHP
 const SERVICES    = <?= json_encode($servicesJs) ?>;
 const DEPOSIT_PCT = <?= $depositPct ?>;
+// "AGB bring your bestie": a share link (/booking?ref=CODE) is remembered for
+// 30 days and sent with the booking. The SERVER decides if it applies (new
+// clients only) and takes it off the balance on the day; this page only says so.
+const REFERRAL_ON     = <?= json_encode(referralEnabled()) ?>;
+const REFERRAL_FRIEND = <?= json_encode(referralAmounts()['friend']) ?>;
+function getReferralCode() {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('ref');
+    if (fromUrl && /^[A-Za-z0-9]{4,20}$/.test(fromUrl)) {
+      localStorage.setItem('agb_ref', JSON.stringify({ code: fromUrl.toUpperCase(), exp: Date.now() + 30 * 864e5 }));
+    }
+    const saved = JSON.parse(localStorage.getItem('agb_ref') || 'null');
+    if (saved && saved.exp > Date.now()) return saved.code;
+    localStorage.removeItem('agb_ref');
+  } catch (e) { /* storage blocked: the URL code still works for this visit */
+    const c = new URLSearchParams(window.location.search).get('ref');
+    if (c && /^[A-Za-z0-9]{4,20}$/.test(c)) return c.toUpperCase();
+  }
+  return '';
+}
+function clearReferralCode() { try { localStorage.removeItem('agb_ref'); } catch (e) {} }
 const STRIPE_KEY  = '<?= $stripePublicKey ?>';
 const BANK_NAME   = '<?= htmlspecialchars(getSetting('bank_account_name', 'BraidedbyAGB')) ?>';
 const BANK_SORT   = '<?= htmlspecialchars(getSetting('bank_sort_code', 'XX-XX-XX')) ?>';
@@ -752,6 +773,7 @@ let pendingRebookAddons = <?= json_encode($rebookAddons) ?>;
 <?php if ($preselected): ?>
 // Pre-select service from URL (and, for "Book again", the same option)
 window.addEventListener('DOMContentLoaded', () => {
+  getReferralCode();   // remember a share link's code even if they browse away first
   selectService(<?= (int)$preselected['id'] ?>);
   const rebookVariant = <?= (int)$rebookVariant ?>;
   if (rebookVariant) {
@@ -1409,6 +1431,10 @@ function renderPaymentStep() {
           : `<div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>`}
         <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? (payFull ? ' (full price + travel)' : ' (deposit + travel)') : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
         <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}${payFull ? ' — nothing to pay' : ''}</span></div>
+        ${(REFERRAL_ON && REFERRAL_FRIEND > 0 && getReferralCode()) ? `<div class="summary-row" style="color:var(--color-primary);font-weight:600"><span class="label">🎁 Bestie reward</span><span class="value">${payFull
+            ? '£' + REFERRAL_FRIEND.toFixed(2) + ' credit for your next visit'
+            : '£' + REFERRAL_FRIEND.toFixed(2) + ' off your balance on the day'}</span></div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);padding:0 0 4px">For first-time clients booking through a friend's link. It shows on your confirmation email.</div>` : ''}
       </div>
     </div>`;
 
@@ -1496,12 +1522,14 @@ async function submitStripePayment() {
         payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
         payment_method: 'stripe',
         pay_mode: payFull ? 'full' : 'deposit',   // pay-in-3 charges the full price
+        referral_code: getReferralCode(),
         items: buildCartItems(),
         ...homePayload()
       })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    clearReferralCode();   // the booking exists now; the reward (if any) is on it
 
     // 3. Confirm — cards resolve inline; Klarna/Clearpay/PayPal redirect out.
     const returnUrl = window.location.origin + '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
@@ -1551,12 +1579,14 @@ async function confirmCart(method) {
     body: JSON.stringify({
       payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
       payment_method: method,
+      referral_code: getReferralCode(),
       items: buildCartItems(),
       ...homePayload()
     })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
+  clearReferralCode();
   if (data.refs && data.refs.length) {
     window.location.href = '/booking/confirmation?ref=' + encodeURIComponent(data.refs[0]);
   }

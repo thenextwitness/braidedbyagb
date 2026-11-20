@@ -228,6 +228,44 @@ function statusBadge(string $status): string {
   </div>
 </div>
 
+<?php
+// ── "AGB bring your bestie" summary for this client ──
+$refInfo = null;
+try {
+    $rq = $db->prepare("SELECT r.status, r.created_at, c2.id AS other_id, c2.name AS other_name, b.booking_ref
+                        FROM referrals r JOIN customers c2 ON c2.id = r.referred_id LEFT JOIN bookings b ON b.id = r.booking_id
+                        WHERE r.referrer_id = ? ORDER BY r.created_at DESC");
+    $rq->execute([(int)$c['id']]);
+    $by = $db->prepare("SELECT c3.id, c3.name, r.status FROM referrals r JOIN customers c3 ON c3.id = r.referrer_id WHERE r.referred_id = ? ORDER BY r.id DESC LIMIT 1");
+    $by->execute([(int)$c['id']]);
+    $refInfo = ['code' => $c['referral_code'] ?? '', 'credit' => customerCreditBalance($db, (int)$c['id']),
+                'brought' => $rq->fetchAll(), 'by' => $by->fetch() ?: null];
+} catch (Throwable $e) { /* referral tables not created yet */ }
+?>
+<?php if ($refInfo): ?>
+<div style="background:#fff;border:1px solid var(--admin-border,#e5e7eb);border-radius:10px;padding:20px;margin-bottom:20px">
+  <h3 style="font-size:0.75rem;font-weight:700;color:var(--admin-muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px">💕 Bring your bestie</h3>
+  <p style="font-size:0.82rem;margin:0 0 6px">
+    Credit to spend: <strong><?= formatPrice($refInfo['credit']) ?></strong> (comes off the balance on the day of their next booking automatically).
+    <?php if ($refInfo['code']): ?> · Share code <strong><?= htmlspecialchars($refInfo['code']) ?></strong><?php endif; ?>
+  </p>
+  <?php if ($refInfo['by']): ?>
+    <p style="font-size:0.82rem;margin:0 0 6px">Referred by <a href="/admin/customers/<?= (int)$refInfo['by']['id'] ?>"><?= htmlspecialchars($refInfo['by']['name']) ?></a> (<?= htmlspecialchars($refInfo['by']['status']) ?>).</p>
+  <?php endif; ?>
+  <?php if ($refInfo['brought']): ?>
+    <p style="font-size:0.82rem;margin:8px 0 4px;font-weight:700">Besties they've brought (<?= count($refInfo['brought']) ?>):</p>
+    <ul style="margin:0;padding-left:18px;font-size:0.8rem">
+      <?php foreach ($refInfo['brought'] as $r): ?>
+        <li><a href="/admin/customers/<?= (int)$r['other_id'] ?>"><?= htmlspecialchars($r['other_name']) ?></a>
+            · <?= htmlspecialchars((string)$r['booking_ref']) ?> · <?= $r['status'] === 'completed' ? 'reward earned' : ($r['status'] === 'void' ? 'cancelled, no reward' : 'waiting for their appointment') ?></li>
+      <?php endforeach; ?>
+    </ul>
+  <?php else: ?>
+    <p style="font-size:0.78rem;color:var(--admin-muted);margin:0">No referrals yet.</p>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
+
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
 
   <!-- Tags -->

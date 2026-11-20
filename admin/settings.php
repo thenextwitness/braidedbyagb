@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'review_incentive_enabled', 'review_incentive_type', 'review_incentive_value',
             'auto_cancel_bank_transfer_hours', 'rebook_default_weeks',
             'aftercare_delay_hours', 'winback_after_days',
+            'referral_friend_amount', 'referral_referrer_amount',
             'loyalty_earn_rate', 'loyalty_redeem_rate', 'loyalty_min_redeem',
             'home_service_min', 'travel_fee_farnborough', 'travel_fee_camberley_aldershot', 'travel_fee_further',
         ];
@@ -45,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'rebook_reminders_enabled',
             'aftercare_enabled',
             'winback_enabled',
+            'referral_enabled',
         ];
         foreach ($checkboxes as $key) {
             $val = isset($_POST[$key]) ? '1' : '0';
@@ -265,6 +267,26 @@ $isError = str_starts_with($msg, 'ERROR:');
           <input class="admin-input" type="number" name="rebook_default_weeks" value="<?= htmlspecialchars($g('rebook_default_weeks','6')) ?>" min="1" max="52" style="max-width:120px">
           <small style="color:var(--admin-muted)">Each service can override this in Services (0 = never), and you can pick a date for each appointment when you mark it completed. Only clients who allow emails get them, and never if they've already booked again.</small>
         </div>
+      </div>
+
+      <!-- Referrals -->
+      <div class="settings-section admin-form-card" id="referrals">
+        <div class="settings-section-title">💕 AGB bring your bestie (referrals)</div>
+        <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-bottom:12px">
+          <input type="checkbox" name="referral_enabled" <?= $g('referral_enabled','1') === '1' ? 'checked' : '' ?>>
+          <span><strong>Referral programme on</strong> — every client gets a share link on their account page and in their emails</span>
+        </label>
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-label">Bestie gets (£ off their first appointment)</label>
+            <input class="admin-input" type="number" name="referral_friend_amount" value="<?= htmlspecialchars($g('referral_friend_amount','10')) ?>" min="0" max="100" step="0.01">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-label">Referrer gets (£ off their next appointment)</label>
+            <input class="admin-input" type="number" name="referral_referrer_amount" value="<?= htmlspecialchars($g('referral_referrer_amount','10')) ?>" min="0" max="100" step="0.01">
+          </div>
+        </div>
+        <small style="color:var(--admin-muted)">Both come off the balance paid on the day, never the online deposit. Only first-time clients qualify. The referrer's reward is earned when their bestie's appointment is marked completed, and is cancelled if that booking is cancelled. Changing the amounts affects new referrals only.</small>
       </div>
 
       <!-- Follow-ups -->

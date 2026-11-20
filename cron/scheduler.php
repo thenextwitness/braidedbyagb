@@ -513,7 +513,7 @@ try {
         $dueBy  = (clone $now)->modify("-{$delay} hours")->format('Y-m-d H:i:s');
         $oldest = (clone $now)->modify('-7 days')->format('Y-m-d H:i:s');
         $stmt = $db->prepare("
-            SELECT b.id, b.booking_ref, s.name AS s_name, c.name AS c_name, c.email AS c_email
+            SELECT b.id, b.booking_ref, b.customer_id, s.name AS s_name, c.name AS c_name, c.email AS c_email
             FROM bookings b
             JOIN services  s ON s.id = b.service_id
             JOIN customers c ON c.id = b.customer_id
@@ -527,7 +527,7 @@ try {
         $stmt->execute([$oldest, $dueBy]);
         $mark = $db->prepare("UPDATE bookings SET aftercare_sent_at = NOW() WHERE id = ?");
         foreach ($stmt->fetchAll() as $b) {
-            if (emailAftercare(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'])) {
+            if (emailAftercare(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'], (int)$b['customer_id'])) {
                 $mark->execute([(int)$b['id']]);
                 cronLog("[aftercare] → {$b['c_email']} ({$b['booking_ref']})");
             }
@@ -577,6 +577,17 @@ try {
     }
 } catch (Throwable $e) {
     cronLog('[ERROR] Win-back: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
+// 13. REFERRAL SWEEP — earn / void / return "bring your bestie" rewards from
+//     booking statuses. Catches status changes made by paths that don't call
+//     onBookingStatusChanged (e.g. the auto-reject jobs above). Idempotent.
+// ─────────────────────────────────────────────────────────
+try {
+    syncReferrals($db);
+} catch (Throwable $e) {
+    cronLog('[ERROR] Referral sweep: ' . $e->getMessage());
 }
 
 // ─────────────────────────────────────────────────────────

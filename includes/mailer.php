@@ -486,7 +486,7 @@ HTML;
 
 // ── Aftercare follow-up (cron job 11) ─────────────────────
 // Tips come from the aftercare_tips setting (default: AFTERCARE_TIPS_DEFAULT in helpers.php).
-function emailAftercare(array $customer, string $serviceName): bool {
+function emailAftercare(array $customer, string $serviceName, int $customerId = 0): bool {
     try {
         $mail = createMailer();
         $mail->addAddress($customer['email'], $customer['name']);
@@ -498,11 +498,13 @@ function emailAftercare(array $customer, string $serviceName): bool {
             $t = trim($t);
             if ($t !== '') $tips .= '<li style="margin-bottom:6px">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</li>';
         }
+        $bestie = $customerId > 0 ? referralEmailBlock($customerId) : '';
         $content = <<<HTML
 <h2>Thank you for coming in 💕</h2>
 <p>Hi {$first}, we hope you're loving your <strong>{$svc}</strong>! Here are a few tips to keep it looking fresh for longer:</p>
 <ul style="padding-left:20px">{$tips}</ul>
 <p>Any tenderness, itching or a loose braid? Just WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a> and we'll sort you out.</p>
+{$bestie}
 <p>Thank you for choosing BraidedbyAGB. 💜</p>
 HTML;
         $mail->Body = emailWrapper($content);
@@ -523,7 +525,7 @@ function emailWinBack(array $customer, string $lastVisit, int $customerId): bool
         $when    = formatDate($lastVisit);
         $book    = htmlspecialchars(rtrim(SITE_URL, '/') . '/booking', ENT_QUOTES, 'UTF-8');
         $profile = htmlspecialchars(SITE_URL . '/account/profile', ENT_QUOTES, 'UTF-8');
-        $extra   = function_exists('winBackExtraHtml') ? winBackExtraHtml($customerId) : '';
+        $extra   = referralEmailBlock($customerId);
         $content = <<<HTML
 <h2>It's been a while! 💕</h2>
 <p>Hi {$first}, we haven't seen you since {$when} and we'd love to have you back in the chair. Whether it's your usual style or something new, there are times available now.</p>
@@ -538,6 +540,34 @@ HTML;
         return $mail->send();
     } catch (Exception $e) {
         error_log('Email error (win-back): ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Referral reward earned (syncReferrals) ────────────────
+function emailReferralEarned(array $customer, float $amount, string $friendFirst, int $customerId): bool {
+    try {
+        $mail = createMailer();
+        $mail->addAddress($customer['email'], $customer['name']);
+        $first  = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
+        $friend = sanitize($friendFirst !== '' ? $friendFirst : 'your bestie');
+        $amt    = '£' . rtrim(rtrim(number_format($amount, 2), '0'), '.');
+        $mail->Subject = "You've earned {$amt} off, {$first}! 💕 — BraidedbyAGB";
+        $book   = htmlspecialchars(rtrim(SITE_URL, '/') . '/booking', ENT_QUOTES, 'UTF-8');
+        $more   = referralEmailBlock($customerId);
+        $content = <<<HTML
+<h2>Thank you for bringing your bestie! 💕</h2>
+<p>Hi {$first}, {$friend} has just had their appointment with us, so you've earned <strong>{$amt} off</strong> your next booking.</p>
+<p>There's nothing to do: it comes off your balance on the day automatically when you next book with this email address.</p>
+<p style="text-align:center;margin:28px 0">
+  <a href="{$book}" class="cta-btn" style="background:#7A0050;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700">Book your next appointment</a>
+</p>
+{$more}
+HTML;
+        $mail->Body = emailWrapper($content);
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('Email error (referral earned): ' . $e->getMessage());
         return false;
     }
 }
@@ -1335,8 +1365,13 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
             $balance = formatPrice((float)$it['remaining_balance']);
             // Pay-in-3 (Klarna/Clearpay) bookings are paid in full up front.
             $itPaidFull = $paymentMethod !== 'bank_transfer' && (float)$it['remaining_balance'] <= 0.005;
-            $paidLbl    = $itPaidFull ? 'Paid in Full:' : 'Deposit Paid:';
+            // "Paid in full" only when the payment covered the price; a bestie
+            // reward/credit can also bring the balance to £0 after a deposit.
+            $paidLbl    = ($itPaidFull && (float)$it['deposit_amount'] >= (float)$it['total_price'] - 0.005) ? 'Paid in Full:' : 'Deposit Paid:';
             $balanceTxt = $itPaidFull ? 'Nothing to pay on the day' : "{$balance} (on the day)";
+            $refDisc    = (float)($it['referral_discount'] ?? 0);
+            $rewardRow  = $refDisc > 0.005
+                ? '<tr><td>🎁 Bestie reward:</td><td class="gold-text">−' . formatPrice($refDisc) . ' (taken off your balance)</td></tr>' : '';
             // Who the appointment is for — falls back to the payer when not set
             $who     = !empty($it['guest_name']) ? sanitize($it['guest_name']) : $name;
             $num     = $i + 1;
@@ -1351,6 +1386,7 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
     <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>{$paidLbl}</td><td class="gold-text">{$deposit} ✓</td></tr>
+    {$rewardRow}
     <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>

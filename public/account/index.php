@@ -93,6 +93,49 @@ require_once __DIR__ . '/../../includes/account-head.php';
     </div>
   </div>
 
+  <?php
+  // ── "AGB bring your bestie" ──
+  $bestie = null;
+  if (referralEnabled()) {
+      try {
+          $amts  = referralAmounts();
+          $link  = referralLink($db, (int)$cid);
+          $credit = customerCreditBalance($db, (int)$cid);
+          $cnt = $db->prepare("SELECT SUM(status='completed') AS done, SUM(status='pending') AS waiting FROM referrals WHERE referrer_id = ?");
+          $cnt->execute([(int)$cid]);
+          $c = $cnt->fetch() ?: [];
+          $money = fn($v) => '£' . rtrim(rtrim(number_format((float)$v, 2), '0'), '.');
+          if ($link !== '') $bestie = ['link' => $link, 'friend' => $money($amts['friend']), 'you' => $money($amts['referrer']),
+                                        'credit' => $credit, 'creditTxt' => $money($credit),
+                                        'done' => (int)($c['done'] ?? 0), 'waiting' => (int)($c['waiting'] ?? 0)];
+      } catch (Throwable $e) { error_log('account bestie card: ' . $e->getMessage()); }
+  }
+  ?>
+  <?php if ($bestie): ?>
+  <div class="account-card" style="margin-bottom:30px;border:2px solid var(--color-primary,#CC1A8A)">
+    <h3 style="margin-top:0">💕 AGB bring your bestie</h3>
+    <p style="margin:0 0 12px;color:#4B3A55">Share your link: your bestie gets <strong><?= $bestie['friend'] ?> off</strong> their first appointment, and you get <strong><?= $bestie['you'] ?> off</strong> your next one once they've been in.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="bestieLink" value="<?= htmlspecialchars($bestie['link']) ?>" readonly
+             style="flex:1;min-width:0;padding:10px 12px;border:1px solid #E8D8EE;border-radius:8px;font-size:0.85rem;background:#fff">
+      <button type="button" class="auth-btn" style="width:auto;margin:0;padding:10px 16px" onclick="copyBestie(this)">Copy link</button>
+      <a class="auth-btn" style="width:auto;margin:0;padding:10px 16px;background:#25D366;text-decoration:none"
+         target="_blank" href="https://wa.me/?text=<?= rawurlencode("Book your braids with BraidedbyAGB and get {$bestie['friend']} off your first appointment 💕 " . $bestie['link']) ?>">Share on WhatsApp</a>
+    </div>
+    <p style="margin:12px 0 0;color:#8A7595;font-size:0.85rem">
+      <?php if ($bestie['credit'] > 0): ?><strong style="color:#7A0050">You have <?= $bestie['creditTxt'] ?> credit</strong>: it comes off your balance on the day of your next booking automatically. <?php endif; ?>
+      <?= $bestie['done'] ?> bestie<?= $bestie['done'] === 1 ? '' : 's' ?> booked so far<?= $bestie['waiting'] ? ', ' . $bestie['waiting'] . ' with an appointment coming up' : '' ?>.
+    </p>
+  </div>
+  <script>
+  function copyBestie(btn) {
+    const i = document.getElementById('bestieLink');
+    (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).catch(() => { i.select(); document.execCommand('copy'); })
+      .finally(() => { btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy link', 2000); });
+  }
+  </script>
+  <?php endif; ?>
+
   <h2 style="font-family:'Montserrat',sans-serif;color:var(--color-deep-purple,#7A0050);font-size:1.15rem;margin:0 0 14px;">Recent bookings</h2>
   <?php if (!$recentBookings): ?>
     <div class="account-card account-empty">You have no bookings yet. <a class="auth-link" href="/booking">Book your first appointment »</a></div>

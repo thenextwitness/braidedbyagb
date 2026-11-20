@@ -594,6 +594,9 @@ function rebookWeeks(w) {
         <?php endif; ?>
       </span>
     </div>
+    <?php if ((float)($bk['referral_discount'] ?? 0) > 0.005): ?>
+    <div class="detail-row"><span class="dl">🎁 Bestie reward</span><span class="dv" style="color:#7A0050">−<?= formatPrice($bk['referral_discount']) ?> <span class="td-muted">(already taken off the total and balance)</span></span></div>
+    <?php endif; ?>
     <div class="detail-row"><span class="dl">Balance on day</span><span class="dv"><?= formatPrice($bk['remaining_balance']) ?></span></div>
     <div class="detail-row"><span class="dl">Method</span><span class="dv"><?= ucfirst(str_replace('_',' ',$bk['payment_method'])) ?></span></div>
 

@@ -301,6 +301,11 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
     if ($newStatus === 'incomplete') {
         forfeitBookingDeposit($db, $bookingId);
     }
+
+    // Referral rewards follow the booking: earned on completion, voided or
+    // returned if it falls through (self-healing; the scheduler re-checks too).
+    try { syncReferrals($db, $bookingId); }
+    catch (Throwable $e) { error_log('syncReferrals (status change): ' . $e->getMessage()); }
 }
 
 // ============================================================

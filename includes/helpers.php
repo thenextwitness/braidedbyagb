@@ -764,3 +764,6 @@ require_once __DIR__ . '/scheduling.php';
 // with no extra require and no risk of a page missing one. Placed last so all
 // the helpers it depends on (createJournalEntry, loyalty) are already defined.
 require_once __DIR__ . '/bookings.php';
+
+// ── "AGB bring your bestie" referrals (rewards follow booking statuses) ──
+require_once __DIR__ . '/referrals.php';
