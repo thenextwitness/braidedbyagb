@@ -67,23 +67,24 @@ Blocked from the web: `config/`, `vendor/`, `composer.*`, any `.sql/.bak/.log/
   If `config/database.php` is ever replaced, keep that line.
 - PHP errors are logged to `/var/log/php/braided-error.log` (never shown to visitors).
 
-## Cutover status
+## Cutover: DONE 20 Nov 2026 (~01:15 UK)
 
-- [x] Server built, code copied, routing translated and checked against the live site
-- [x] Sensitive-file blocks, nightly backups, scheduler prepared (off)
-- [x] Deploy user on the server (rsync-only, verified)
-- [x] `ORACLE_DEPLOY_KEY` repo secret
-- [x] Live data imported (export of 19 Nov 19:43: 55 tables, 147 bookings) + uploads
-- [x] Server config built from the LIVE cPanel `config/database.php` (the copy in
-      D:\BraidedbyAGB\config is older and lacks the reCAPTCHA + webhook keys; do
-      not upload it). Only DB_*, the pinned AUTH_CODE_PEPPER and STRINGIFY_FETCHES differ.
-- [ ] Final fresh export just before the DNS switch (bookings made after the
-      first export would otherwise be lost); re-import
-- [ ] Switch on the scheduler; add the domain to Caddy
-- [ ] Owner: turn off the cPanel cron job (or reminder emails go out twice)
-- [ ] Owner: cPanel Zone Editor, set `@` and `www` A records to 141.147.86.105
-      (leave MX, SPF and mail records alone; email stays on Namecheap)
-- [ ] Watch the first scheduler run and a test booking end to end
+- Data: live export of 19 Nov 19:43 (55 tables, 147 bookings, last booking change
+  19 Nov 14:10; the owner confirmed no activity after it) + 39 upload files.
+- Server config built from the live cPanel `config/database.php`. Only DB_*, the
+  pinned AUTH_CODE_PEPPER and STRINGIFY_FETCHES differ. Backups of earlier
+  versions sit beside it in `config/` (server only).
+- cPanel cron jobs deleted by the owner; the Oracle scheduler is on. Checked
+  before enabling: no review requests due and no pending bookings, so nothing
+  the cPanel cron had already sent could go out twice.
+- DNS: the `braidedbyagb.co.uk` A record is now 141.147.86.105 (`www` is a CNAME to
+  it). MX, SPF and mail records are untouched, so email stays on Namecheap.
+  Let's Encrypt certificates for both names were issued by Caddy.
+- First GitHub Actions deploy green: the live site reported commit 8931e97.
+- The old cPanel copy still exists. Visitors whose DNS was cached could reach it
+  for up to ~4 hours after the switch (record TTL 14400). Check its database
+  (cPanel phpMyAdmin) once for bookings, orders or customers created after
+  19 Nov 14:10, and copy any across.
 
 ## Known gaps carried over from Namecheap
 
