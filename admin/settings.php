@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
             'review_delay_hours',
             'auto_cancel_bank_transfer_hours', 'rebook_default_weeks',
-            'aftercare_delay_hours', 'winback_after_days',
+            'aftercare_delay_hours', 'winback_after_days', 'winback_repeat_days', 'winback_stop_months',
             'referral_friend_amount', 'referral_referrer_amount',
             'loyalty_earn_rate', 'loyalty_redeem_rate', 'loyalty_min_redeem',
             'home_service_min', 'travel_fee_farnborough', 'travel_fee_camberley_aldershot', 'travel_fee_further',
@@ -335,9 +335,15 @@ $isError = str_starts_with($msg, 'ERROR:');
             <input type="checkbox" name="winback_enabled" <?= $g('winback_enabled','1') === '1' ? 'checked' : '' ?>>
             <span><strong>"We miss you" emails</strong> — contact clients who haven't booked in a while</span>
           </label>
-          <label class="admin-label" style="margin-top:8px">Contact them after this many days without a visit</label>
+          <label class="admin-label" style="margin-top:8px">First email after this many days without a visit</label>
           <input class="admin-input" type="number" name="winback_after_days" value="<?= htmlspecialchars($g('winback_after_days','60')) ?>" min="14" max="365" style="max-width:120px">
-          <small style="color:var(--admin-muted)">One email per client each time they lapse, only to clients who allow emails and have nothing booked. 60 days ≈ 2 months, 90 ≈ 3 months. Clients lapsed for up to a year are included. You can also message them yourself from Clients → Haven't booked lately.</small>
+          <label class="admin-label" style="margin-top:8px">Then repeat every (days)</label>
+          <input class="admin-input" type="number" name="winback_repeat_days" value="<?= htmlspecialchars($g('winback_repeat_days','60')) ?>" min="0" max="365" style="max-width:120px">
+          <small style="color:var(--admin-muted);display:block">0 = send only once.</small>
+          <label class="admin-label" style="margin-top:8px">Stop after this many months without a visit</label>
+          <input class="admin-input" type="number" name="winback_stop_months" value="<?= htmlspecialchars($g('winback_stop_months','12')) ?>" min="0" max="60" style="max-width:120px">
+          <small style="color:var(--admin-muted);display:block">0 = never stop. We recommend 12: emailing people who haven't been in for years can push all your emails (including booking confirmations) into spam.</small>
+          <small style="color:var(--admin-muted);display:block;margin-top:6px">Only to clients who allow emails and have nothing booked; never straight after a rebook reminder or one of your batch messages. You can also message clients yourself from Clients → Haven't booked lately.</small>
         </div>
       </div>
 

@@ -575,15 +575,22 @@ try {
 // ─────────────────────────────────────────────────────────
 // 12. WIN-BACK: "WE MISS YOU"  (daytime only, 10:00–19:00 UK)
 //     Clients whose last completed appointment was winback_after_days ago
-//     (default 60) or more — up to a year — with nothing booked since, get one
-//     friendly email per lapse. Skips clients who turned emails off, blocked
-//     clients, and anyone sent a rebook reminder in the last 21 days. At most
-//     15 per run (the scheduler runs every 30 min), so a first run spreads out.
+//     (default 60) with nothing booked since get a friendly email, repeated
+//     every winback_repeat_days (default 60; 0 = once per lapse) until
+//     winback_stop_months without a visit (default 12; 0 = never stop).
+//     Owner-approved: docs/mockups/2026-11-winback-repeat.png. Skips clients
+//     who turned emails off, blocked clients, anyone sent a rebook reminder in
+//     the last 21 days or a batch message in the last 14. At most 15 per run.
 // ─────────────────────────────────────────────────────────
 try {
     $hrNow = (int)$now->format('H');
     if ($hrNow >= 10 && $hrNow < 19 && getSetting('winback_enabled', '1') === '1') {
-        $after = max(14, min(365, (int)getSetting('winback_after_days', '60')));
+        $after  = max(14, min(365, (int)getSetting('winback_after_days', '60')));
+        $repeat = max(0, min(365, (int)getSetting('winback_repeat_days', '60')));
+        $stop   = max(0, min(60, (int)getSetting('winback_stop_months', '12')));
+        // Trusted ints, inlined.
+        $stopSql   = $stop > 0 ? "AND last_visit >= DATE_SUB(CURDATE(), INTERVAL {$stop} MONTH)" : '';
+        $repeatSql = $repeat > 0 ? "OR c.winback_sent_at <= DATE_SUB(NOW(), INTERVAL {$repeat} DAY)" : '';
         $stmt = $db->prepare("
             SELECT c.id, c.name, c.email, MAX(b.booked_date) AS last_visit
             FROM customers c
@@ -594,10 +601,12 @@ try {
               AND NOT EXISTS (SELECT 1 FROM bookings f WHERE f.customer_id = c.id AND f.status IN ('pending','confirmed'))
               AND NOT EXISTS (SELECT 1 FROM bookings r WHERE r.customer_id = c.id
                               AND r.rebook_reminder_sent_at > DATE_SUB(NOW(), INTERVAL 21 DAY))
+              AND NOT EXISTS (SELECT 1 FROM message_batch_recipients m WHERE m.customer_id = c.id
+                              AND m.status IN ('sent','opened') AND m.sent_at > DATE_SUB(NOW(), INTERVAL 14 DAY))
             GROUP BY c.id, c.name, c.email, c.winback_sent_at
             HAVING last_visit <= DATE_SUB(CURDATE(), INTERVAL {$after} DAY)
-               AND last_visit >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)
-               AND (c.winback_sent_at IS NULL OR c.winback_sent_at < last_visit)
+               {$stopSql}
+               AND (c.winback_sent_at IS NULL OR c.winback_sent_at < last_visit {$repeatSql})
             ORDER BY last_visit DESC
             LIMIT 15
         ");
