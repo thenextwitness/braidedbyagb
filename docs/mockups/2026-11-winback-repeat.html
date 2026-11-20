@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>"We miss you" every 60 days (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.tl{display:flex;background:#fff;border-radius:12px;padding:24px 26px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.step{flex:1;position:relative;padding:0 10px}
+.step:not(:last-child)::after{content:"";position:absolute;top:21px;right:-6px;width:12px;border-top:3px solid #D4AF37}
+.dot{width:44px;height:44px;border-radius:50%;background:#800080;color:#fff;display:grid;place-items:center;font-weight:800;font-family:Montserrat;font-size:13px}
+.step.new .dot{background:#D4AF37;color:#4B0082}.step.stop .dot{background:#e5dff0;color:#6b5c78}
+.step h4{font-family:Montserrat;color:#4B0082;font-size:14px;margin:10px 0 4px}.step p{font-size:12.5px;color:#6b5c78;margin:0;line-height:1.45}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;border-radius:10px;padding:2px 8px;margin-top:6px}
+.tag.new{background:#fdf6dd;color:#8a6d00}.tag.same{background:#eef2f6;color:#6b5c78}
+.row{display:flex;gap:24px;align-items:flex-start}
+.admin{background:#f3f0f8;border-radius:12px;padding:20px;width:700px}
+.acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:18px 20px}
+.atitle{font-family:Montserrat;font-weight:800;font-size:14px;color:#4B0082;margin-bottom:12px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0}
+.box{width:16px;height:16px;border-radius:4px;background:#800080;flex:none;margin-top:1px;color:#fff;font-size:11px;display:grid;place-items:center}
+.alabel{font-size:12px;font-weight:700;margin:12px 0 4px;display:block}
+.ainput{border:1px solid #e5dff0;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;width:120px}
+.newbox{outline:2px solid #D4AF37;outline-offset:4px;border-radius:6px}
+.ahint{font-size:11.5px;color:#6b5c78;margin-top:4px;line-height:1.45}
+.rules{background:#fff;border-radius:12px;padding:18px 22px;width:560px;font-size:13.5px;line-height:1.6}
+.rules h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 8px}.rules li{margin-bottom:6px}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1 — A client who stops booking (last visit: 1 March). Circles = days since her last visit.</b> Today she gets one "We miss you" email at 60 days and nothing more. <b>New:</b> it repeats every 60 days while she still hasn't booked, and stops after 12 months (you can change both). The moment she books, it stops; if she lapses again later, it starts again from her new visit.</div>
+<div class="tl">
+  <div class="step"><div class="dot">60</div><h4>30 April</h4><p>"We miss you" email #1</p><span class="tag same">AS NOW</span></div>
+  <div class="step new"><div class="dot">120</div><h4>29 June</h4><p>Email #2 — same friendly message</p><span class="tag new">NEW</span></div>
+  <div class="step new"><div class="dot">180</div><h4>28 August</h4><p>Email #3</p><span class="tag new">NEW</span></div>
+  <div class="step new"><div class="dot">240</div><h4>27 October</h4><p>Email #4</p><span class="tag new">NEW</span></div>
+  <div class="step new"><div class="dot">300</div><h4>26 December</h4><p>Email #5</p><span class="tag new">NEW</span></div>
+  <div class="step stop"><div class="dot">365</div><h4>1 March next year</h4><p>Stops: 12 months without a visit.</p><span class="tag same">STOPS</span></div>
+</div>
+
+<div class="cap"><b>Frame 2 — Settings → Follow-ups &amp; reviews.</b> Gold outline = new controls. Left as they are, it sends every 60 days for up to 12 months.</div>
+<div class="row">
+  <div class="admin"><div class="acard">
+    <div class="atitle">💌 "We miss you" emails</div>
+    <div class="chk"><span class="box">✓</span><span><b>"We miss you" emails</b> — contact clients who haven't booked in a while</span></div>
+    <span class="alabel">First email after this many days without a visit</span>
+    <input class="ainput" value="60">
+    <div class="newbox" style="padding:4px 6px;margin-top:10px">
+      <span class="alabel" style="margin-top:4px">Then repeat every (days)</span>
+      <input class="ainput" value="60">
+      <div class="ahint">0 = send only once (how it works today).</div>
+      <span class="alabel">Stop after this many months without a visit</span>
+      <input class="ainput" value="12">
+      <div class="ahint">0 = never stop. We recommend 12: emailing people who haven't been in for years can push all your emails (including booking confirmations) into spam.</div>
+    </div>
+  </div></div>
+  <div class="rules">
+    <h3>Always true</h3>
+    <ul>
+      <li>Only clients who allow emails, and each email has the one-click <b>Unsubscribe</b> link.</li>
+      <li>Never sent if they have a booking coming up.</li>
+      <li>Skipped if they were sent a rebook reminder in the last 3 weeks, or one of your batch messages in the last 2 weeks — so nobody gets two in a row.</li>
+      <li>Sent between 10 AM and 7 PM, a few at a time.</li>
+      <li>Clients → "Haven't booked lately" shows when each client was last sent one.</li>
+    </ul>
+  </div>
+</div>
+</body></html>
