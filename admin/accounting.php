@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // BraidedbyAGB — Admin Accounting
-// FILE: /admin/accounting.php   (/admin/accounting?tab=overview|reports|expenses|owed)
+// FILE: /admin/accounting.php   (/admin/accounting.php?tab=overview|reports|expenses|owed)
 //
 // Every figure comes from the double-entry ledger (includes/finance.php), so
 // services, shop sales, travel fees, courses, forfeits, refunds and expenses
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = ['err', $e instanceof RuntimeException ? $e->getMessage() : 'Not saved: something went wrong.'];
         if (!($e instanceof RuntimeException)) error_log('accounting POST ' . $action . ': ' . $e->getMessage());
     }
-    header('Location: /admin/accounting?tab=' . urlencode($back) . '&' . ($periodQs ? $periodQs . '&' : '')
+    header('Location: /admin/accounting.php?tab=' . urlencode($back) . '&' . ($periodQs ? $periodQs . '&' : '')
          . 'm=' . urlencode($msg[0]) . '&t=' . urlencode($msg[1]));
     exit;
 }
@@ -152,7 +152,7 @@ $curPreset = array_key_exists($_GET['period'] ?? '', $presets) ? $_GET['period']
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
   <?php foreach (['overview' => '📊 Overview', 'reports' => '📄 Reports & exports', 'expenses' => '🧾 Expenses', 'owed' => '💷 Money owed'] as $k => $v): ?>
-    <a href="/admin/accounting?tab=<?= $k ?>" class="btn-admin <?= $tab === $k ? 'btn-admin-primary' : 'btn-admin-outline' ?>"><?= $v ?></a>
+    <a href="/admin/accounting.php?tab=<?= $k ?>" class="btn-admin <?= $tab === $k ? 'btn-admin-primary' : 'btn-admin-outline' ?>"><?= $v ?></a>
   <?php endforeach; ?>
 </div>
 
@@ -257,9 +257,9 @@ $curPreset = array_key_exists($_GET['period'] ?? '', $presets) ? $_GET['period']
   <?php endif; ?>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
     <?php $eq = 'tab=reports' . ($periodQs ? '&' . $periodQs : ''); ?>
-    <a class="btn-admin btn-admin-primary" href="/admin/accounting?<?= htmlspecialchars($eq) ?>&export=pl">⬇ Profit &amp; loss (spreadsheet)</a>
-    <a class="btn-admin btn-admin-outline" href="/admin/accounting?<?= htmlspecialchars($eq) ?>&export=expenses">⬇ Expenses list</a>
-    <a class="btn-admin btn-admin-outline" href="/admin/accounting?<?= htmlspecialchars($eq) ?>&export=journal">⬇ Full ledger (for your accountant)</a>
+    <a class="btn-admin btn-admin-primary" href="/admin/accounting.php?<?= htmlspecialchars($eq) ?>&export=pl">⬇ Profit &amp; loss (spreadsheet)</a>
+    <a class="btn-admin btn-admin-outline" href="/admin/accounting.php?<?= htmlspecialchars($eq) ?>&export=expenses">⬇ Expenses list</a>
+    <a class="btn-admin btn-admin-outline" href="/admin/accounting.php?<?= htmlspecialchars($eq) ?>&export=journal">⬇ Full ledger (for your accountant)</a>
   </div>
   <p style="font-size:0.72rem;color:var(--admin-muted);margin-top:10px">Spreadsheets open in Excel, Numbers or Google Sheets. This is a record for you and your accountant, not tax advice.</p>
 </div>

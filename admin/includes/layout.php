@@ -172,7 +172,7 @@ try {
 
       <div class="admin-nav-section">
         <p class="admin-nav-label">Finance</p>
-        <a href="/admin/accounting" class="admin-nav-link <?= $currentPage === 'accounting' ? 'active' : '' ?>">
+        <a href="/admin/accounting.php" class="admin-nav-link <?= in_array($currentPage, ['accounting', 'accounting.php'], true) ? 'active' : '' ?>">
           <span class="nav-icon">💰</span> Accounting
         </a>
       </div>
