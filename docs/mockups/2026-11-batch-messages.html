@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Batch messages to lapsed clients (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.ex{border:1px solid #D4AF37;color:#D4AF37;border-radius:6px;font-size:10px;padding:1px 6px;margin-left:6px}
+/* admin shell — same tokens as the admin panel */
+.shell{display:grid;grid-template-columns:200px 1fr;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.side{background:#0f0020;color:#cbb9dc;padding:18px 14px;font-size:13px}
+.side .lg{font-family:Montserrat;font-weight:800;color:#fff;margin-bottom:16px}
+.side div.i{padding:7px 10px;border-radius:8px;margin-bottom:2px}.side div.on{background:rgba(128,0,128,.5);color:#fff;font-weight:700}
+.main{background:#f3f0f8;padding:20px 24px}
+h2{font-family:Montserrat;color:#4B0082;font-size:20px;margin:0 0 4px}.muted{color:#6b5c78;font-size:12.5px}
+.btn{display:inline-block;border:1px solid #800080;color:#800080;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:700;background:#fff}
+.btn.p{background:#800080;color:#fff}.btn.sm{padding:4px 9px;font-size:11.5px}
+.card{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:16px 18px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font-size:11px;letter-spacing:.06em;color:#6b5c78;text-transform:uppercase;padding:8px 8px;border-bottom:1px solid #e5dff0}
+td{padding:9px 8px;border-bottom:1px solid #f1ecf6;vertical-align:middle}
+.cb{width:16px;height:16px;border-radius:4px;border:2px solid #b9a8c9;display:inline-block;vertical-align:middle}.cb.on{background:#800080;border-color:#800080;position:relative}
+.cb.on::after{content:"✓";color:#fff;font-size:11px;position:absolute;left:2px;top:-2px}
+.pill{display:inline-block;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700}
+.pill.ok{background:#e9f8ef;color:#16a34a}.pill.off{background:#f3f0f8;color:#6b5c78}.pill.sent{background:#fdf6dd;color:#8a6d00}
+.bar{position:sticky;display:flex;align-items:center;gap:12px;background:#4B0082;color:#fff;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px}
+.bar b{color:#D4AF37}
+.seg{display:inline-flex;border:1px solid #e5dff0;border-radius:9px;overflow:hidden;background:#fff}
+.seg span{padding:7px 14px;font-size:12.5px;font-weight:700;color:#6b5c78}.seg span.on{background:#800080;color:#fff}
+.lbl{font-size:12px;font-weight:700;margin:12px 0 5px;display:block}
+.inp{border:1px solid #e5dff0;border-radius:8px;padding:9px 11px;font-size:13px;background:#fff;width:100%}
+.ta{min-height:150px;line-height:1.55}
+.chip{display:inline-block;background:#F9EEF9;border:1px solid #E8D8EE;color:#800080;border-radius:12px;padding:2px 9px;font-size:11.5px;font-weight:700;margin:4px 4px 0 0}
+/* email preview — same as the real email wrapper */
+.mail{background:#F9EEF9;padding:14px;border-radius:10px}
+.wrapper{background:#fff;max-width:520px;margin:0 auto}
+.header{background:linear-gradient(135deg,#4B0082,#800080);padding:20px;text-align:center}
+.logo-badge{display:inline-block;background:#fff;border-radius:14px;padding:8px 14px}.logo-badge img{width:120px;display:block}
+.header p{color:#D4AF37;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin:10px 0 0}
+.mb{padding:24px 28px}.mb h3{color:#4B0082;font-size:19px;margin:0 0 10px}.mb p{font-size:14px;line-height:1.6;margin:0 0 10px}
+.cta{display:inline-block;background:#800080;color:#fff;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:11px 22px;border-radius:6px}
+.foot{background:#4B0082;padding:14px;text-align:center}.foot p{color:#D4AF37;font-size:11px;margin:2px 0}
+.prog{height:12px;background:#f1ecf6;border-radius:8px;overflow:hidden}.prog i{display:block;height:100%;width:56%;background:linear-gradient(90deg,#800080,#D4AF37)}
+.q{display:flex;align-items:center;gap:12px;border:1px solid #e5dff0;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px}
+.q.done{opacity:.55}.q .n{width:26px;height:26px;border-radius:50%;background:#F9EEF9;color:#800080;font-weight:800;display:grid;place-items:center;font-size:12px}
+.wa{background:#25D366;border-color:#25D366;color:#fff}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1 — Clients → "Haven't booked lately", now with ticks.</b> Choose how long it's been (2, 3, 6 months or a year), tick clients one by one or "Select all", and press <b>Message selected</b>. Each row shows whether they allow emails and when they were last messaged, so nobody is pestered twice in a short time. <span class="ex">EXAMPLE</span></div>
+<div class="shell"><div class="side"><div class="lg">BraidedbyAGB</div><div class="i">Dashboard</div><div class="i">Bookings</div><div class="i on">Clients</div><div class="i">Services</div><div class="i">Accounting</div><div class="i">Settings</div></div>
+<div class="main">
+  <h2>Clients</h2>
+  <div style="display:flex;gap:8px;margin:12px 0"><span class="btn">All customers</span><span class="btn p">💤 Haven't booked lately (41)</span><span class="btn">✉️ Message history</span></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span class="muted">Not booked for</span>
+      <div class="seg"><span>2 months</span><span class="on">3 months</span><span>6 months</span><span>1 year+</span></div>
+      <span class="muted" style="margin-left:auto">27 clients · nothing booked since</span>
+    </div>
+    <table>
+      <thead><tr><th><span class="cb on"></span></th><th>Client</th><th>Last visit</th><th>Visits</th><th>Emails</th><th>Last messaged</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="cb on"></span></td><td><b>Amara Okafor</b><div class="muted">07700 900123</div></td><td>12 Aug 2026<div class="muted">100 days ago</div></td><td>4</td><td><span class="pill ok">Allowed</span></td><td class="muted">—</td><td><span class="btn sm">💬</span></td></tr>
+        <tr><td><span class="cb on"></span></td><td><b>Jade Bello</b><div class="muted">07700 900456</div></td><td>2 Aug 2026<div class="muted">110 days ago</div></td><td>2</td><td><span class="pill ok">Allowed</span></td><td class="muted">"We miss you" auto-email, 1 Oct</td><td><span class="btn sm">💬</span></td></tr>
+        <tr><td><span class="cb on"></span></td><td><b>Chioma Eze</b><div class="muted">07700 900789</div></td><td>20 Jul 2026<div class="muted">123 days ago</div></td><td>6</td><td><span class="pill off">Turned off</span></td><td class="muted">—</td><td><span class="btn sm">💬</span></td></tr>
+        <tr><td><span class="cb"></span></td><td><b>Ruth Ade</b><div class="muted">07700 900321</div></td><td>15 Jul 2026<div class="muted">128 days ago</div></td><td>1</td><td><span class="pill ok">Allowed</span></td><td><span class="pill sent">Batch "Christmas dates", 4 days ago</span></td><td><span class="btn sm">💬</span></td></tr>
+        <tr><td><span class="cb on"></span></td><td><b>Funmi Lawal</b><div class="muted">07700 900654</div></td><td>30 Jun 2026<div class="muted">143 days ago</div></td><td>3</td><td><span class="pill ok">Allowed</span></td><td class="muted">—</td><td><span class="btn sm">💬</span></td></tr>
+      </tbody>
+    </table>
+    <div class="bar"><b>12 selected</b><span style="opacity:.85">10 can be emailed · 2 have emails turned off (they can still be messaged on WhatsApp)</span><span class="btn p" style="margin-left:auto;background:#D4AF37;border-color:#D4AF37;color:#4B0082">Message selected →</span></div>
+  </div>
+</div></div>
+
+<div class="cap"><b>Frame 2 — Write the message once, it's personalised for each client.</b> Pick <b>Email</b> or <b>WhatsApp</b>, start from a ready-made message (We miss you · New dates open · Seasonal offer · Blank) and edit it. <b>{first name}</b> and <b>{last style}</b> fill in for each person. The right side shows exactly what they'll receive, in your branded email design. Every email has an unsubscribe link (required by law); clients who turned emails off are never emailed. <span class="ex">EXAMPLE</span></div>
+<div class="shell"><div class="side"><div class="lg">BraidedbyAGB</div><div class="i">Dashboard</div><div class="i">Bookings</div><div class="i on">Clients</div><div class="i">Services</div><div class="i">Accounting</div><div class="i">Settings</div></div>
+<div class="main" style="display:grid;grid-template-columns:1fr 560px;gap:20px">
+  <div>
+    <h2>Message 12 clients</h2><div class="muted">Haven't booked for 3 months+</div>
+    <div class="card" style="margin-top:12px">
+      <span class="lbl" style="margin-top:0">Send by</span>
+      <div class="seg"><span class="on">✉️ Email (10)</span><span>💬 WhatsApp (12)</span></div>
+      <span class="lbl">Start from</span>
+      <select class="inp"><option>We miss you 💕</option></select>
+      <span class="lbl">Subject</span>
+      <input class="inp" value="We miss you, {first name}! 💕">
+      <span class="lbl">Message</span>
+      <div class="inp ta">Hi {first name},<br><br>It's been a little while since your {last style} and we'd love to see you back in the chair! Our December dates are open now and filling fast.<br><br>Book in a minute with the button below, or just reply on WhatsApp.<br><br>Love, AGB 💕</div>
+      <div><span class="chip">+ {first name}</span><span class="chip">+ {last style}</span><span class="chip">+ Book now button ✓</span></div>
+      <div style="display:flex;gap:8px;margin-top:14px;align-items:center">
+        <span class="btn">Send me a test first</span>
+        <span class="btn p" style="margin-left:auto">Send to 10 clients</span>
+      </div>
+      <div class="muted" style="margin-top:8px">Asks you to confirm before anything is sent. 2 clients with emails turned off are left out of the email.</div>
+    </div>
+  </div>
+  <div>
+    <div class="muted" style="margin-bottom:6px"><b style="color:#1A0014">Preview for Amara</b> · Subject: We miss you, Amara! 💕</div>
+    <div class="mail"><div class="wrapper">
+      <div class="header"><div class="logo-badge"><img src="https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png" alt=""></div><p>African Hair Braiding Specialist</p></div>
+      <div class="mb"><h3>We miss you, Amara! 💕</h3>
+        <p>Hi Amara,</p><p>It's been a little while since your <b>Knotless braids</b> and we'd love to see you back in the chair! Our December dates are open now and filling fast.</p>
+        <p>Book in a minute with the button below, or just reply on WhatsApp.</p>
+        <p style="text-align:center;margin:18px 0"><span class="cta">See available times</span></p>
+        <p>Love, AGB 💕</p>
+        <p style="font-size:11px;color:#9B8BA5;margin-top:14px">You're receiving this because you're a BraidedbyAGB client. <u>Unsubscribe</u> in one click.</p></div>
+      <div class="foot"><p>BraidedbyAGB · Farnborough, Hampshire</p><p>📷 Instagram · 🎵 TikTok · 📘 Facebook</p></div>
+    </div></div>
+  </div>
+</div></div>
+
+<div class="cap"><b>Frame 3 — Sending.</b> Left: emails go out in the background a few at a time (so your email service never blocks them), with a progress bar; you can leave the page. Right: <b>WhatsApp can't be sent in bulk from a website</b> (WhatsApp only allows that through its paid business system), so it becomes a one-tap queue: each chat opens with your personalised message already typed — you press send in WhatsApp, come back, tap <b>Next</b>. <span class="ex">EXAMPLE</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <div class="card">
+    <h2 style="font-size:16px">✉️ Sending "We miss you 💕"</h2>
+    <div class="muted" style="margin:4px 0 12px">Started 2:14 PM · 10 emails</div>
+    <div class="prog"><i></i></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px"><span><b>6 of 10 sent</b></span><span class="muted">0 failed · about 1 minute left</span></div>
+    <div class="muted" style="margin-top:12px">When it finishes: "✓ 10 sent". Any that fail (e.g. a mistyped address) are listed so you can WhatsApp them instead.</div>
+  </div>
+  <div class="card">
+    <h2 style="font-size:16px">💬 WhatsApp queue — 12 clients</h2>
+    <div class="muted" style="margin:4px 0 6px">3 done · 9 to go</div>
+    <div class="q done"><span class="n">✓</span><span style="flex:1"><b>Amara Okafor</b></span><span class="muted">Opened 2:16 PM</span></div>
+    <div class="q done"><span class="n">✓</span><span style="flex:1"><b>Jade Bello</b></span><span class="muted">Opened 2:17 PM</span></div>
+    <div class="q done"><span class="n">✓</span><span style="flex:1"><b>Chioma Eze</b></span><span class="muted">Opened 2:18 PM</span></div>
+    <div class="q" style="border:2px solid #800080"><span class="n">4</span><span style="flex:1"><b>Funmi Lawal</b><div class="muted">"Hi Funmi, it's been a little while since your Box braids…"</div></span><span class="btn wa">Open WhatsApp →</span></div>
+    <div class="q"><span class="n">5</span><span style="flex:1"><b>Grace Obi</b></span><span class="btn sm">Skip</span></div>
+  </div>
+</div>
+
+<div class="cap"><b>Frame 4 — Clients → Message history.</b> Every batch you send is listed: what, when, how many, by email or WhatsApp. Clients messaged in the last 2 weeks show a "recently messaged" tag in Frame 1, so you can avoid sending too often. <span class="ex">EXAMPLE</span></div>
+<div class="card">
+  <table>
+    <thead><tr><th>Sent</th><th>Message</th><th>By</th><th>To</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Today, 2:14 PM</td><td><b>We miss you 💕</b></td><td>Email</td><td>10 clients (3 months+)</td><td><span class="pill ok">10 sent</span></td></tr>
+      <tr><td>Today, 2:16 PM</td><td><b>We miss you 💕</b></td><td>WhatsApp</td><td>12 clients</td><td><span class="pill sent">3 of 12 opened</span></td></tr>
+      <tr><td>16 Nov 2026</td><td><b>Christmas dates are open 🎄</b></td><td>Email</td><td>34 clients (6 months+)</td><td><span class="pill ok">33 sent</span> <span class="pill off">1 bounced</span></td></tr>
+    </tbody>
+  </table>
+</div>
+</body></html>
