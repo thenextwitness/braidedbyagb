@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>BraidedbyAGB — thank-you + review requests (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#ece6f2;font-family:'Lato',Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+  .cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:28px 0 14px;font-size:14px;line-height:1.5}
+  .cap b{color:#D4AF37}
+  .ex{border:1px solid #D4AF37;color:#D4AF37;border-radius:6px;font-size:10px;padding:1px 6px;margin-left:6px}
+  .row{display:flex;gap:32px;align-items:flex-start}
+  /* ── email: same styles as includes/mailer.php emailWrapper() ── */
+  .mail{width:600px;background:#F9EEF9;padding:18px 0;border-radius:8px}
+  .meta{width:600px;margin:0 0 8px;font-size:12px;color:#6b5c78}
+  .meta b{color:#1A0014}
+  .wrapper{max-width:600px;margin:0 auto;background:#fff}
+  .header{background:linear-gradient(135deg,#4B0082,#800080);padding:26px 40px 22px;text-align:center}
+  .logo-badge{display:inline-block;background:#fff;border-radius:16px;padding:10px 18px}
+  .logo-badge img{display:block;width:150px;height:auto}
+  .header p{color:#D4AF37;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:14px 0 0}
+  .body{padding:34px 40px}
+  .body h2{color:#4B0082;font-size:22px;font-weight:700;margin:0 0 14px}
+  .body p{font-size:15px;line-height:1.65;margin:0 0 12px}
+  .body ul{padding-left:20px;margin:0 0 12px;font-size:15px;line-height:1.6}
+  .cta-btn{display:inline-block;background:#800080;color:#fff;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:13px 26px;text-decoration:none;border-radius:6px}
+  .cta-google{background:#fff;color:#1A0014;border:2px solid #4B0082}
+  .gold-text{color:#D4AF37;font-weight:700}
+  .soft{background:#F9EEF9;border:1px solid #E8D8EE;padding:14px 16px;border-radius:4px;text-align:center}
+  .footer{background:#4B0082;padding:22px 40px;text-align:center}
+  .footer p{color:#D4AF37;font-size:12px;margin:3px 0}
+  /* ── timeline ── */
+  .tl{display:flex;gap:0;background:#fff;border-radius:12px;padding:22px 26px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .step{flex:1;position:relative;padding:0 14px}
+  .step:not(:last-child)::after{content:"";position:absolute;top:21px;right:-8px;width:16px;border-top:3px solid #D4AF37}
+  .dot{width:44px;height:44px;border-radius:50%;background:#800080;color:#fff;display:grid;place-items:center;font-weight:800;font-family:Montserrat}
+  .step.new .dot{background:#D4AF37;color:#4B0082}
+  .step h4{font-family:Montserrat;color:#4B0082;font-size:14px;margin:10px 0 4px}
+  .step p{font-size:12.5px;color:#6b5c78;margin:0;line-height:1.45}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;border-radius:10px;padding:2px 8px;margin-top:6px}
+  .tag.new{background:#fdf6dd;color:#8a6d00}.tag.changed{background:#f3e8ff;color:#800080}.tag.same{background:#eef2f6;color:#6b5c78}
+  /* ── admin: same tokens as the admin panel ── */
+  .admin{width:640px;background:#f3f0f8;border-radius:12px;padding:20px}
+  .acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:18px 20px;margin-bottom:14px}
+  .atitle{font-family:Montserrat;font-weight:800;font-size:14px;color:#4B0082;margin-bottom:12px}
+  .alabel{font-size:12px;font-weight:700;color:#1A0014;margin:10px 0 4px;display:block}
+  .ainput{border:1px solid #e5dff0;border-radius:8px;padding:9px 11px;font-size:13px;width:100%;background:#fff}
+  .ahint{font-size:11.5px;color:#6b5c78;margin-top:4px;line-height:1.45}
+  .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:8px 0}
+  .box{width:16px;height:16px;border-radius:4px;background:#800080;flex:none;margin-top:1px;color:#fff;font-size:11px;display:grid;place-items:center}
+  .abtn{display:inline-block;border:1px solid #800080;color:#800080;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;margin:4px 6px 0 0}
+  .abtn.p{background:#800080;color:#fff}
+  .status{font-size:12.5px;margin:4px 0}
+  .ok{color:#16a34a;font-weight:700}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1 — What a client receives after every appointment.</b> Gold = new. The thank-you and the review request become two separate, well-timed messages, and the review email now offers <b>both</b> your website and your Google profile. Nothing is sent to clients who are blocked; the review request isn't sent twice.</div>
+<div class="tl">
+  <div class="step new"><div class="dot">1</div><h4>Thank you 💜 — 2 hours after</h4><p>A warm thank-you from you, with their aftercare tips and "message us if anything's not right".</p><span class="tag new">NEW (replaces the 48-hour aftercare email)</span></div>
+  <div class="step new"><div class="dot">2</div><h4>Review request — next day</h4><p>One email, two buttons: review on our website, or on Google. Sent the day after so they've lived with their style.</p><span class="tag changed">CHANGED (was website only, at 3 hours)</span></div>
+  <div class="step new"><div class="dot">3</div><h4>Gentle reminder — 5 days after</h4><p>Only if they haven't left a website review yet. One reminder, never more.</p><span class="tag new">NEW (can be switched off)</span></div>
+  <div class="step"><div class="dot">4</div><h4>Rebook reminder — your chosen date</h4><p>The "time for a refresh?" email from the rebook date you set when completing.</p><span class="tag same">AS NOW</span></div>
+</div>
+
+<div class="cap"><b>Frame 2 — The thank-you email (left) and the review request (right)</b>, in the exact BraidedbyAGB email design clients already get. Names, style and links fill in automatically. <span class="ex">EXAMPLE</span></div>
+<div class="row">
+  <div>
+    <div class="meta"><b>Subject:</b> Thank you for coming in, Amara 💜 &nbsp;·&nbsp; <b>Sent:</b> 2 hours after the appointment</div>
+    <div class="mail"><div class="wrapper">
+      <div class="header"><div class="logo-badge"><img src="https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png" alt="BraidedbyAGB"></div><p>African Hair Braiding Specialist</p></div>
+      <div class="body">
+        <h2>Thank you for coming in, Amara! 💜</h2>
+        <p>It was a joy doing your <strong>Knotless braids — waist length</strong> today. Thank you for trusting BraidedbyAGB with your hair.</p>
+        <p>A few tips to keep them looking fresh for longer:</p>
+        <ul>
+          <li>Sleep with a satin bonnet or scarf, or on a satin pillowcase.</li>
+          <li>Keep your scalp moisturised with a light oil, focusing on the parting.</li>
+          <li>Any tenderness, itching or a loose braid? Just message me.</li>
+        </ul>
+        <p style="text-align:center;margin:22px 0 6px"><a class="cta-btn" style="background:#25D366">💬 WhatsApp me</a></p>
+        <p style="font-size:13px;color:#6b5c78;text-align:center">Love, AGB 💕</p>
+      </div>
+      <div class="footer"><p>BraidedbyAGB · Farnborough, Hampshire</p><p>📷 Follow us on Instagram @BraidedbyAGB</p></div>
+    </div></div>
+  </div>
+
+  <div>
+    <div class="meta"><b>Subject:</b> How are you loving your braids, Amara? ⭐ &nbsp;·&nbsp; <b>Sent:</b> the next day</div>
+    <div class="mail"><div class="wrapper">
+      <div class="header"><div class="logo-badge"><img src="https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png" alt="BraidedbyAGB"></div><p>African Hair Braiding Specialist</p></div>
+      <div class="body">
+        <h2>Would you leave us a review? ⭐</h2>
+        <p>Hi Amara, I hope you're loving your <strong>Knotless braids</strong>! A quick review helps other clients find us and means the world to a small business like mine.</p>
+        <p style="text-align:center;margin:22px 0 10px"><a class="cta-btn">⭐ Review on our website</a></p>
+        <div class="soft" style="margin:0 0 14px"><p style="margin:0;color:#4B0082;font-weight:700">🎁 Website reviews get <span class="gold-text">10% off</span> your next booking</p></div>
+        <p style="text-align:center;margin:6px 0 4px"><a class="cta-btn cta-google">Review us on Google <span style="font-weight:800"><span style="color:#4285F4">G</span></span></a></p>
+        <p style="font-size:12.5px;color:#6b5c78;text-align:center;margin-top:8px">Google reviews take 30 seconds and help people nearby find BraidedbyAGB.</p>
+        <p style="font-size:12px;color:#9B8BA5;margin-top:16px">Your website review link is personal to you and lasts 7 days.</p>
+      </div>
+      <div class="footer"><p>BraidedbyAGB · Farnborough, Hampshire</p><p>📷 Follow us on Instagram @BraidedbyAGB</p></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="cap"><b>Frame 3 — What you control (Admin).</b> Left: Settings → Follow-ups gains your Google review link, the timings and an on/off for each message. Right: on every completed booking you can see what's been sent, and send a one-tap WhatsApp asking for a Google review (handy for clients who prefer WhatsApp). <span class="ex">EXAMPLE</span></div>
+<div class="row">
+  <div class="admin">
+    <div class="acard">
+      <div class="atitle">💌 Follow-ups</div>
+      <div class="chk"><span class="box">✓</span><span><b>Thank-you message</b> — with aftercare tips, sent <input class="ainput" style="width:60px;display:inline-block;padding:4px 6px" value="2"> hours after the appointment</span></div>
+      <div class="chk"><span class="box">✓</span><span><b>Review request</b> — website + Google, sent <input class="ainput" style="width:60px;display:inline-block;padding:4px 6px" value="24"> hours after</span></div>
+      <div class="chk"><span class="box">✓</span><span><b>One reminder</b> after 5 days if no website review yet</span></div>
+      <label class="alabel">Your Google review link</label>
+      <input class="ainput" value="https://g.page/r/CbX2…/review">
+      <div class="ahint">Find it in your Google Business Profile → <b>Ask for reviews</b> → copy the link. Until it's added, the email simply shows the website button only.</div>
+      <div class="ahint" style="margin-top:8px">ℹ️ Google doesn't allow discounts for Google reviews, so your review discount applies to website reviews only, and every client is asked (not just happy ones).</div>
+    </div>
+  </div>
+  <div class="admin">
+    <div class="acard">
+      <div class="atitle">⭐ Thank-you &amp; reviews — Amara Okafor · AGB-2026-0418</div>
+      <div class="status"><span class="ok">✓</span> Thank-you email sent — Thu 20 Nov, 4:12 PM</div>
+      <div class="status"><span class="ok">✓</span> Review request sent — Fri 21 Nov, 10:30 AM</div>
+      <div class="status">⏳ Reminder due Tue 25 Nov (cancelled automatically if she reviews first)</div>
+      <div class="status">Website review: <b>not yet</b></div>
+      <div style="margin-top:10px">
+        <span class="abtn p">💬 Ask for a Google review on WhatsApp</span>
+        <span class="abtn">💬 Send thank-you on WhatsApp</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>
