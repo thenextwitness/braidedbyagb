@@ -33,19 +33,15 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
+import com.braidedbyagb.admin.utils.BusinessHours
 import java.util.*
-
-private val TIME_SLOTS = buildList {
-    var h = 8; var m = 0
-    while (h < 18) {
-        add("%02d:%02d".format(h, m))
-        m += 30; if (m == 60) { m = 0; h++ }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen() {
+    // Opening hours from the website settings (same grid as the website).
+    var timeSlots by remember { mutableStateOf(BusinessHours.grid(null)) }
+    LaunchedEffect(Unit) { timeSlots = BusinessHours.loadGrid() }
     val context   = LocalContext.current
     val scope     = rememberCoroutineScope()
     val gson      = remember { Gson() }
@@ -229,7 +225,7 @@ fun CalendarScreen() {
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(text = { Text("All day") }, onClick = { selectedSlot = "all"; expanded = false })
-                        TIME_SLOTS.forEach { t ->
+                        timeSlots.forEach { t ->
                             DropdownMenuItem(text = { Text(t) }, onClick = { selectedSlot = t; expanded = false })
                         }
                     }

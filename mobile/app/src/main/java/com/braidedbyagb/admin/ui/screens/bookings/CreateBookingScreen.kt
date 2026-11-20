@@ -24,13 +24,9 @@ import com.braidedbyagb.admin.ui.theme.Gold
 import com.braidedbyagb.admin.ui.theme.Primary
 import com.braidedbyagb.admin.ui.theme.Purple800
 import com.braidedbyagb.admin.ui.theme.TextMuted
+import com.braidedbyagb.admin.utils.BusinessHours
 import kotlinx.coroutines.launch
 import java.util.*
-
-private val TIME_SLOTS_CB = listOf(
-    "09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30",
-    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30"
-)
 
 private val PAYMENT_METHODS = mapOf(
     "bank_transfer" to "Bank Transfer",
@@ -50,6 +46,9 @@ private val STATUSES = listOf("pending","confirmed","completed","cancelled")
 @Composable
 fun CreateBookingScreen(onBack: () -> Unit, onCreated: (Int) -> Unit) {
     val scope   = rememberCoroutineScope()
+    // Opening hours from the website settings (same grid as the website).
+    var timeSlots by remember { mutableStateOf(BusinessHours.grid(null)) }
+    LaunchedEffect(Unit) { timeSlots = BusinessHours.loadGrid() }
     val context = LocalContext.current
 
     // ── Load data ─────────────────────────────────────────────
@@ -430,7 +429,7 @@ fun CreateBookingScreen(onBack: () -> Unit, onCreated: (Int) -> Unit) {
                     Spacer(Modifier.height(6.dp))
 
                     // Time grid — 4 per row
-                    TIME_SLOTS_CB.chunked(4).forEach { rowSlots ->
+                    timeSlots.chunked(4).forEach { rowSlots ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             rowSlots.forEach { t ->
                                 val isSelected = bookedTime == t
