@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_settings') {
         $fields = [
             'site_name', 'site_email', 'whatsapp_number', 'site_address',
-            'deposit_percent', 'booking_buffer_hours',
+            'deposit_percent', 'booking_buffer_hours', 'day_start_time', 'day_end_time',
             'bank_account_name', 'bank_sort_code', 'bank_account_number',
             'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
@@ -230,6 +230,18 @@ $isError = str_starts_with($msg, 'ERROR:');
             <input class="admin-input" type="number" name="booking_buffer_hours" value="<?= htmlspecialchars($g('booking_buffer_hours','2')) ?>" min="0" max="72">
           </div>
         </div>
+        <?php $bh = businessHours(); ?>
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-label">First appointment time</label>
+            <input class="admin-input" type="time" name="day_start_time" step="1800" value="<?= htmlspecialchars($bh['start']) ?>" required>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-label">Appointments must finish by</label>
+            <input class="admin-input" type="time" name="day_end_time" step="1800" value="<?= htmlspecialchars($bh['end']) ?>" required>
+          </div>
+        </div>
+        <small style="color:var(--admin-muted);display:block;margin:-6px 0 12px">Used everywhere: the website's booking times, New Booking, calendar blocks and the app.</small>
         <div class="admin-form-group">
           <label class="admin-label">Auto-cancel unpaid bank transfer bookings after (hours)</label>
           <input class="admin-input" type="number" name="auto_cancel_bank_transfer_hours" value="<?= htmlspecialchars($g('auto_cancel_bank_transfer_hours','24')) ?>" min="1" max="72" style="max-width:120px">

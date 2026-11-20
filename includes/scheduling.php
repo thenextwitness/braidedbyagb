@@ -209,17 +209,56 @@ function isStylistFree(string $date, string $time, int $durMins, int $stylistId,
 }
 
 /**
+ * Opening hours: the ONE source for every time grid (website slots, admin new
+ * booking, admin calendar blocks, the app). Settings `day_start_time` /
+ * `day_end_time` (HH:MM; the end is when the last appointment must finish).
+ * Returns ['start' => 'HH:MM', 'end' => 'HH:MM'], falling back to 09:30–20:30
+ * when a setting is missing or malformed.
+ */
+const DAY_START_DEFAULT = '09:30';
+const DAY_END_DEFAULT   = '20:30';
+function businessHours(): array {
+    $norm = function (string $v, string $def): string {
+        return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v) ? $v : $def;
+    };
+    $start = $norm(trim((string) getSetting('day_start_time', DAY_START_DEFAULT)), DAY_START_DEFAULT);
+    $end   = $norm(trim((string) getSetting('day_end_time',   DAY_END_DEFAULT)),   DAY_END_DEFAULT);
+    if (strcmp($end, $start) <= 0) { $start = DAY_START_DEFAULT; $end = DAY_END_DEFAULT; }
+    return ['start' => $start, 'end' => $end];
+}
+
+/** Does an appointment at $time ('HH:MM[:SS]') lasting $durMins fit inside opening hours? */
+function withinBusinessHours(string $time, int $durMins): bool {
+    $h = businessHours();
+    $t = strtotime('2000-01-01 ' . $time);
+    if ($t === false) return false;
+    return $t >= strtotime('2000-01-01 ' . $h['start'])
+        && $t + max(1, $durMins) * 60 <= strtotime('2000-01-01 ' . $h['end']);
+}
+
+/** Start times ('HH:MM') from opening to the last start that still fits a step before closing. */
+function dayTimeGrid(int $stepMins = 30): array {
+    $h = businessHours();
+    $out = [];
+    for ($t = strtotime('2000-01-01 ' . $h['start']); $t < strtotime('2000-01-01 ' . $h['end']); $t += $stepMins * 60) {
+        $out[] = date('H:i', $t);
+    }
+    return $out;
+}
+
+/**
  * The bookable-slots grid for a day — replaces the inline copy in the public
  * `slots` API endpoint, producing the identical array of
  * ['time'=>'HH:MM:SS', 'label'=>'g:i A', 'available'=>bool].
  *
- * $opts: day_start ('08:00'), day_end ('20:30'), step_mins (30),
+ * $opts: day_start / day_end (default: businessHours()), step_mins (30),
  *        buffer_hours (int|null → falls back to the booking_buffer_hours setting).
  */
 function availableSlotsForDay(string $date, int $newDurMins, array $opts = []): array {
     if ($newDurMins < 1) $newDurMins = 60;
-    $dayStart = strtotime($date . ' ' . ($opts['day_start'] ?? '08:00') . ':00');
-    $dayEnd   = strtotime($date . ' ' . ($opts['day_end']   ?? '20:30') . ':00');
+    $hours    = businessHours();
+    $dayStart = strtotime($date . ' ' . ($opts['day_start'] ?? $hours['start']) . ':00');
+    $dayEnd   = strtotime($date . ' ' . ($opts['day_end']   ?? $hours['end'])   . ':00');
     $step     = (int) ($opts['step_mins'] ?? 30) * 60;
     $newSecs  = $newDurMins * 60;
     $capacity = slotCapacity($date);

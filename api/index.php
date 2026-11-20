@@ -38,7 +38,7 @@ switch ($endpoint) {
     // ── SLOTS ─────────────────────────────────────────────
     // Availability now comes from the one canonical builder in
     // includes/scheduling.php (availableSlotsForDay), which honours day/slot
-    // blocks, the booking buffer, the 08:00–20:30 grid and duration-aware
+    // blocks, the booking buffer, the opening-hours grid (Settings, default 09:30–20:30) and duration-aware
     // capacity. Behaviour is identical at capacity 1 (the default).
     case 'slots':
         $date      = sanitize($_GET['date'] ?? '');
@@ -268,6 +268,10 @@ switch ($endpoint) {
                 $durRow = $durStmt->fetch();
                 $dur    = ($durRow && (int)$durRow['dur'] > 0) ? (int)$durRow['dur'] : 60;
 
+                if (!withinBusinessHours($time, $dur)) {
+                    $db->rollBack();
+                    jsonResponse(['error' => "The {$time} slot on {$date} is outside opening hours. Please pick another time."], 409);
+                }
                 if (!isSlotAvailable($date, $time, $dur)) {
                     $db->rollBack();
                     jsonResponse(['error' => "The {$time} slot on {$date} was just taken. Please review your cart and pick another time."], 409);

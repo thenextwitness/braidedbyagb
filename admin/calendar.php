@@ -281,9 +281,8 @@ $msg = sanitize($_GET['msg'] ?? '');
           <select name="time_slot" class="admin-input admin-select">
             <option value="all">🔴 All day (block entire date)</option>
             <?php
-              for ($t = strtotime('08:00'); $t <= strtotime('17:30'); $t += 30 * 60) {
-                $val   = date('H:i', $t);
-                $label = date('g:i A', $t);
+              foreach (dayTimeGrid() as $val) {   // opening hours from Settings
+                $label = date('g:i A', strtotime($val));
                 echo "<option value=\"$val\">🟡 $label only</option>";
               }
             ?>
