@@ -538,7 +538,7 @@ function emailWinBack(array $customer, string $lastVisit, int $customerId): bool
         $mail->Subject = "We miss you, {$first}! 💕 — BraidedbyAGB";
         $when    = formatDate($lastVisit);
         $book    = htmlspecialchars(rtrim(SITE_URL, '/') . '/booking', ENT_QUOTES, 'UTF-8');
-        $profile = htmlspecialchars(SITE_URL . '/account/profile', ENT_QUOTES, 'UTF-8');
+        $profile = htmlspecialchars(unsubscribeUrl(getDB(), $customerId), ENT_QUOTES, 'UTF-8');   // one click, no sign-in
         $extra   = referralEmailBlock($customerId);
         $content = <<<HTML
 <h2>It's been a while! 💕</h2>
@@ -548,7 +548,7 @@ function emailWinBack(array $customer, string $lastVisit, int $customerId): bool
 </p>
 {$extra}
 <p>Want to chat about a new look first? WhatsApp us on <a href="{{WA_URL}}">{{WA_DISPLAY}}</a>.</p>
-<p style="font-size:12px;color:#8A7595">Don't want emails like this? <a href="{$profile}">Turn off emails in your account</a>.</p>
+<p style="font-size:12px;color:#8A7595">Don't want emails like this? <a href="{$profile}">Unsubscribe</a> in one click.</p>
 HTML;
         $mail->Body = emailWrapper($content);
         return $mail->send();

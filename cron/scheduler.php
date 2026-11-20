@@ -638,6 +638,17 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
+// 15. BATCH MESSAGES — finish any email batch the owner started and then
+//     left the page (the page normally sends them itself, with a progress bar).
+// ─────────────────────────────────────────────────────────
+try {
+    $n = sendPendingBatches($db);
+    if ($n > 0) cronLog("[batch] {$n} batch email(s) sent");
+} catch (Throwable $e) {
+    cronLog('[ERROR] Batch messages: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
 // 9. PORTAL AUTH CLEANUP  (Phase A)
 //    Purge expired login codes and remember-me tokens.
 // ─────────────────────────────────────────────────────────

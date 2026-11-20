@@ -1206,6 +1206,44 @@ step('thank-you/review settings (one-time)',
     },
     $report);
 
+// ── Batch messages to clients (owner-approved 20 Nov 2026; includes/messaging.php) ──
+step('customers.unsubscribe_token column (unique)',
+    fn() => columnExists($db, $dbName, 'customers', 'unsubscribe_token'),
+    fn() => $db->exec("ALTER TABLE customers ADD COLUMN unsubscribe_token VARCHAR(40) DEFAULT NULL, ADD UNIQUE KEY uq_customers_unsub (unsubscribe_token)"),
+    $report);
+step('message_batches table',
+    fn() => tableExists($db, $dbName, 'message_batches'),
+    fn() => $db->exec("CREATE TABLE message_batches (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        channel     ENUM('email','whatsapp') NOT NULL,
+        template    VARCHAR(30) DEFAULT NULL,
+        subject     VARCHAR(255) DEFAULT NULL,
+        body        TEXT NOT NULL,
+        book_button TINYINT(1) NOT NULL DEFAULT 1,
+        audience    VARCHAR(100) DEFAULT NULL,
+        total       INT NOT NULL DEFAULT 0,
+        sent        INT NOT NULL DEFAULT 0,
+        failed      INT NOT NULL DEFAULT 0,
+        status      ENUM('sending','done','cancelled') NOT NULL DEFAULT 'sending',
+        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        finished_at DATETIME DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+step('message_batch_recipients table',
+    fn() => tableExists($db, $dbName, 'message_batch_recipients'),
+    fn() => $db->exec("CREATE TABLE message_batch_recipients (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        batch_id    INT NOT NULL,
+        customer_id INT NOT NULL,
+        status      ENUM('pending','sending','sent','failed','skipped','opened') NOT NULL DEFAULT 'pending',
+        error       VARCHAR(255) DEFAULT NULL,
+        claimed_at  DATETIME DEFAULT NULL,
+        sent_at     DATETIME DEFAULT NULL,
+        UNIQUE KEY uq_batch_customer (batch_id, customer_id),
+        KEY idx_mbr_customer (customer_id, sent_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+
 // ── "AGB bring your bestie" referrals (owner request 2026-11; rules in includes/referrals.php) ──
 step('customers.referral_code column (unique)',
     fn() => columnExists($db, $dbName, 'customers', 'referral_code'),

@@ -788,3 +788,6 @@ require_once __DIR__ . '/referrals.php';
 
 // ── Finance: shop/travel/product ledger syncs, refunds, expenses, reports ──
 require_once __DIR__ . '/finance.php';
+
+// ── Batch messages to clients (email + WhatsApp queue) ──
+require_once __DIR__ . '/messaging.php';

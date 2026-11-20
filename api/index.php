@@ -90,6 +90,44 @@ switch ($endpoint) {
         break;
 
     // ── VALIDATE DISCOUNT ─────────────────────────────────
+    // ── One-click unsubscribe from marketing emails (batch messages, "we miss
+    //    you"). The link shows one button: a plain GET never unsubscribes,
+    //    because some inboxes open links automatically to scan them.
+    case 'unsubscribe':
+        header('Content-Type: text/html; charset=utf-8');
+        $tok = preg_replace('/[^a-f0-9]/', '', strtolower((string)($_GET['t'] ?? $_POST['t'] ?? '')));
+        $who = null;
+        if (strlen($tok) === 32) {
+            $q = getDB()->prepare("SELECT id, name, email_optin FROM customers WHERE unsubscribe_token = ?");
+            $q->execute([$tok]);
+            $who = $q->fetch() ?: null;
+        }
+        $done = false;
+        if ($who && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            getDB()->prepare("UPDATE customers SET email_optin = 0 WHERE id = ?")->execute([(int)$who['id']]);
+            $done = true;
+        }
+        $first = $who ? htmlspecialchars(trim(explode(' ', (string)$who['name'])[0]), ENT_QUOTES, 'UTF-8') : '';
+        $t = htmlspecialchars($tok, ENT_QUOTES, 'UTF-8');
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+           . '<title>Email preferences — BraidedbyAGB</title><style>body{margin:0;background:#F9EEF9;font-family:Lato,Arial,sans-serif;color:#1A0014}'
+           . '.c{max-width:480px;margin:60px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(75,0,130,.12)}'
+           . '.h{background:linear-gradient(135deg,#4B0082,#800080);color:#D4AF37;text-align:center;padding:22px;font-weight:700;letter-spacing:2px;font-size:13px}'
+           . '.b{padding:28px;text-align:center}h1{color:#4B0082;font-size:22px;margin:0 0 12px}p{line-height:1.6}'
+           . 'button,a.k{display:inline-block;background:#800080;color:#fff;border:0;border-radius:6px;padding:12px 24px;font-weight:700;font-size:14px;text-decoration:none;cursor:pointer}</style></head><body>'
+           . '<div class="c"><div class="h">BRAIDEDBYAGB</div><div class="b">';
+        if (!$who) {
+            echo '<h1>Link not recognised</h1><p>This unsubscribe link isn\'t valid. You can change your email choices in your account, or WhatsApp us and we\'ll do it for you.</p>';
+        } elseif ($done || (int)$who['email_optin'] === 0) {
+            echo "<h1>You're unsubscribed</h1><p>{$first}, you won't get any more marketing emails from us. You'll still receive emails about bookings you make.</p>"
+               . '<p>Changed your mind? Turn emails back on any time in <a href="/account/profile">your account</a>.</p>';
+        } else {
+            echo "<h1>Unsubscribe, {$first}?</h1><p>You'll stop getting offers and \"we miss you\" emails. Emails about bookings you make will still come.</p>"
+               . '<form method="POST" action="/api/unsubscribe"><input type="hidden" name="t" value="' . $t . '"><button>Unsubscribe me</button></form>';
+        }
+        echo '</div></div></body></html>';
+        exit;
+
     case 'validate-discount':
         $code = strtoupper(sanitize($_GET['code'] ?? ''));
         if (!$code) jsonResponse(['valid' => false, 'error' => 'No code provided']);
