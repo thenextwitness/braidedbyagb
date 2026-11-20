@@ -385,6 +385,10 @@ function finalizeOrderPayment(PDO $db, string $piId, array $meta, string $confir
             foreach ($items->fetchAll() as $it) {
                 decrementProductStock($db, (int) $it['product_id'], $it['variant_id'] !== null ? (int) $it['variant_id'] : null, (int) $it['quantity']);
             }
+            // Remembered so cancelling the order puts the stock back (syncOrderStock).
+            // Never allowed to fail the payment step.
+            try { $db->prepare("UPDATE orders SET stock_deducted = 1 WHERE id = ?")->execute([$orderId]); }
+            catch (Throwable $e) { error_log('finalizeOrderPayment stock flag: ' . $e->getMessage()); }
             if (!empty($order['discount_code_id'])) {
                 $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id = ?")
                    ->execute([(int) $order['discount_code_id']]);
@@ -398,6 +402,8 @@ function finalizeOrderPayment(PDO $db, string $piId, array $meta, string $confir
     }
 
     if ($transitioned) {
+        // Shop sale onto the books (DR Stripe / CR 4010 + 4012). Idempotent, non-fatal.
+        syncOrderExtras($db, $orderId);
         try {
             require_once __DIR__ . '/mailer.php';
             $cust = $db->prepare("SELECT name, email FROM customers WHERE id = ?");

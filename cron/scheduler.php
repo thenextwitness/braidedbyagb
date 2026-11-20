@@ -591,6 +591,18 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
+// 14. FINANCE SWEEP — shop sales, travel fees, products bought with bookings
+//     and stock brought in line with order/booking states (self-healing; the
+//     first run also back-fills history), then repeating monthly expenses.
+// ─────────────────────────────────────────────────────────
+try {
+    $fin = financeSweep($db);
+    if ($fin['recurring'] > 0) cronLog("[finance] {$fin['recurring']} repeating expense(s) posted");
+} catch (Throwable $e) {
+    cronLog('[ERROR] Finance sweep: ' . $e->getMessage());
+}
+
+// ─────────────────────────────────────────────────────────
 // 9. PORTAL AUTH CLEANUP  (Phase A)
 //    Purge expired login codes and remember-me tokens.
 // ─────────────────────────────────────────────────────────

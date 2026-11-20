@@ -53,7 +53,10 @@ function bookingCashAccount(string $paymentMethod): string {
  * Derived from the ledger so it is always the true current liability.
  */
 function bookingHeldDeposit(PDO $db, int $bookingId): float {
-    $in = "'" . implode("','", BOOKING_LEDGER_SOURCES) . "'";
+    // Refunds of a held deposit ('booking_refund') reduce what's held. They are
+    // deliberately NOT in BOOKING_LEDGER_SOURCES, so a refund on a completed
+    // booking can never make revenue look "not recognised" and get re-posted.
+    $in = "'" . implode("','", array_merge(BOOKING_LEDGER_SOURCES, ['booking_refund'])) . "'";
     $s = $db->prepare("
         SELECT COALESCE(SUM(l.credit - l.debit), 0)
         FROM journal_entry_lines l
@@ -86,6 +89,13 @@ function bookingRevenueRecognised(PDO $db, int $bookingId): bool {
  * that was completed before its deposit row was journalled must not re-hold).
  */
 function journalBookingDeposit(PDO $db, int $bookingId): void {
+    journalBookingDepositOnly($db, $bookingId);
+    // Every "deposit is now paid" path comes through here, so the travel fee and
+    // any products bought with the booking are brought onto the books with it.
+    if (function_exists('syncBookingExtras')) syncBookingExtras($db, $bookingId);
+}
+
+function journalBookingDepositOnly(PDO $db, int $bookingId): void {
     $s = $db->prepare("SELECT booking_ref, deposit_amount, deposit_paid, payment_method FROM bookings WHERE id = ?");
     $s->execute([$bookingId]);
     $bk = $s->fetch();
@@ -233,6 +243,17 @@ function reverseBookingLoyalty(PDO $db, int $bookingId): void {
 }
 
 /**
+ * Everything that follows a booking's status besides its own revenue/loyalty:
+ * the travel fee + products bought with it (finance.php) and referral rewards
+ * (referrals.php). Both are self-healing; the scheduler re-checks them too.
+ */
+function bookingStatusFollowOns(PDO $db, int $bookingId): void {
+    if (function_exists('syncBookingExtras')) syncBookingExtras($db, $bookingId);
+    try { if (function_exists('syncReferrals')) syncReferrals($db, $bookingId); }
+    catch (Throwable $e) { error_log('syncReferrals (status change): ' . $e->getMessage()); }
+}
+
+/**
  * The single hook every status-changing path calls AFTER writing bookings.status.
  *
  *  → completed : recognise revenue (release any held deposit + collect the
@@ -288,6 +309,7 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
             }
         }
         awardBookingLoyalty($db, $bookingId);
+        bookingStatusFollowOns($db, $bookingId);
         return;
     }
 
@@ -302,10 +324,8 @@ function onBookingStatusChanged(PDO $db, int $bookingId, string $newStatus): voi
         forfeitBookingDeposit($db, $bookingId);
     }
 
-    // Referral rewards follow the booking: earned on completion, voided or
-    // returned if it falls through (self-healing; the scheduler re-checks too).
-    try { syncReferrals($db, $bookingId); }
-    catch (Throwable $e) { error_log('syncReferrals (status change): ' . $e->getMessage()); }
+    bookingStatusFollowOns($db, $bookingId);
+}
 }
 
 // ============================================================

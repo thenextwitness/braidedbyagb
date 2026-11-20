@@ -434,7 +434,11 @@ switch ($endpoint) {
                 http_response_code(400); echo json_encode(['error' => 'Payment not confirmed by Stripe (status: '.($pi['status'] ?? 'unknown').')']); exit;
             }
 
-            $amountGbp = round($amountPence / 100, 2);
+            // The amount is Stripe's, not the app's; the same payment is never recorded twice.
+            $amountGbp = round(((int)($pi['amount_received'] ?? $pi['amount'] ?? $amountPence)) / 100, 2);
+            $dup = $db->prepare("SELECT COUNT(*) FROM payments WHERE stripe_id = ?");
+            $dup->execute([$piId]);
+            if ((int)$dup->fetchColumn() > 0) { echo json_encode(['success' => true, 'already_recorded' => true]); exit; }
 
             // Record payment
             $db->prepare("INSERT INTO payments (booking_id, type, amount, currency, method, status, stripe_id, confirmed_by, confirmed_at)
@@ -867,6 +871,7 @@ switch ($endpoint) {
             $allowed   = ['pending','processing','dispatched','delivered','cancelled','refunded'];
             if (!in_array($newStatus, $allowed)) { http_response_code(400); echo json_encode(['error' => 'Invalid status']); exit; }
             $db->prepare("UPDATE orders SET status=? WHERE id=?")->execute([$newStatus, $id]);
+            syncOrderExtras($db, (int)$id);   // books + stock follow the status
             if ($newStatus === 'dispatched') {
                 // Optional tracking number from mobile app
                 $trackingNumber = trim(sanitize($body['tracking_number'] ?? ''));
@@ -927,51 +932,35 @@ switch ($endpoint) {
         require_once __DIR__ . '/../includes/helpers.php';
 
         if ($method === 'GET') {
-            $today      = date('Y-m-d');
-            $monthStart = date('Y-m-01');
-            $monthEnd   = date('Y-m-t');
-
-            $todayStmt = $db->prepare("SELECT COALESCE(SUM(total_price),0) FROM bookings WHERE status='completed' AND booked_date=?");
-            $todayStmt->execute([$today]);
-            $todayTakings = (float)$todayStmt->fetchColumn();
-
-            $revStmt = $db->prepare("SELECT COALESCE(SUM(total_price),0) FROM bookings WHERE status='completed' AND booked_date BETWEEN ? AND ?");
-            $revStmt->execute([$monthStart, $monthEnd]);
-            $monthRevenue = (float)$revStmt->fetchColumn();
-
-            $expStmt = $db->prepare("SELECT COALESCE(SUM(amount),0) FROM expenses WHERE expense_date BETWEEN ? AND ?");
-            $expStmt->execute([$monthStart, $monthEnd]);
-            $monthExpenses = (float)$expStmt->fetchColumn();
-
-            $drawStmt = $db->prepare("SELECT COALESCE(SUM(amount),0) FROM owner_draws WHERE draw_date BETWEEN ? AND ?");
-            $drawStmt->execute([$monthStart, $monthEnd]);
-            $monthDraws = (float)$drawStmt->fetchColumn();
-
-            $recent = $db->query("SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC LIMIT 10")->fetchAll();
+            // Same ledger figures as the web Accounting page (financeProfitAndLoss),
+            // so shop sales, travel fees, courses and refunds are included.
+            $today = financeProfitAndLoss($db, date('Y-m-d'), date('Y-m-d'));
+            $month = financeProfitAndLoss($db, date('Y-m-01'), date('Y-m-t'));
+            $recent = $db->query("SELECT * FROM expenses WHERE COALESCE(is_void,0) = 0 ORDER BY expense_date DESC, created_at DESC LIMIT 10")->fetchAll();
             $draws  = $db->query("SELECT * FROM owner_draws ORDER BY draw_date DESC, created_at DESC LIMIT 5")->fetchAll();
 
             echo json_encode([
-                'today_takings'   => $todayTakings,
-                'month_revenue'   => $monthRevenue,
-                'month_expenses'  => $monthExpenses,
-                'month_draws'     => $monthDraws,
-                'month_profit'    => $monthRevenue - $monthExpenses - $monthDraws,
-                'recent_expenses' => $recent,
-                'recent_draws'    => $draws,
+                'today_takings'       => $today['total_income'],
+                'month_revenue'       => $month['total_income'],
+                'month_expenses'      => $month['total_expenses'],
+                'month_draws'         => $month['draws'],
+                'month_profit'        => round($month['profit'] - $month['draws'], 2),   // after paying yourself (as before)
+                'profit_before_draws' => $month['profit'],
+                'income_by_type'      => $month['income'],
+                'recent_expenses'     => $recent,
+                'recent_draws'        => $draws,
             ]);
             exit;
         }
 
         if ($method === 'POST' && $action === 'expense') {
-            $amount   = (float)($body['amount']      ?? 0);
-            $desc     = trim($body['description']    ?? '');
-            $category = trim($body['category']       ?? 'Business Expenses');
-            $date     = trim($body['date']           ?? date('Y-m-d'));
-            $notes    = trim($body['notes']          ?? '');
+            $amount   = round((float)($body['amount'] ?? 0), 2);
+            $desc     = trim(strip_tags((string)($body['description'] ?? '')));
+            $category = trim(strip_tags((string)($body['category'] ?? ''))) ?: 'Other';
+            $date     = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($body['date'] ?? '')) ? $body['date'] : date('Y-m-d');
+            $notes    = trim(strip_tags((string)($body['notes'] ?? '')));
             if ($amount <= 0 || !$desc) { http_response_code(400); echo json_encode(['error' => 'Amount and description required']); exit; }
-            $db->prepare("INSERT INTO expenses (expense_date, description, amount, category, notes) VALUES (?,?,?,?,?)")->execute([$date, $desc, $amount, $category, $notes]);
-            $expId = (int)$db->lastInsertId();
-            journalExpense($expId, $amount, $date, $desc);
+            $expId = logExpense($db, $date, $desc, $amount, $category, 'bank', $notes);
             echo json_encode(['success' => true, 'id' => $expId]); exit;
         }
 

@@ -453,9 +453,11 @@ function decrementProductStock(PDO $db, int $productId, ?int $variantId, int $qt
     if ($variantId) {
         $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE id = ?")
            ->execute([$qty, $variantId]);
-    } else {
-        $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE product_id = ?")
-           ->execute([$qty, $productId]);
+    } elseif ($only = stockVariantFor($db, $productId, null)) {
+        // No colour/size chosen: only safe when the product has exactly one variant
+        // (it used to take the quantity off EVERY variant of the product).
+        $db->prepare("UPDATE product_variants SET stock_qty = GREATEST(0, stock_qty - ?) WHERE id = ?")
+           ->execute([$qty, $only]);
     }
 }
 
@@ -696,12 +698,12 @@ function createJournalEntry(string $date, string $description, string $source, ?
 
 /**
  * Create the journal entry for a logged expense.
- * DR 5100 Business Expenses / CR 1020 Bank Account
+ * DR 5100 Business Expenses / CR the account it was paid from (default 1020 Bank).
  */
-function journalExpense(int $expenseId, float $amount, string $date, string $description): void {
+function journalExpense(int $expenseId, float $amount, string $date, string $description, string $paidFromCode = '1020'): void {
     createJournalEntry($date, $description, 'expense', $expenseId, [
-        ['account_code' => '5100', 'debit' => $amount, 'credit' => 0,       'memo' => $description],
-        ['account_code' => '1020', 'debit' => 0,       'credit' => $amount, 'memo' => 'Cash/Bank'],
+        ['account_code' => '5100',        'debit' => $amount, 'credit' => 0,       'memo' => $description],
+        ['account_code' => $paidFromCode, 'debit' => 0,       'credit' => $amount, 'memo' => 'Paid from ' . $paidFromCode],
     ]);
 }
 
@@ -767,3 +769,6 @@ require_once __DIR__ . '/bookings.php';
 
 // ── "AGB bring your bestie" referrals (rewards follow booking statuses) ──
 require_once __DIR__ . '/referrals.php';
+
+// ── Finance: shop/travel/product ledger syncs, refunds, expenses, reports ──
+require_once __DIR__ . '/finance.php';

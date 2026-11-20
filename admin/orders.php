@@ -50,6 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log('Order confirm_payment email error: ' . $e->getMessage());
             }
         }
+        // Books + stock follow the order's payment/status (shop sale posted when
+        // paid, reversed and restocked when cancelled). Self-healing, idempotent.
+        syncOrderExtras($db, $id);
     }
     header('Location: /admin/orders?msg=Updated.');
     exit;

@@ -472,6 +472,10 @@ switch ($endpoint) {
                     decrementProductStock($db, (int)$item['productId'], !empty($item['variantId']) ? (int)$item['variantId'] : null, (int)$item['quantity']);
                 }
                 if ($discountCodeId) $db->prepare("UPDATE discount_codes SET uses_count = uses_count + 1 WHERE id=?")->execute([$discountCodeId]);
+                // Remembered so cancelling the order puts the stock back (syncOrderStock).
+                // Never allowed to fail the order.
+                try { $db->prepare("UPDATE orders SET stock_deducted = 1 WHERE id = ?")->execute([$orderId]); }
+                catch (Throwable $e) { error_log('order-intent stock flag: ' . $e->getMessage()); }
             }
 
             $db->commit();

@@ -1211,6 +1211,74 @@ step('referral_credits table',
         KEY idx_rc_referral (referral_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
     $report);
+// ── Finance (owner request 2026-11; rules in includes/finance.php) ──
+step('accounts 4010/4011/4012 (product sales, travel fees, delivery)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM accounts WHERE code IN ('4010','4011','4012')")->fetchColumn() >= 3,
+    fn() => $db->exec("INSERT IGNORE INTO accounts (code, name, type) VALUES
+        ('4010','Product Sales','income'), ('4011','Travel Fees','income'), ('4012','Delivery Charges','income')"),
+    $report);
+step("journal_entries.source includes finance sources",
+    fn() => enumHasValue($db, $dbName, 'journal_entries', 'source', 'expense_reversal'),
+    fn() => $db->exec("ALTER TABLE journal_entries MODIFY COLUMN source
+                       ENUM('booking_payment','expense','owner_draw','manual',
+                            'booking_deposit','booking_forfeit','booking_reversal',
+                            'stylist_payout','course_payment',
+                            'order_payment','order_reversal','order_refund',
+                            'booking_travel','booking_refund','expense_reversal') NOT NULL"),
+    $report);
+step('orders.stock_deducted column',
+    fn() => columnExists($db, $dbName, 'orders', 'stock_deducted'),
+    fn() => $db->exec("ALTER TABLE orders ADD COLUMN stock_deducted TINYINT(1) NOT NULL DEFAULT 0"),
+    $report);
+// Products bought with bookings before stock tracking existed never had stock
+// taken off; the owner has managed those counts by hand, so mark them "legacy"
+// (2) and never move their stock now. Runs in the same deploy as the column.
+step('orders: existing booking-product orders marked legacy for stock (one-time)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='stock_legacy_marked_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->exec("UPDATE orders SET stock_deducted = 2 WHERE from_pipeline = 1");
+        $db->exec("INSERT INTO settings (setting_key, setting_value) VALUES ('stock_legacy_marked_2026_11','1')
+                   ON DUPLICATE KEY UPDATE setting_value = '1'");
+    },
+    $report);
+step('expenses.paid_from / receipt_url / recurring_id / is_void columns',
+    fn() => columnExists($db, $dbName, 'expenses', 'is_void'),
+    fn() => $db->exec("ALTER TABLE expenses
+        ADD COLUMN paid_from VARCHAR(12) NOT NULL DEFAULT 'bank',
+        ADD COLUMN receipt_url VARCHAR(255) DEFAULT NULL,
+        ADD COLUMN recurring_id INT DEFAULT NULL,
+        ADD COLUMN is_void TINYINT(1) NOT NULL DEFAULT 0"),
+    $report);
+step('recurring_expenses table',
+    fn() => tableExists($db, $dbName, 'recurring_expenses'),
+    fn() => $db->exec("CREATE TABLE recurring_expenses (
+        id                INT AUTO_INCREMENT PRIMARY KEY,
+        description       VARCHAR(255) NOT NULL,
+        amount            DECIMAL(10,2) NOT NULL,
+        category          VARCHAR(100) NOT NULL,
+        paid_from         VARCHAR(12) NOT NULL DEFAULT 'bank',
+        day_of_month      TINYINT NOT NULL DEFAULT 1,
+        is_active         TINYINT(1) NOT NULL DEFAULT 1,
+        last_posted_month CHAR(7) DEFAULT NULL,
+        created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+step('refunds table',
+    fn() => tableExists($db, $dbName, 'refunds'),
+    fn() => $db->exec("CREATE TABLE refunds (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        kind        ENUM('booking','order') NOT NULL,
+        ref_id      INT NOT NULL,
+        reference   VARCHAR(40) NOT NULL,
+        amount      DECIMAL(10,2) NOT NULL,
+        method      VARCHAR(12) NOT NULL,
+        reason      VARCHAR(255) DEFAULT NULL,
+        refund_date DATE NOT NULL,
+        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_refunds_ref (kind, ref_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+
 step('referral_credit_uses table',
     fn() => (bool)$db->query("SHOW TABLES LIKE 'referral_credit_uses'")->fetchColumn(),
     fn() => $db->exec("CREATE TABLE referral_credit_uses (
