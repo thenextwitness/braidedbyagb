@@ -30,7 +30,8 @@ so notes or memory that mention the old path are out of date.
 Things you **cannot** do from this session: log in to the server, change the
 Caddy rules, read server logs, or change server config. Ask the owner; they
 pass it to their infrastructure session. Things you **can** do: change code,
-push (which deploys), add migrations and ask the owner to run them.
+push (which deploys), and add database migrations (the server applies them
+automatically after the deploy; see the rules at the bottom).
 
 ## The timeline of what was done
 
@@ -119,5 +120,9 @@ details in `docs/ORACLE-HOSTING.md` → "Known gaps"):
   `database/migrations.sql` (a stub that is never run; the deploy now fails if
   SQL appears in it). Corrected 20 Nov after the Braided session spotted that
   the first version of these docs said the opposite.
+- **Database changes now apply automatically** (added 20 Nov): push a new
+  step in `migrate.php` and the server runs it after the deploy, with a backup
+  first. You never need the migrate key or a server login. Details:
+  `docs/ORACLE-HOSTING.md` → "Database changes are automatic too".
 - The Android admin app (`mobile/`) talks to the same domain and API, so it
   needed no change for the move.

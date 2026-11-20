@@ -8,6 +8,13 @@
 // script is SAFE TO RE-RUN as many times as you like.
 //
 // USAGE
+//   AUTOMATIC (since 20 Nov 2026): after every deploy, the server runs this
+//   file by itself IF it changed in that deploy (a database backup is taken
+//   first). The deploy workflow waits for the result and fails if any step
+//   reports ERROR. So: add a guarded step() at the bottom, push, done.
+//   Because a run re-checks EVERY step, data-fixing steps (e.g. "backfill past
+//   bookings to completed") also run whenever this file changes: keep every
+//   step's "already applied" check exact.
 //   Web: https://braidedbyagb.co.uk/database/migrate.php?key=YOUR_SECRET
 //   CLI: php database/migrate.php
 //

@@ -10,7 +10,8 @@ name: Deploy to Oracle
 #
 # Server-only paths are never uploaded or deleted (see .deployignore):
 #   config/ (secrets)   uploads/ (customer photos + receipts)
-# Database changes are NOT run here: use /database/migrate.php?key=... after deploy.
+# Database changes: the server runs database/migrate.php itself after the deploy
+# (only when it changed, backup first); the last step below waits for the result.
 
 on:
   push:
@@ -63,3 +64,21 @@ jobs:
           echo "deployed=$want live=$got"
           test "$want" = "$got"
           curl -fsS -o /dev/null --resolve braidedbyagb.co.uk:443:141.147.86.105 https://braidedbyagb.co.uk/
+
+      # The server runs database/migrate.php by itself after each deploy (only
+      # when that file changed; it backs the database up first) and writes the
+      # result to /migrate-status.txt. Wait for this commit's result.
+      - name: Database migrations (applied automatically by the server)
+        run: |
+          want=$(cat version.txt)
+          for i in $(seq 1 36); do
+            got=$(curl -fsS --resolve braidedbyagb.co.uk:443:141.147.86.105 https://braidedbyagb.co.uk/migrate-status.txt || true)
+            case "$got" in
+              "$want unchanged"*) echo "migrate.php unchanged in this deploy: nothing to run."; exit 0 ;;
+              "$want ok"*)        echo "Migrations: $got"; exit 0 ;;
+              "$want failed"*)    echo "::error::Database migration FAILED on the live server: ${got#"$want failed: "}. The code is deployed but the database step did not apply. A backup was taken first; tell the owner (server log /var/log/braided-migrate.log)."; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "::error::No migration result from the server after 3 minutes (status: $got). Tell the owner."
+          exit 1

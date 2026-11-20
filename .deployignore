@@ -22,3 +22,4 @@ error_log
 /.cpanel.yml
 /.deployignore
 /.gitignore
+/migrate-status.txt

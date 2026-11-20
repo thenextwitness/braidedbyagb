@@ -16,14 +16,25 @@ Namecheap still hosts **email** (cPanel webmail, MX records) and the owner's
 
 Never deploy through cPanel any more: cPanel's copy is no longer the live site.
 
-**Database changes are not automatic.** Add a guarded `step()` to the bottom of
-`database/migrate.php` (each step checks whether it is already applied, so the
-runner is safe to re-run), push, then run the migration runner once.
-`database/migrations.sql` is an old stub that is never executed: SQL added there
-would silently never apply, so the deploy workflow fails if any appears in it.
-Run the runner with:
-`https://braidedbyagb.co.uk/database/migrate.php?key=<MIGRATE_KEY>`
-(the key is in the server's `config/database.php`; ask the owner).
+**Database changes are automatic too.** Add a guarded `step()` to the bottom of
+`database/migrate.php` (each step checks whether it is already applied) and push.
+After the files land, the server notices the deploy (systemd `braided-migrate.path`
+watching `version.txt`) and, **only if `migrate.php` changed**, backs the database
+up to `/var/backups/braided/pre-migrate-*.sql.gz` (last 20 kept) and runs it.
+The result goes to `https://braidedbyagb.co.uk/migrate-status.txt`
+(`<commit> unchanged` / `<commit> ok N applied` / `<commit> failed: <step names>`),
+and the workflow's last step waits for it: a red run means a step reported ERROR.
+Full output is in `/var/log/braided-migrate.log` on the server (owner only).
+No key or server login is involved, so the Braided session can do all of this.
+
+- A run re-checks every step, so data-fixing steps (such as "backfill past
+  bookings to completed") also run whenever `migrate.php` changes. Keep every
+  step's "already applied" check exact, and never write a step that deletes or
+  rewrites customer data without the owner agreeing first.
+- `database/migrations.sql` is an old stub that is never executed: SQL added there
+  would silently never apply, so the deploy fails if any appears in it.
+- Manual run, if ever needed (owner): `https://braidedbyagb.co.uk/database/migrate.php?key=<MIGRATE_KEY>`
+  (the key is in the server's `config/database.php`).
 
 ## The server
 
