@@ -100,6 +100,17 @@
   background: var(--color-bg-light);
   box-shadow: 0 0 0 3px rgba(128,0,128,0.1);
 }
+/* The chosen service's options box, opened right under its row (booking.php placeServiceOptions). */
+#service-options.in-grid {
+  grid-column: 1 / -1;
+  background: #fff;
+  border: 2px solid var(--color-primary);
+  border-radius: 12px;
+  padding: var(--space-4);
+  margin: 2px 0 var(--space-2);
+  box-shadow: 0 6px 18px rgba(75,0,130,0.12);
+}
+#service-options.in-grid #step1-next { margin-top: var(--space-4); }
 .service-select-name {
   font-family: var(--font-primary);
   font-size: var(--text-sm);

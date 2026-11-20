@@ -101,7 +101,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
 <?php include __DIR__ . '/../includes/brand-styles.php'; ?>
   <link rel="stylesheet" href="/assets/css/global.css">
   <link rel="stylesheet" href="/assets/css/pages.css">
-  <link rel="stylesheet" href="/assets/css/booking.css">
+  <link rel="stylesheet" href="/assets/css/booking.css?v=<?= @filemtime(__DIR__ . '/../assets/css/booking.css') ?: 1 ?>">
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     /* ── Custom Request Nudge (Step 1 bottom) ── */
@@ -283,6 +283,11 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
           </div>
           <?php endforeach; ?>
 
+          <!-- The chosen service's details, options, add-ons and Continue. Kept here
+               until a service is tapped, then moved to sit right under that
+               service's row (placeServiceOptions), so nobody scrolls past the list. -->
+          <div id="service-options-home"></div>
+          <div id="service-options">
           <!-- Service description (shown once a service is chosen) -->
           <div id="service-desc-box" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-left:4px solid var(--color-primary);border-radius:0 var(--border-radius-lg,8px) var(--border-radius-lg,8px) 0">
             <p id="service-desc-text" style="margin:0;font-size:var(--text-sm);color:var(--color-text,#3a2540);line-height:1.6"></p>
@@ -309,6 +314,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
           <button class="btn btn-primary btn-lg w-full" id="step1-next" disabled onclick="goToStep(2)">
             Continue to Date & Time →
           </button>
+          </div><!-- /#service-options -->
 
           <!-- Custom request nudge -->
           <div class="custom-request-nudge">
@@ -765,7 +771,41 @@ document.querySelectorAll('.service-select-card').forEach(card => {
     document.querySelectorAll('.service-select-card').forEach(c => c.classList.remove('selected'));
     this.classList.add('selected');
     selectService(parseInt(this.dataset.serviceId));
+    placeServiceOptions(this, true);
   });
+});
+
+// Open the chosen service's options right under its row (after the last card on
+// the same line), instead of under the whole list. Re-placed if the screen is
+// resized/rotated (rows change), and sent back home when the draft is reset.
+function placeServiceOptions(card, scroll) {
+  const panel = document.getElementById('service-options');
+  if (!panel || !card) return;
+  let last = card;
+  for (let n = card.nextElementSibling; n && n.classList.contains('service-select-card'); n = n.nextElementSibling) {
+    if (n.offsetTop !== card.offsetTop) break;
+    last = n;
+  }
+  if (last.nextElementSibling !== panel) last.after(panel);
+  panel.classList.add('in-grid');
+  if (scroll) {
+    const top = card.getBoundingClientRect().top + window.scrollY - 90;   // keep the chosen service in view above it
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+}
+function unplaceServiceOptions() {
+  const panel = document.getElementById('service-options');
+  const home  = document.getElementById('service-options-home');
+  if (panel && home && home.nextElementSibling !== panel) home.after(panel);
+  if (panel) panel.classList.remove('in-grid');
+}
+let placeOptionsTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(placeOptionsTimer);
+  placeOptionsTimer = setTimeout(() => {
+    const sel = document.querySelector('.service-select-card.selected');
+    if (sel) placeServiceOptions(sel, false);
+  }, 150);
 });
 
 // "Book again": add-ons to tick once the chosen service's add-ons load (used once).
@@ -775,6 +815,7 @@ let pendingRebookAddons = <?= json_encode($rebookAddons) ?>;
 window.addEventListener('DOMContentLoaded', () => {
   getReferralCode();   // remember a share link's code even if they browse away first
   selectService(<?= (int)$preselected['id'] ?>);
+  placeServiceOptions(document.querySelector('.service-select-card.selected'), false);
   const rebookVariant = <?= (int)$rebookVariant ?>;
   if (rebookVariant) {
     const vb = document.querySelector('.variant-btn[data-variant-id="' + rebookVariant + '"]');
@@ -1222,6 +1263,7 @@ function addAnotherPerson() {
 
 function resetDraftUI() {
   document.querySelectorAll('.service-select-card').forEach(c => c.classList.remove('selected'));
+  unplaceServiceOptions();
   document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('variant-section').style.display   = 'none';
   document.getElementById('addons-section').style.display    = 'none';
