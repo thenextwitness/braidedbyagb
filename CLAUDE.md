@@ -5,7 +5,12 @@ and stylist portals, admin, plus the Android admin app in `mobile/`). Plain PHP
 8.3 + MySQL/MariaDB, no framework. It is a business, separate from The Next
 Witness ministry projects.
 
-## Hosting and deploy: read `docs/ORACLE-HOSTING.md` first
+## NEW (20 Nov 2026): the site moved host. Read `docs/MIGRATION-HANDOVER-2026-11-20.md` first
+
+It explains what was done while this session was idle, what changed for you,
+and what is still open. Then use `docs/ORACLE-HOSTING.md` day to day.
+
+## Hosting and deploy: read `docs/ORACLE-HOSTING.md`
 
 - The live site runs on an **Oracle Cloud VM** (Caddy + PHP-FPM + MariaDB), not
   Namecheap. Namecheap still holds the domain's **email** only.
