@@ -74,7 +74,7 @@ private fun keyLabel(key: String): String = when (key) {
     "bank_account_number"              -> "Account Number"
     "bank_transfer_hold_hours"         -> "Hold Hours (bank transfer)"
     "day_start_time"                   -> "First Appointment Time (HH:MM, e.g. 09:30)"
-    "day_end_time"                     -> "Appointments Finish By (HH:MM, e.g. 20:30)"
+    "day_end_time"                     -> "Appointments Finish By (HH:MM, e.g. 19:00)"
     "deposit_percent"                  -> "Deposit % Required"
     "booking_buffer_hours"             -> "Booking Buffer (hours)"
     "auto_cancel_bank_transfer_hours"  -> "Auto-cancel After (hours)"

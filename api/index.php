@@ -38,7 +38,7 @@ switch ($endpoint) {
     // ── SLOTS ─────────────────────────────────────────────
     // Availability now comes from the one canonical builder in
     // includes/scheduling.php (availableSlotsForDay), which honours day/slot
-    // blocks, the booking buffer, the opening-hours grid (Settings, default 09:30–20:30) and duration-aware
+    // blocks, the booking buffer, the opening-hours grid (Settings, default 09:30–19:00) and duration-aware
     // capacity. Behaviour is identical at capacity 1 (the default).
     case 'slots':
         $date      = sanitize($_GET['date'] ?? '');

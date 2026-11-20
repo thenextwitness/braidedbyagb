@@ -5,11 +5,11 @@ import com.braidedbyagb.admin.data.remote.ApiClient
 /**
  * Opening hours, from the website settings `day_start_time` / `day_end_time`
  * (the same ones the website and admin use), so every time picker in the app
- * matches the website. Falls back to 09:30–20:30 when offline or unset.
+ * matches the website. Falls back to 09:30–19:00 when offline or unset.
  */
 object BusinessHours {
     const val DEFAULT_START = "09:30"
-    const val DEFAULT_END   = "20:30"
+    const val DEFAULT_END   = "19:00"
 
     private fun minutes(hhmm: String?): Int? {
         val m = Regex("^([01]\\d|2[0-3]):([0-5]\\d)$").find(hhmm?.trim() ?: return null) ?: return null

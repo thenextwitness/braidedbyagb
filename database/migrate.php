@@ -1170,6 +1170,18 @@ step('customers.winback_sent_at column',
     fn() => $db->exec("ALTER TABLE customers ADD COLUMN winback_sent_at DATETIME DEFAULT NULL"),
     $report);
 
+// ── Salon closes at 7pm (owner, 20 Nov 2026): last appointment must END by 19:00.
+// One-time marker so a later change in Settings is never overwritten.
+step('day_end_time set to 19:00 (one-time)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='day_end_1900_set'")->fetchColumn() > 0,
+    function() use ($db) {
+        $up = $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?,?)
+                            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $up->execute(['day_end_time', '19:00']);
+        $up->execute(['day_end_1900_set', '1']);
+    },
+    $report);
+
 // ── "AGB bring your bestie" referrals (owner request 2026-11; rules in includes/referrals.php) ──
 step('customers.referral_code column (unique)',
     fn() => columnExists($db, $dbName, 'customers', 'referral_code'),

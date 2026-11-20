@@ -86,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $durStmt->execute([$variantId, $serviceId]);
         $durMins = (int)($durStmt->fetchColumn() ?: 60);
 
-        if (!isSlotAvailable($bookedDate, $bookedTime, $durMins)) {
+        if (!withinBusinessHours($bookedTime, $durMins)) {
+            $errors[] = outsideHoursMessage();
+        } elseif (!isSlotAvailable($bookedDate, $bookedTime, $durMins)) {
             $errors[] = 'That time clashes with an existing booking or a blocked period. Please pick another slot.';
         }
     }
@@ -434,7 +436,7 @@ require_once __DIR__ . '/includes/layout.php';
         <label class="admin-label">Time *</label>
         <div class="time-grid" id="timeGrid">
           <?php
-          $times = dayTimeGrid();   // opening hours from Settings (default 09:30–20:30)
+          $times = dayTimeGrid();   // opening hours from Settings (default 09:30–19:00)
           $selectedTime = $_POST['booked_time'] ?? '';
           foreach ($times as $t):
             $label = date('g:i A', strtotime($t));

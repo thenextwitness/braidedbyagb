@@ -102,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
       "longitude": "-0.7486"
     },
     "openingHoursSpecification": [
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "<?= htmlspecialchars(businessHours()['start']) ?>", "closes": "18:00" },
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "<?= htmlspecialchars(businessHours()['start']) ?>", "closes": "17:00" }
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "<?= htmlspecialchars(businessHours()['start']) ?>", "closes": "<?= htmlspecialchars(businessHours()['end']) ?>" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "<?= htmlspecialchars(businessHours()['start']) ?>", "closes": "<?= htmlspecialchars(businessHours()['end']) ?>" }
     ],
     "sameAs": [
       "https://instagram.com/BraidedbyAGB",

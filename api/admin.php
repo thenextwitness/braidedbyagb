@@ -270,6 +270,9 @@ switch ($endpoint) {
             $thisBk->execute([$newDurMins, $id]);
             $thisDur = (int)($thisBk->fetchColumn() ?: 60);
 
+            if (!withinBusinessHours($newTime, $thisDur)) {
+                http_response_code(409); echo json_encode(['error' => outsideHoursMessage()]); exit;
+            }
             $others = loadDayBookings($newDate, (int)$id);
             if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
                 http_response_code(409);
@@ -553,6 +556,14 @@ switch ($endpoint) {
 
             // Normalise time to HH:MM:SS
             if (strlen($bookedTime) === 5) $bookedTime .= ':00';
+
+            // Must start and finish within opening hours (same rule as the website).
+            $hoursDur = $db->prepare("SELECT COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60)
+                                      FROM services s LEFT JOIN service_variants sv ON sv.id = ? WHERE s.id = ?");
+            $hoursDur->execute([$variantId ?: null, $serviceId]);
+            if (!withinBusinessHours($bookedTime, (int)($hoursDur->fetchColumn() ?: 60))) {
+                http_response_code(409); echo json_encode(['error' => outsideHoursMessage()]); exit;
+            }
 
             // Prepend custom style name to admin notes so it surfaces in all booking views
             $adminNotesStored = $adminNotes ?: null;

@@ -132,6 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $durStmt->execute([$bookingId]);
             $thisDur = (int)($durStmt->fetchColumn() ?: 60);
+            if (!withinBusinessHours($newTime, $thisDur)) {
+                header("Location: /admin/bookings/$bookingId?msg=" . urlencode('Not rescheduled: ' . outsideHoursMessage()));
+                exit;
+            }
             $others  = loadDayBookings($newDate, (int)$bookingId);
             if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
                 header("Location: /admin/bookings/$bookingId?msg=That+slot+clashes+with+another+booking.+Choose+another+time.");

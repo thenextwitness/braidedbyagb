@@ -212,11 +212,11 @@ function isStylistFree(string $date, string $time, int $durMins, int $stylistId,
  * Opening hours: the ONE source for every time grid (website slots, admin new
  * booking, admin calendar blocks, the app). Settings `day_start_time` /
  * `day_end_time` (HH:MM; the end is when the last appointment must finish).
- * Returns ['start' => 'HH:MM', 'end' => 'HH:MM'], falling back to 09:30–20:30
- * when a setting is missing or malformed.
+ * Returns ['start' => 'HH:MM', 'end' => 'HH:MM'], falling back to 09:30–19:00
+ * when a setting is missing or malformed. (Was 20:30; owner: closes at 7pm.)
  */
 const DAY_START_DEFAULT = '09:30';
-const DAY_END_DEFAULT   = '20:30';
+const DAY_END_DEFAULT   = '19:00';   // salon closes at 7pm
 function businessHours(): array {
     $norm = function (string $v, string $def): string {
         return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v) ? $v : $def;
@@ -234,6 +234,13 @@ function withinBusinessHours(string $time, int $durMins): bool {
     if ($t === false) return false;
     return $t >= strtotime('2000-01-01 ' . $h['start'])
         && $t + max(1, $durMins) * 60 <= strtotime('2000-01-01 ' . $h['end']);
+}
+
+/** The reason a time is refused for being outside opening hours (shown in admin + app). */
+function outsideHoursMessage(): string {
+    $h = businessHours();
+    return 'That appointment would start before opening (' . date('g:i A', strtotime($h['start'])) . ') or finish after closing ('
+         . date('g:i A', strtotime($h['end'])) . '). Pick an earlier time, or change the hours in Settings.';
 }
 
 /** Start times ('HH:MM') from opening to the last start that still fits a step before closing. */
