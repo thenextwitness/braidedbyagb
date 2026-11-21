@@ -1284,78 +1284,8 @@ step('delete test order: Tolulope Agboola £1,500 (owner request, one-time)',
     },
     $report);
 
-// ── Owner request 21 Nov 2026: delete the test client "Tolulope Agboola" and
-// everything attached to her. Guarded: exactly one such client, and it refuses
-// (changes nothing) if she has any real business history — a completed
-// booking, a succeeded payment, a paid order, a course enrolment or earned
-// referral credit — so a real client can never be wiped by this.
-step('delete test client: Tolulope Agboola (owner request, one-time)',
-    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='test_client_tolulope_removed'")->fetchColumn() > 0,
-    function() use ($db) {
-        $q = $db->query("SELECT id, email FROM customers WHERE LOWER(TRIM(name)) = 'tolulope agboola'");
-        $rows = $q->fetchAll();
-        if (count($rows) !== 1) throw new RuntimeException('found ' . count($rows) . ' clients named Tolulope Agboola (need exactly 1) — nothing changed');
-        $cid = (int)$rows[0]['id']; $email = (string)$rows[0]['email'];
-        $has = fn(string $sql) => (int)$db->query($sql)->fetchColumn();
-        $why = [];
-        if ($n = $has("SELECT COUNT(*) FROM bookings WHERE customer_id = $cid AND status = 'completed'")) $why[] = "$n completed booking(s)";
-        if ($n = $has("SELECT COUNT(*) FROM payments p JOIN bookings b ON b.id = p.booking_id WHERE b.customer_id = $cid AND p.status = 'succeeded'")) $why[] = "$n paid booking payment(s)";
-        if ($n = $has("SELECT COUNT(*) FROM orders WHERE customer_id = $cid AND payment_status = 'paid'")) $why[] = "$n paid order(s)";
-        if (tableExists($db, DB_NAME, 'course_enrolments') && ($n = $has("SELECT COUNT(*) FROM course_enrolments WHERE customer_id = $cid"))) $why[] = "$n course enrolment(s)";
-        if (tableExists($db, DB_NAME, 'referral_credits') && ($n = $has("SELECT COUNT(*) FROM referral_credits WHERE customer_id = $cid AND status = 'earned'"))) $why[] = "$n earned referral credit(s)";
-        if ($why) throw new RuntimeException('client #' . $cid . ' has real history (' . implode(', ', $why) . ') — not deleted, nothing changed');
-
-        $del = function(string $sql, array $args = []) use ($db) { $db->prepare($sql)->execute($args); };
-        $opt = fn(string $t) => tableExists($db, DB_NAME, $t);
-        $db->beginTransaction();
-        try {
-            $bids = $db->query("SELECT id FROM bookings WHERE customer_id = $cid")->fetchAll(PDO::FETCH_COLUMN);
-            foreach ($bids as $bid) {
-                $bid = (int)$bid;
-                $del("DELETE FROM journal_entries WHERE source IN ('booking_payment','booking_deposit','booking_forfeit','booking_reversal','booking_travel','booking_refund') AND source_id = ?", [$bid]);
-                $del("DELETE FROM booking_addons WHERE booking_id = ?", [$bid]);
-                $del("DELETE FROM payments WHERE booking_id = ?", [$bid]);
-                if ($opt('booking_assignments'))   $del("DELETE FROM booking_assignments WHERE booking_id = ?", [$bid]);
-                if ($opt('referral_credit_uses'))  $del("DELETE FROM referral_credit_uses WHERE booking_id = ?", [$bid]);
-                if ($opt('refunds'))               $del("DELETE FROM refunds WHERE kind = 'booking' AND ref_id = ?", [$bid]);
-                $del("DELETE FROM review_requests WHERE booking_id = ?", [$bid]);
-                $del("UPDATE reviews SET booking_id = NULL WHERE booking_id = ?", [$bid]);
-                $del("UPDATE orders SET booking_id = NULL WHERE booking_id = ? AND customer_id <> ?", [$bid, $cid]);
-            }
-            $oids = $db->query("SELECT id FROM orders WHERE customer_id = $cid")->fetchAll(PDO::FETCH_COLUMN);
-            foreach ($oids as $oid) {
-                $oid = (int)$oid;
-                $del("DELETE FROM journal_entries WHERE source IN ('order_payment','order_reversal','order_refund') AND source_id = ?", [$oid]);
-                $del("DELETE FROM order_items WHERE order_id = ?", [$oid]);
-                $del("DELETE FROM payments WHERE order_id = ?", [$oid]);
-                if ($opt('refunds')) $del("DELETE FROM refunds WHERE kind = 'order' AND ref_id = ?", [$oid]);
-                $del("DELETE FROM review_requests WHERE order_id = ?", [$oid]);
-                $del("UPDATE reviews SET order_id = NULL WHERE order_id = ?", [$oid]);
-            }
-            $del("DELETE FROM orders WHERE customer_id = ?", [$cid]);
-            $del("DELETE FROM bookings WHERE customer_id = ?", [$cid]);
-            if ($opt('referrals')) {
-                foreach ($db->query("SELECT id FROM referrals WHERE referrer_id = $cid OR referred_id = $cid")->fetchAll(PDO::FETCH_COLUMN) as $rid) {
-                    $del("DELETE FROM referral_credits WHERE referral_id = ?", [(int)$rid]);
-                }
-                $del("DELETE FROM referrals WHERE referrer_id = ? OR referred_id = ?", [$cid, $cid]);
-                $del("DELETE FROM referral_credits WHERE customer_id = ?", [$cid]);
-            }
-            foreach (['loyalty_transactions', 'customer_notes', 'review_requests', 'reviews', 'message_batch_recipients', 'trainee_profiles', 'discount_codes'] as $t) {
-                if ($opt($t)) $del("DELETE FROM $t WHERE customer_id = ?", [$cid]);
-            }
-            if ($opt('portal_auth_codes'))      $del("DELETE FROM portal_auth_codes WHERE user_type = 'client' AND (user_id = ? OR email = ?)", [$cid, $email]);
-            if ($opt('portal_remember_tokens')) $del("DELETE FROM portal_remember_tokens WHERE user_type = 'client' AND user_id = ?", [$cid]);
-            $del("DELETE FROM customers WHERE id = ?", [$cid]);
-            $del("INSERT INTO settings (setting_key, setting_value) VALUES ('test_client_tolulope_removed', ?)",
-                 [json_encode(['customer_id' => $cid, 'bookings' => count($bids), 'orders' => count($oids), 'removed_at' => date('c')])]);
-            $db->commit();
-        } catch (Throwable $e) {
-            if ($db->inTransaction()) $db->rollBack();
-            throw $e;
-        }
-    },
-    $report);
+// (Test-client removal for "Tolulope Agboola" is parked until the owner confirms her 2 booking
+// payments — see commit bb0fb10 for the guarded step to restore.)
 
 // ── Batch messages to clients (owner-approved 20 Nov 2026; includes/messaging.php) ──
 step('customers.unsubscribe_token column (unique)',
