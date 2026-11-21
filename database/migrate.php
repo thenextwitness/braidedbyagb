@@ -1284,26 +1284,6 @@ step('delete test order: Tolulope Agboola £1,500 (owner request, one-time)',
     },
     $report);
 
-// TEMPORARY DIAGNOSTIC (remove after reading): the deletion below was refused
-// and the status file only shows a failing step's label, so this step puts
-// COUNTS ONLY (no personal data) in its label and always fails, to surface why.
-if ((int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='test_client_tolulope_removed'")->fetchColumn() === 0) {
-    try {
-        $dq  = fn(string $sql) => (int)$db->query($sql)->fetchColumn();
-        $ids = $db->query("SELECT id FROM customers WHERE LOWER(TRIM(name)) = 'tolulope agboola'")->fetchAll(PDO::FETCH_COLUMN);
-        $cidD = (int)($ids[0] ?? 0);
-        $diag = 'clients=' . count($ids)
-              . ' bookings=' . $dq("SELECT COUNT(*) FROM bookings WHERE customer_id = $cidD")
-              . ' completed=' . $dq("SELECT COUNT(*) FROM bookings WHERE customer_id = $cidD AND status = 'completed'")
-              . ' paidpay=' . $dq("SELECT COUNT(*) FROM payments p JOIN bookings b ON b.id = p.booking_id WHERE b.customer_id = $cidD AND p.status = 'succeeded'")
-              . ' orders=' . $dq("SELECT COUNT(*) FROM orders WHERE customer_id = $cidD")
-              . ' paidorders=' . $dq("SELECT COUNT(*) FROM orders WHERE customer_id = $cidD AND payment_status = 'paid'")
-              . ' enrol=' . (tableExists($db, $dbName, 'course_enrolments') ? $dq("SELECT COUNT(*) FROM course_enrolments WHERE customer_id = $cidD") : -1)
-              . ' credits=' . (tableExists($db, $dbName, 'referral_credits') ? $dq("SELECT COUNT(*) FROM referral_credits WHERE customer_id = $cidD AND status = 'earned'") : -1);
-    } catch (Throwable $e) { $diag = 'diag error ' . substr(preg_replace('/[^A-Za-z0-9 _.:-]/', '', $e->getMessage()), 0, 120); }
-    step('DIAG tolulope ' . $diag, fn() => false, function() { throw new RuntimeException('diagnostic only'); }, $report);
-}
-
 // ── Owner request 21 Nov 2026: delete the test client "Tolulope Agboola" and
 // everything attached to her. Guarded: exactly one such client, and it refuses
 // (changes nothing) if she has any real business history — a completed
