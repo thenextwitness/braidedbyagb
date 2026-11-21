@@ -1228,6 +1228,62 @@ step('customers.email_optin defaults to NULL (not asked)',
     fn() => $db->exec("ALTER TABLE customers MODIFY COLUMN email_optin TINYINT(1) NULL DEFAULT NULL"),
     $report);
 
+// ── Owner request 21 Nov 2026: delete the £1,500 test order by "Tolulope
+// Agboola" (it was a trial, not a sale) and take it out of revenue. Safe by
+// design: acts only on EXACTLY ONE matching order; refuses (changes nothing)
+// if it was paid by card through Stripe, since real money would need a refund
+// first. Removes the order, its items/payments/review links and its ledger
+// entries; puts back stock it took; keeps the client record. One-time.
+step('delete test order: Tolulope Agboola £1,500 (owner request, one-time)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='test_order_tolulope_1500_removed'")->fetchColumn() > 0,
+    function() use ($db) {
+        $q = $db->query("SELECT o.* FROM orders o JOIN customers c ON c.id = o.customer_id
+                         WHERE LOWER(TRIM(c.name)) = 'tolulope agboola' AND o.total BETWEEN 1499.995 AND 1500.005");
+        $rows = $q->fetchAll();
+        if (count($rows) !== 1) throw new RuntimeException('found ' . count($rows) . ' matching orders (need exactly 1) — nothing changed');
+        $o = $rows[0]; $oid = (int)$o['id'];
+        if (($o['payment_method'] ?? '') === 'stripe' && ($o['payment_status'] ?? '') === 'paid' && !empty($o['stripe_payment_id'])) {
+            throw new RuntimeException("order {$o['order_ref']} was paid by card through Stripe ({$o['stripe_payment_id']}) — refund it in Stripe and confirm before it is deleted; nothing changed");
+        }
+        $db->beginTransaction();
+        try {
+            if ((int)($o['stock_deducted'] ?? 0) === 1) {
+                // Put back the stock it took (same rule as finance.php: its own
+                // variant, else the product's only variant).
+                $it = $db->prepare("SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?");
+                $it->execute([$oid]);
+                foreach ($it->fetchAll() as $line) {
+                    $vid = $line['variant_id'] !== null ? (int)$line['variant_id'] : 0;
+                    if (!$vid) {
+                        $vs = $db->prepare("SELECT id FROM product_variants WHERE product_id = ? LIMIT 2");
+                        $vs->execute([(int)$line['product_id']]);
+                        $ids = $vs->fetchAll(PDO::FETCH_COLUMN);
+                        $vid = count($ids) === 1 ? (int)$ids[0] : 0;
+                    }
+                    if ($vid) $db->prepare("UPDATE product_variants SET stock_qty = stock_qty + ? WHERE id = ?")->execute([(int)$line['quantity'], $vid]);
+                }
+            }
+            if (!empty($o['discount_code_id']) && ($o['payment_status'] ?? '') === 'paid') {
+                $db->prepare("UPDATE discount_codes SET uses_count = GREATEST(0, uses_count - 1) WHERE id = ?")->execute([(int)$o['discount_code_id']]);
+            }
+            $db->prepare("DELETE FROM journal_entries WHERE source IN ('order_payment','order_reversal','order_refund') AND source_id = ?")->execute([$oid]);
+            if (tableExists($db, DB_NAME, 'refunds')) $db->prepare("DELETE FROM refunds WHERE kind = 'order' AND ref_id = ?")->execute([$oid]);
+            $db->prepare("DELETE FROM payments WHERE order_id = ?")->execute([$oid]);
+            $db->prepare("UPDATE reviews SET order_id = NULL WHERE order_id = ?")->execute([$oid]);
+            $db->prepare("DELETE FROM review_requests WHERE order_id = ?")->execute([$oid]);
+            $db->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$oid]);
+            $db->prepare("DELETE FROM orders WHERE id = ?")->execute([$oid]);
+            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('test_order_tolulope_1500_removed', ?)")
+               ->execute([json_encode(['ref' => $o['order_ref'], 'total' => $o['total'], 'created' => $o['created_at'],
+                                       'payment' => [$o['payment_method'], $o['payment_status']], 'removed_at' => date('c')])]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
+    },
+    $report);
+
 // ── Batch messages to clients (owner-approved 20 Nov 2026; includes/messaging.php) ──
 step('customers.unsubscribe_token column (unique)',
     fn() => columnExists($db, $dbName, 'customers', 'unsubscribe_token'),
