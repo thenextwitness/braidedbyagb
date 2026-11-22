@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'aftercare_enabled',
             'winback_enabled',
             'referral_enabled',
+            'client_copy_enabled',
         ];
         foreach ($checkboxes as $key) {
             $val = isset($_POST[$key]) ? '1' : '0';
@@ -78,6 +79,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $msg = 'Settings saved.';
+        // Where hidden copies of client emails go — blank = the booking-alerts inbox.
+        if (isset($_POST['client_copy_email'])) {
+            $cc = trim((string)$_POST['client_copy_email']);
+            if ($cc === '' || filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+                $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('client_copy_email',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
+                   ->execute([$cc]);
+            } else {
+                $msg = 'Settings saved, except the "Send the copies to" address: that is not a valid email address, so the copies still go to your usual inbox.';
+            }
+        }
 
     } elseif ($action === 'save_brand') {
         $brandFields = [
@@ -305,6 +316,15 @@ $isError = str_starts_with($msg, 'ERROR:');
       <div class="settings-section admin-form-card" id="followups">
         <div class="settings-section-title">💌 Follow-ups</div>
         <div class="admin-form-group">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input type="checkbox" name="client_copy_enabled" <?= $g('client_copy_enabled','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>📨 Send BraidedbyAGB a copy of every email to a client</strong> (a hidden copy: clients don't see it)</span>
+          </label>
+          <label class="admin-label" style="margin-top:8px">Send the copies to</label>
+          <input class="admin-input" type="email" name="client_copy_email" value="<?= htmlspecialchars(html_entity_decode($g('client_copy_email',''), ENT_QUOTES, 'UTF-8')) ?>" placeholder="Leave blank for your usual inbox" style="max-width:340px">
+          <small style="color:var(--admin-muted);display:block">Blank = the inbox that already gets your booking alerts. Batch messages send you one copy per batch. Sign-in codes and password notices are never copied, to keep clients' accounts safe.</small>
+        </div>
+        <div class="admin-form-group" style="margin-top:14px">
           <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
             <input type="checkbox" name="aftercare_enabled" <?= $g('aftercare_enabled','1') === '1' ? 'checked' : '' ?>>
             <span><strong>Thank-you message</strong> — "Thank you for coming in", with aftercare tips, WhatsApp and "Please follow our social media pages"</span>

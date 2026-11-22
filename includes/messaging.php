@@ -65,7 +65,7 @@ function unsubscribeUrl(PDO $db, int $customerId): string {
 }
 
 /** Full branded email HTML for one client (subject returned too). */
-function buildBatchEmail(PDO $db, array $client, string $subject, string $body, bool $bookButton): array {
+function buildBatchEmail(PDO $db, array $client, string $subject, string $body, bool $bookButton, bool $businessCopy = false): array {
     if (!function_exists('emailWrapper')) require_once __DIR__ . '/mailer.php';
     $subj  = personaliseMessage($subject, $client);
     $text  = personaliseMessage($body, $client);
@@ -77,7 +77,8 @@ function buildBatchEmail(PDO $db, array $client, string $subject, string $body, 
     $heading = htmlspecialchars($subj, ENT_QUOTES, 'UTF-8');
     $book    = htmlspecialchars(rtrim(SITE_URL, '/') . '/booking', ENT_QUOTES, 'UTF-8');
     $btn     = $bookButton ? '<p style="text-align:center;margin:24px 0"><a href="' . $book . '" class="cta-btn">See available times</a></p>' : '';
-    $unsub   = htmlspecialchars(unsubscribeUrl($db, (int)$client['id']), ENT_QUOTES, 'UTF-8');
+    // The business copy gets a dead link, so clicking it can't unsubscribe a real client.
+    $unsub   = $businessCopy ? '#' : htmlspecialchars(unsubscribeUrl($db, (int)$client['id']), ENT_QUOTES, 'UTF-8');
     $content = "<h2>{$heading}</h2>{$paras}{$btn}"
              . '<p style="font-size:12px;color:#9B8BA5;margin-top:22px">You\'re receiving this because you\'re a BraidedbyAGB client. '
              . '<a href="' . $unsub . '" style="color:#9B8BA5">Unsubscribe</a> in one click.</p>';
@@ -130,10 +131,45 @@ function refreshBatchCounts(PDO $db, int $batchId): array {
     $n = ['pending' => 0, 'sending' => 0, 'sent' => 0, 'failed' => 0, 'skipped' => 0, 'opened' => 0];
     foreach ($q->fetchAll() as $r) $n[$r['status']] = (int)$r['n'];
     $done = $n['pending'] === 0 && $n['sending'] === 0;
-    $db->prepare("UPDATE message_batches SET sent = ?, failed = ?, status = IF(?, 'done', status),
-                  finished_at = IF(? AND finished_at IS NULL, NOW(), finished_at) WHERE id = ?")
-       ->execute([$n['sent'] + $n['opened'], $n['failed'], $done ? 1 : 0, $done ? 1 : 0, $batchId]);
+    $db->prepare("UPDATE message_batches SET sent = ?, failed = ?, status = IF(?, 'done', status) WHERE id = ?")
+       ->execute([$n['sent'] + $n['opened'], $n['failed'], $done ? 1 : 0, $batchId]);
+    if ($done) {
+        // Only the call that actually finishes the batch sends the business copy.
+        $fin = $db->prepare("UPDATE message_batches SET finished_at = NOW() WHERE id = ? AND finished_at IS NULL");
+        $fin->execute([$batchId]);
+        if ($fin->rowCount() === 1) {
+            try { sendBatchBusinessCopy($db, $batchId, $n['sent'] + $n['opened']); }
+            catch (Throwable $e) { error_log('Batch business copy failed: ' . $e->getMessage()); }
+        }
+    }
     return $n;
+}
+
+/**
+ * One copy of a finished email batch to the business inbox (not one per client).
+ * Shows the message as the first client received it; its unsubscribe link is disabled.
+ */
+function sendBatchBusinessCopy(PDO $db, int $batchId, int $sentCount): void {
+    if ($sentCount < 1) return;
+    if (!function_exists('sendMail')) require_once __DIR__ . '/mailer.php';
+    $to = businessCopyAddress();
+    if ($to === '') return;
+    $b = $db->prepare("SELECT * FROM message_batches WHERE id = ? AND channel = 'email'");
+    $b->execute([$batchId]);
+    $batch = $b->fetch();
+    if (!$batch) return;
+    $f = $db->prepare("SELECT customer_id FROM message_batch_recipients WHERE batch_id = ? AND status IN ('sent','opened') ORDER BY id LIMIT 1");
+    $f->execute([$batchId]);
+    $client = messageClient($db, (int)$f->fetchColumn());
+    if (!$client) return;
+    $mail  = buildBatchEmail($db, $client, (string)$batch['subject'], (string)$batch['body'], (int)$batch['book_button'] === 1, true);
+    $label = $sentCount === 1 ? '1 client' : $sentCount . ' clients';
+    $note  = '<div style="background:#fdf6dd;border:1px solid #D4AF37;border-radius:8px;padding:10px 14px;margin:0 auto 14px;max-width:600px;'
+           . 'font-family:Arial,sans-serif;font-size:13px;color:#4B0082">Your copy: this batch message was sent to <strong>' . $label
+           . '</strong>. Shown as ' . htmlspecialchars($client['first'], ENT_QUOTES, 'UTF-8') . ' received it; each client saw their own name.</div>';
+    $html  = preg_replace('/<body([^>]*)>/i', '<body$1>' . $note, $mail['html'], 1, $cnt);
+    if (!$cnt) $html = $note . $mail['html'];
+    sendMail($to, '[Copy] ' . $mail['subject'] . ' (sent to ' . $label . ')', $html, '', [], ['no_copy' => true]);
 }
 
 /** Send up to $limit pending emails of a batch. Safe to call from two places at once. Returns counts. */
@@ -160,7 +196,8 @@ function sendBatchChunk(PDO $db, int $batchId, int $limit = 6): array {
         }
         try {
             $mail = buildBatchEmail($db, $client, (string)$batch['subject'], (string)$batch['body'], (int)$batch['book_button'] === 1);
-            $ok = sendMail(trim((string)$client['email']), $mail['subject'], $mail['html']);
+            // no_copy: the business gets one copy per batch when it finishes, not one per client.
+            $ok = sendMail(trim((string)$client['email']), $mail['subject'], $mail['html'], '', [], ['no_copy' => true]);
             $done->execute([$ok ? 'sent' : 'failed', $ok ? null : 'The email service refused it', (int)$r['id']]);
         } catch (Throwable $e) {
             $done->execute(['failed', substr($e->getMessage(), 0, 250), (int)$r['id']]);

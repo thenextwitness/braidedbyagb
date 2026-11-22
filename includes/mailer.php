@@ -21,7 +21,19 @@ require_once __DIR__ . '/helpers.php';
  * @param array        $attachments  [['filename'=>..., 'content'=>base64...], ...]
  * @return bool  true on success (HTTP 200/201 with an id), false otherwise (non-fatal).
  */
-function sendMail($to, string $subject, string $html, string $altText = '', array $attachments = []): bool {
+/**
+ * Where hidden copies of client emails go ('' = copies switched off).
+ * Settings → Follow-ups: client_copy_enabled (default on) and client_copy_email
+ * (blank = SITE_EMAIL, the inbox that already gets booking alerts).
+ */
+function businessCopyAddress(): string {
+    if (getSetting('client_copy_enabled', '1') !== '1') return '';
+    $a = trim(html_entity_decode(getSetting('client_copy_email', ''), ENT_QUOTES, 'UTF-8'));
+    if ($a === '' || !filter_var($a, FILTER_VALIDATE_EMAIL)) $a = defined('SITE_EMAIL') ? trim((string)SITE_EMAIL) : '';
+    return filter_var($a, FILTER_VALIDATE_EMAIL) ? $a : '';
+}
+
+function sendMail($to, string $subject, string $html, string $altText = '', array $attachments = [], array $opts = []): bool {
     if (!defined('RESEND_API_KEY') || RESEND_API_KEY === '' || strpos(RESEND_API_KEY, 'xxxx') !== false) {
         error_log('sendMail: RESEND_API_KEY is not configured — email not sent.');
         return false;
@@ -58,6 +70,18 @@ function sendMail($to, string $subject, string $html, string $altText = '', arra
         ],
     ];
     if (!empty($attachments)) $payload['attachments'] = $attachments;
+    // Hidden copy (Bcc) of client emails to the business inbox — owner request,
+    // docs/mockups/2026-11-copy-business-inbox.png. Skipped for sign-in emails
+    // ($opts['no_copy']) and for emails already addressed to the business.
+    if (empty($opts['no_copy']) && ($copyTo = businessCopyAddress()) !== '') {
+        $isBusiness = false;
+        $biz = array_filter([strtolower($copyTo), defined('SITE_EMAIL') ? strtolower((string)SITE_EMAIL) : '']);
+        foreach ($recipients as $r) {
+            $addr = strtolower(trim(preg_match('/<([^>]+)>/', $r, $m) ? $m[1] : $r));
+            if (in_array($addr, $biz, true)) { $isBusiness = true; break; }
+        }
+        if (!$isBusiness) $payload['bcc'] = [$copyTo];
+    }
 
     $ch = curl_init('https://api.resend.com/emails');
     curl_setopt_array($ch, [
@@ -95,6 +119,8 @@ class MailShim {
     public string $Subject = '';
     public string $Body    = '';
     public string $AltBody = '';
+    /** true = no hidden business copy (sign-in codes, password notices). */
+    public bool $noCopy = false;
     private array $recipients  = [];
     private array $attachments = [];
 
@@ -113,7 +139,7 @@ class MailShim {
     }
     public function send(): bool {
         if (empty($this->recipients)) return false;
-        return sendMail($this->recipients, $this->Subject, $this->Body, $this->AltBody, $this->attachments);
+        return sendMail($this->recipients, $this->Subject, $this->Body, $this->AltBody, $this->attachments, ['no_copy' => $this->noCopy]);
     }
 }
 
@@ -1636,6 +1662,7 @@ HTML;
 function emailPortalLoginCode(string $email, string $name, string $code): bool {
     try {
         $mail = createMailer();
+        $mail->noCopy = true;   // sign-in/security email: never copied to the business inbox
         $mail->addAddress($email, $name ?: '');
         $mail->Subject = 'Your BraidedbyAGB sign-in code';
         $greeting = $name ? 'Hi ' . sanitize($name) . ',' : 'Hi,';
@@ -1667,6 +1694,7 @@ HTML;
 function emailPortalNoAccount(string $email): bool {
     try {
         $mail = createMailer();
+        $mail->noCopy = true;   // sign-in/security email: never copied to the business inbox
         $mail->addAddress($email);
         $mail->Subject = 'About your BraidedbyAGB sign-in';
         $bookUrl = SITE_URL . '/booking';
@@ -1691,6 +1719,7 @@ HTML;
 function emailPortalPasswordChanged(string $email, string $name): bool {
     try {
         $mail = createMailer();
+        $mail->noCopy = true;   // sign-in/security email: never copied to the business inbox
         $mail->addAddress($email, $name ?: '');
         $mail->Subject = 'Your BraidedbyAGB password was changed';
         $greeting = $name ? 'Hi ' . sanitize($name) . ',' : 'Hi,';

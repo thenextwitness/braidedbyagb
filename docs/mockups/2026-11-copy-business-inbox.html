@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Copy BraidedbyAGB on client emails (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:flex-start}
+.mail{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);width:668px;overflow:hidden}
+.mhead{padding:14px 18px;border-bottom:1px solid #eee;font-size:13px;line-height:1.7}
+.mhead .k{display:inline-block;width:64px;color:#6b5c78}
+.mhead .hl{background:#fdf6dd;outline:2px solid #D4AF37;border-radius:4px;padding:0 4px}
+.mhead .subj{font-family:Montserrat;font-weight:800;color:#4B0082;font-size:15px;margin-bottom:4px}
+.mbody{background:#F9EEF9;padding:18px}
+.etop{background:linear-gradient(135deg,#800080,#4B0082);color:#fff;text-align:center;border-radius:10px 10px 0 0;padding:16px;font-family:Montserrat;font-weight:800;letter-spacing:.04em}
+.etop small{display:block;font-family:Lato;font-weight:400;color:#D4AF37;font-size:11px;margin-top:2px}
+.ebody{background:#fff;padding:16px 18px;border-radius:0 0 10px 10px;font-size:13px;line-height:1.55}
+.ebody h3{font-family:Montserrat;color:#4B0082;margin:0 0 6px;font-size:15px}
+.inbox{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);width:668px;overflow:hidden}
+.ititle{padding:12px 18px;font-family:Montserrat;font-weight:800;color:#4B0082;border-bottom:1px solid #eee;font-size:14px}
+.irow{display:flex;gap:14px;padding:11px 18px;border-bottom:1px solid #f1edf5;font-size:13px}
+.irow .who{width:150px;font-weight:700}.irow .s{flex:1;color:#333}.irow .t{color:#6b5c78;width:60px;text-align:right}
+.irow.copy{background:#fffbea}
+.pill{display:inline-block;background:#800080;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 7px;margin-right:6px}
+.pill.adm{background:#e5dff0;color:#4B0082}
+.admin{background:#f3f0f8;border-radius:12px;padding:20px;width:668px}
+.acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:18px 20px}
+.atitle{font-family:Montserrat;font-weight:800;font-size:14px;color:#4B0082;margin-bottom:12px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0}
+.box{width:16px;height:16px;border-radius:4px;background:#800080;flex:none;margin-top:1px;color:#fff;font-size:11px;display:grid;place-items:center}
+.alabel{font-size:12px;font-weight:700;margin:12px 0 4px;display:block}
+.ainput{border:1px solid #e5dff0;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;width:320px;color:#6b5c78}
+.newbox{outline:2px solid #D4AF37;outline-offset:4px;border-radius:6px}
+.ahint{font-size:11.5px;color:#6b5c78;margin-top:4px;line-height:1.45}
+.rules{background:#fff;border-radius:12px;padding:18px 22px;width:668px;font-size:13.5px;line-height:1.6}
+.rules h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 8px}.rules li{margin-bottom:5px}
+.yes{color:#1b7a3a;font-weight:800}.no{color:#a0153e;font-weight:800}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1: What the client sees vs what you get.</b> Each email to a client also sends an exact copy to the BraidedbyAGB inbox (the same one that already gets your "New booking" alerts). The copy is <b>hidden (Bcc)</b>: the client's email looks exactly as it does today, and your address isn't shown to them.</div>
+<div class="row">
+  <div class="mail">
+    <div class="mhead">
+      <div class="subj">Reminder: Your Appointment is Tomorrow — BraidedbyAGB</div>
+      <div><span class="k">From</span>BraidedbyAGB</div>
+      <div><span class="k">To</span>Amara Johnson</div>
+      <div style="color:#6b5c78;font-size:12px;margin-top:4px">↑ The client's view. Nothing about it changes.</div>
+    </div>
+    <div class="mbody"><div class="etop">BRAIDEDBYAGB<small>African Hair Braiding Specialist</small></div>
+      <div class="ebody"><h3>See you tomorrow! 💕</h3>Hi Amara, just a friendly reminder that your appointment is <b>tomorrow</b>…</div></div>
+  </div>
+  <div class="mail">
+    <div class="mhead">
+      <div class="subj">Reminder: Your Appointment is Tomorrow — BraidedbyAGB</div>
+      <div><span class="k">From</span>BraidedbyAGB</div>
+      <div><span class="k">To</span>Amara Johnson</div>
+      <div><span class="k">Bcc</span><span class="hl">BraidedbyAGB inbox</span></div>
+      <div style="color:#6b5c78;font-size:12px;margin-top:4px">↑ Your copy: the same email, with you as a hidden copy.</div>
+    </div>
+    <div class="mbody"><div class="etop">BRAIDEDBYAGB<small>African Hair Braiding Specialist</small></div>
+      <div class="ebody"><h3>See you tomorrow! 💕</h3>Hi Amara, just a friendly reminder that your appointment is <b>tomorrow</b>…</div></div>
+  </div>
+</div>
+
+<div class="cap"><b>Frame 2: Your BraidedbyAGB inbox on a typical day.</b> Gold rows are the new copies. (The purple name tags are only to explain this picture. In your real inbox you open a copy and its "To" line shows which client it went to.)</div>
+<div class="row">
+  <div class="inbox">
+    <div class="ititle">📥 BraidedbyAGB inbox</div>
+    <div class="irow copy"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill">to Amara J.</span>Reminder: Your Appointment is Tomorrow</span><span class="t">9:00</span></div>
+    <div class="irow copy"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill">to Chloe B.</span>Thank you for coming in 💜</span><span class="t">13:05</span></div>
+    <div class="irow"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill adm">alert</span>New booking: Knotless braids (as today)</span><span class="t">14:20</span></div>
+    <div class="irow copy"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill">to Tasha O.</span>Your booking is confirmed ✨</span><span class="t">14:21</span></div>
+    <div class="irow copy"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill">to Chloe B.</span>How was your visit? Leave us a review</span><span class="t">16:00</span></div>
+    <div class="irow copy"><span class="who">BraidedbyAGB</span><span class="s"><span class="pill">batch</span>We miss you, sent to 34 clients (1 copy)</span><span class="t">17:30</span></div>
+  </div>
+  <div class="admin"><div class="acard newbox">
+    <div class="atitle">📨 Copies of client emails <span style="font-size:10px;background:#fdf6dd;color:#8a6d00;border-radius:9px;padding:2px 8px;font-weight:800">NEW</span></div>
+    <div class="chk"><span class="box">✓</span><span><b>Send BraidedbyAGB a copy of every email to a client</b></span></div>
+    <span class="alabel">Send the copies to</span>
+    <input class="ainput" value="Your BraidedbyAGB inbox (leave blank)">
+    <div class="ahint">Blank = the inbox that already gets your booking alerts. You can type a different address if you'd ever prefer one.</div>
+    <div class="ahint" style="margin-top:10px">Lives in <b>Settings → Follow-ups &amp; reviews</b>, so you can switch it off if it gets too busy.</div>
+  </div></div>
+</div>
+
+<div class="cap"><b>Frame 3: Which emails get copied.</b></div>
+<div class="rules">
+  <h3>Copied to you</h3>
+  <ul>
+    <li><span class="yes">✓</span> Booking received, confirmed, declined, rescheduled, and the booking you create for a client from admin</li>
+    <li><span class="yes">✓</span> Appointment reminder (24 hours before)</li>
+    <li><span class="yes">✓</span> Payment receipts, bank-transfer confirmations, cart confirmations</li>
+    <li><span class="yes">✓</span> Thank-you, review request and review reminder</li>
+    <li><span class="yes">✓</span> Rebook reminder, "We miss you", "Your bestie booked: £10 earned"</li>
+    <li><span class="yes">✓</span> Shop order confirmation and "Your order is on its way"</li>
+    <li><span class="yes">✓</span> Your replies to custom-style requests</li>
+    <li><span class="yes">✓</span> <b>Batch messages</b>: <b>one</b> copy per batch (marked "sent to 34 clients"), not 34 identical copies</li>
+  </ul>
+  <h3>Not copied (for the client's security)</h3>
+  <ul>
+    <li><span class="no">✕</span> Account sign-in codes and "your password was changed". A copy of a sign-in code would let anyone who reads your inbox log in as that client.</li>
+  </ul>
+</div>
+</body></html>
