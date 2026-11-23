@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Studio photo frame (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;width:900px;padding:24px 32px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:40px;justify-content:center}
+.phone{width:380px;background:#fff;border-radius:28px;border:10px solid #1A0014;padding:24px 20px;text-align:center}
+.phone h3{font-family:Montserrat;font-size:14px;margin:0 0 18px}
+.bad{color:#a0153e}.good{color:#1b7a3a}
+/* today */
+.old{position:relative;max-width:300px;margin:0 auto 30px}
+.old::before{content:"";position:absolute;inset:18px -18px -18px 18px;border:2px solid #D4AF37;border-radius:16px}
+.old img{position:relative;display:block;width:100%;border-radius:16px;box-shadow:0 18px 44px rgba(75,0,130,.18)}
+/* new */
+.new{max-width:300px;margin:0 auto 12px;padding:8px;border:2px solid #D4AF37;border-radius:20px;background:#fff;box-shadow:0 18px 44px rgba(75,0,130,.14)}
+.new img{display:block;width:100%;border-radius:13px}
+.lbl{font-family:Montserrat;font-size:11px;letter-spacing:.15em;color:#CC1A8A;text-align:left;margin-top:14px}
+</style></head><body>
+<div class="cap"><b>Studio photo on a phone.</b> Today the gold line is a decorative frame set slightly down and to the right, so the photo looks like it's sliding out of its box. <b>New:</b> the gold frame goes evenly all the way round, with the photo sitting neatly inside it. Same on computers.</div>
+<div class="row">
+  <div class="phone"><h3 class="bad">Today: looks out of the box</h3>
+    <div class="old"><img src="file:///D:/Workspaces/Glory/BraidedbyAGB/assets/images/studio.jpg"></div>
+    <div class="lbl">THE STUDIO</div></div>
+  <div class="phone"><h3 class="good">New: photo inside the frame</h3>
+    <div class="new"><img src="file:///D:/Workspaces/Glory/BraidedbyAGB/assets/images/studio.jpg"></div>
+    <div class="lbl">THE STUDIO</div></div>
+</div>
+</body></html>

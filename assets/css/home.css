@@ -408,15 +408,13 @@
 .sp-studio-point > span { color: var(--color-gold, #D4AF37); font-size: 1.1rem; line-height: 1.4; }
 .sp-studio-point strong { display: block; font-family: var(--font-primary); color: var(--color-deep-purple); font-size: 0.98rem; }
 .sp-studio-point em { font-style: normal; color: var(--color-text-muted, #6b5c78); font-size: 0.9rem; }
-.sp-studio-photo { margin: 0; position: relative; max-width: 420px; justify-self: center; }
-.sp-studio-photo::before {
-  content: ""; position: absolute; inset: 18px -18px -18px 18px;
-  border: 2px solid var(--color-gold, #D4AF37); border-radius: 16px; z-index: 0;
+/* Gold frame evenly all round, photo inside it (owner 23 Nov 2026, docs/mockups/2026-11-studio-frame.png) */
+.sp-studio-photo {
+  margin: 0; max-width: 420px; justify-self: center; box-sizing: border-box;
+  padding: 8px; background: #fff; border: 2px solid var(--color-gold, #D4AF37); border-radius: 20px;
+  box-shadow: 0 18px 44px rgba(75, 0, 130, 0.14);
 }
-.sp-studio-photo img {
-  position: relative; z-index: 1; display: block; width: 100%; height: auto;
-  border-radius: 16px; box-shadow: 0 18px 44px rgba(75, 0, 130, 0.18);
-}
+.sp-studio-photo img { display: block; width: 100%; height: auto; border-radius: 13px; }
 @media (max-width: 900px) {
   .sp-studio-grid { grid-template-columns: 1fr; gap: 40px; max-width: 600px; margin: 0 auto; }
   .sp-studio-photo { max-width: 340px; order: -1; }
