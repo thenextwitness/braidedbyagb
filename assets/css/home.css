@@ -398,3 +398,27 @@
   .sp-footer-inner { flex-direction: column; text-align: center; }
   .sp-footer-links { justify-content: center; }
 }
+
+/* ── STUDIO (photo of the salon, owner 23 Nov 2026) ───────── */
+.sp-studio { background: #fff; }
+.sp-studio-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 64px; align-items: center; }
+.sp-studio-body > p { color: var(--color-text-muted, #6b5c78); line-height: 1.8; margin: 18px 0 0; max-width: 560px; }
+.sp-studio-points { display: grid; gap: 14px; margin: 28px 0 32px; }
+.sp-studio-point { display: flex; gap: 14px; align-items: flex-start; }
+.sp-studio-point > span { color: var(--color-gold, #D4AF37); font-size: 1.1rem; line-height: 1.4; }
+.sp-studio-point strong { display: block; font-family: var(--font-primary); color: var(--color-deep-purple); font-size: 0.98rem; }
+.sp-studio-point em { font-style: normal; color: var(--color-text-muted, #6b5c78); font-size: 0.9rem; }
+.sp-studio-photo { margin: 0; position: relative; max-width: 420px; justify-self: center; }
+.sp-studio-photo::before {
+  content: ""; position: absolute; inset: 18px -18px -18px 18px;
+  border: 2px solid var(--color-gold, #D4AF37); border-radius: 16px; z-index: 0;
+}
+.sp-studio-photo img {
+  position: relative; z-index: 1; display: block; width: 100%; height: auto;
+  border-radius: 16px; box-shadow: 0 18px 44px rgba(75, 0, 130, 0.18);
+}
+@media (max-width: 900px) {
+  .sp-studio-grid { grid-template-columns: 1fr; gap: 40px; max-width: 600px; margin: 0 auto; }
+  .sp-studio-photo { max-width: 340px; order: -1; }
+  .sp-studio-btn { width: 100%; text-align: center; }
+}

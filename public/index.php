@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,600;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/brand.css">
 <?php include __DIR__ . '/../includes/brand-styles.php'; ?>
-  <link rel="stylesheet" href="/assets/css/home.css">
+  <link rel="stylesheet" href="/assets/css/home.css?v=<?= @filemtime(__DIR__ . '/../assets/css/home.css') ?: 1 ?>">
 <?php include __DIR__ . '/../includes/gtag.php'; ?>
 </head>
 <body>
@@ -205,6 +205,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- STUDIO (owner-approved photo of the salon; docs/mockups/2026-11-studio-section.png) -->
+<section class="sp-section sp-studio" id="studio">
+  <div class="sp-container">
+    <div class="sp-studio-grid">
+      <div class="sp-studio-body">
+        <p class="sp-label dark">The Studio</p>
+        <h2 class="sp-title dark">Step inside your space<br>for the day</h2>
+        <p>Your appointment takes place in our private studio in Farnborough: bright, calm and set up for comfort, because great braids take time.</p>
+        <div class="sp-studio-points">
+          <div class="sp-studio-point"><span>✦</span><div><strong>One client at a time</strong><em>A relaxed one-to-one appointment, never rushed</em></div></div>
+          <div class="sp-studio-point"><span>✦</span><div><strong>Comfortable styling chair</strong><em>Made for longer styles, with plenty of light and mirrors</em></div></div>
+          <div class="sp-studio-point"><span>✦</span><div><strong>Clean, bright and welcoming</strong><em>A fresh, tidy space where you can sit back and relax</em></div></div>
+        </div>
+        <a href="/booking" class="btn btn-primary btn-lg sp-studio-btn">Book Your Appointment</a>
+      </div>
+      <figure class="sp-studio-photo">
+        <img src="/assets/images/studio.jpg" alt="Inside the BraidedbyAGB studio in Farnborough: styling chair and mirrors" loading="lazy" width="1178" height="2048">
+      </figure>
     </div>
   </div>
 </section>

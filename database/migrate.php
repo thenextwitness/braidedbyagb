@@ -1612,6 +1612,18 @@ step('service web addresses rebuilt from names (old ones forward)',
     },
     $report);
 
+// Owner 23 Nov 2026 (docs/mockups/2026-11-loc-photo-crop.png): Traditional Loc
+// Retwists gets a close-up of the locs as its own photo (the Gallery original,
+// which showed the chair and room, stays in the Gallery). Only if it has no photo.
+step('Traditional Loc Retwists: close-up service photo',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='loc_retwist_photo_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->prepare("UPDATE services SET image_url = '/assets/images/services/traditional-loc-retwists.jpg'
+                      WHERE slug = 'traditional-loc-retwists' AND (image_url IS NULL OR image_url = '')")->execute();
+        $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('loc_retwist_photo_2026_11', ?)")->execute([date('c')]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
