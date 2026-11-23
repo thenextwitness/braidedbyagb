@@ -273,6 +273,19 @@ function finalizePayBookingPayment(PDO $db, string $piId, array $meta, string $c
 
         if (!$bk['deposit_paid']) {
             $transitioned = true;
+            // "Spread the full price" from the pay link: the whole price was paid,
+            // so it is recorded as paid in full (nothing due on the day). Done
+            // before journalBookingDeposit() so the full amount is held, then
+            // released to revenue at completion like any deposit.
+            if (($meta['pay_mode'] ?? '') === 'full') {
+                $db->prepare("UPDATE bookings SET deposit_amount = deposit_amount + remaining_balance, remaining_balance = 0 WHERE id = ?")
+                   ->execute([$bookingId]);
+                $db->prepare("UPDATE payments p JOIN bookings b ON b.id = p.booking_id SET p.amount = b.deposit_amount
+                              WHERE p.booking_id = ? AND p.type = 'deposit'")->execute([$bookingId]);
+                $re = $db->prepare("SELECT deposit_amount FROM bookings WHERE id = ?");
+                $re->execute([$bookingId]);
+                $bk['deposit_amount'] = $re->fetchColumn();
+            }
             $db->prepare("
                 UPDATE bookings
                 SET deposit_paid   = 1,

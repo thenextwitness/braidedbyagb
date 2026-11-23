@@ -624,7 +624,7 @@ switch ($endpoint) {
 
         $db   = getDB();
         $stmt = $db->prepare("
-            SELECT id, booking_ref, deposit_amount
+            SELECT id, booking_ref, deposit_amount, remaining_balance, payment_method_allowed
             FROM bookings
             WHERE payment_token = ? AND deposit_paid = 0 AND status NOT IN ('cancelled','completed')
             LIMIT 1
@@ -633,15 +633,26 @@ switch ($endpoint) {
         $bk = $stmt->fetch();
         if (!$bk) jsonResponse(['error' => 'Payment link is invalid or has already been used.'], 409);
 
-        $pence = (int) round((float)$bk['deposit_amount'] * 100);
+        // "Spread the full price" (owner-approved 23 Nov 2026): the full amount
+        // (deposit + balance) with instalment methods only.
+        $payFull = ($body['pay_mode'] ?? '') === 'full' && ($bk['payment_method_allowed'] ?? 'both') !== 'bank_transfer';
+        $spread  = null;
+        if ($payFull) {
+            $allowedTypes = ['klarna', 'afterpay_clearpay', 'paypal'];
+            $spread = array_values(array_intersect($allowedTypes, array_map('strval', (array)($body['spread_types'] ?? $allowedTypes))));
+            if (!$spread) $spread = $allowedTypes;
+        }
+        $amount = $payFull ? (float)$bk['deposit_amount'] + (float)$bk['remaining_balance'] : (float)$bk['deposit_amount'];
+        $pence  = (int) round($amount * 100);
         if ($pence < 30) jsonResponse(['error' => 'Deposit amount is invalid.'], 400);
         try {
             $intent = stripeCreatePaymentIntent($pence, 'gbp', [
                 'kind'        => 'pay-booking',
                 'booking_id'  => (int)$bk['id'],
                 'booking_ref' => $bk['booking_ref'],
+                'pay_mode'    => $payFull ? 'full' : 'deposit',
                 'source'      => 'braidedbyagb_pay_link',
-            ], 'paybk_' . $bk['id']);
+            ], 'paybk_' . $bk['id'] . ($payFull ? '_full_' . implode('-', $spread) : ''), $spread);
             $cs = $intent['client_secret'] ?? null;
             if (!$cs) throw new RuntimeException('No client secret');
             jsonResponse(['success' => true, 'client_secret' => $cs, 'ref' => $bk['booking_ref']]);

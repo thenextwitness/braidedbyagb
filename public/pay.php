@@ -202,6 +202,15 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
     .tab-pane.active { display: block; }
     /* The Stripe Payment Element renders its own bordered fields; just give the
        wrapper some breathing room below it before the Pay button. */
+    /* Deposit now / spread the full price (owner-approved 23 Nov 2026) */
+    .pm-opt { display:block; width:100%; text-align:left; position:relative; cursor:pointer; border:2px solid var(--color-border);
+              border-radius:12px; background:#fff; padding:11px 13px; margin-bottom:8px; font-size:0.85rem; line-height:1.45; color:var(--color-text); }
+    .pm-opt strong { display:block; font-family:var(--font-primary); color:var(--color-deep-purple); }
+    .pm-opt.on { border-color:var(--color-primary); background:var(--color-bg-light,#F9EEF9); }
+    .pm-amt { position:absolute; right:12px; top:11px; font-family:var(--font-primary); font-weight:800; color:var(--color-primary); }
+    .pm-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .pm-chip { border-radius:6px; padding:3px 8px; font:700 11px Arial,Helvetica,sans-serif; color:#0A0A0A; }
+    .pm-chip.kl { background:#FFB3C7; } .pm-chip.cp { background:#B2FCE4; } .pm-chip.pp { background:#FFC439; color:#003087; }
     #stripe-payment-element {
       margin-bottom: var(--space-5);
     }
@@ -361,6 +370,24 @@ if (!isset($pageInvalid) && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['pa
         <div class="pay-error"><?= htmlspecialchars($error) ?></div>
       <?php endif; ?>
 
+      <?php if (in_array($allowed, ['stripe','both'])):
+        $payFullAmt = (float)$bk['deposit_amount'] + (float)$bk['remaining_balance']; ?>
+        <div id="pay-mode-choice" style="margin-bottom:var(--space-4)">
+          <p style="font-family:var(--font-primary);font-weight:700;color:var(--color-deep-purple);margin:0 0 8px">How would you like to pay?</p>
+          <button type="button" class="pm-opt on" data-mode="deposit" onclick="choosePayMode('deposit')">
+            <span class="pm-amt"><?= formatPrice($bk['deposit_amount']) ?></span>
+            <strong>Pay the deposit now</strong>
+            Card, Apple Pay, PayPal<?= $allowed === 'both' ? ' or bank transfer' : '' ?>. <?= formatPrice($bk['remaining_balance']) ?> left to pay on the day.
+          </button>
+          <button type="button" class="pm-opt" data-mode="spread" id="pm-spread-btn" onclick="choosePayMode('spread')">
+            <span class="pm-amt"><?= formatPrice($payFullAmt) ?></span>
+            <strong>Spread the full price</strong>
+            Interest-free instalments, nothing to pay on the day.
+            <span class="pm-chips" id="pm-spread-chips"></span>
+          </button>
+        </div>
+      <?php endif; ?>
+
       <?php if ($allowed === 'both'): ?>
         <!-- Tabs -->
         <div class="tab-row">
@@ -456,10 +483,61 @@ function copyRef(text) {
 
 <?php if (in_array($allowed ?? 'both', ['stripe','both'])): ?>
 // ── Stripe Payment Element (Card, PayPal, Klarna, Clearpay) ──
+// Two choices (owner-approved 23 Nov 2026): the deposit, or the full price
+// spread with Klarna / Clearpay / PayPal. If Stripe refuses a set of
+// instalment methods, smaller sets are tried, then the option is hidden.
 var stripe = Stripe('<?= STRIPE_PUBLIC_KEY ?>');
-var payElements = stripe.elements({ mode: 'payment', amount: <?= (int)round($bk['deposit_amount'] * 100) ?>, currency: 'gbp', locale: 'en-GB' });
-var payElement = payElements.create('payment', { layout: 'tabs' });
-payElement.mount('#stripe-payment-element');
+var DEPOSIT_PENCE = <?= (int)round($bk['deposit_amount'] * 100) ?>;
+var FULL_PENCE    = <?= (int)round(((float)$bk['deposit_amount'] + (float)$bk['remaining_balance']) * 100) ?>;
+var DEPOSIT_LABEL = <?= json_encode(formatPrice($bk['deposit_amount'])) ?>;
+var FULL_LABEL    = <?= json_encode(formatPrice((float)$bk['deposit_amount'] + (float)$bk['remaining_balance'])) ?>;
+var BNPL_TYPES = ['klarna', 'afterpay_clearpay'];
+var SPREAD_SETS = [['klarna','afterpay_clearpay','paypal'], ['klarna','afterpay_clearpay'], ['klarna','paypal'],
+                   ['afterpay_clearpay','paypal'], ['klarna'], ['afterpay_clearpay'], ['paypal']];
+var spreadIdx = 0, spreadUnavailable = false, payFull = false, payElements = null, payElement = null, elKey = null;
+
+function spreadTypes() { return SPREAD_SETS[spreadIdx]; }
+function payBtnLabel() { return payFull ? ('Continue — spread ' + FULL_LABEL) : ('Pay ' + DEPOSIT_LABEL + ' Securely'); }
+function renderSpreadChips() {
+  var full = FULL_PENCE / 100;
+  var labels = { klarna: 'Klarna · 3 × £' + (full / 3).toFixed(2), afterpay_clearpay: 'Clearpay · 4 × £' + (full / 4).toFixed(2), paypal: 'PayPal Pay in 3' };
+  var cls = { klarna: 'kl', afterpay_clearpay: 'cp', paypal: 'pp' };
+  var el = document.getElementById('pm-spread-chips');
+  if (el) el.innerHTML = spreadTypes().map(function (t) { return '<span class="pm-chip ' + cls[t] + '">' + labels[t] + '</span>'; }).join('');
+}
+function buildPayElement() {
+  var key = payFull ? 'spread:' + spreadTypes().join(',') : 'deposit';
+  if (payElements && elKey === key) return;
+  if (payElement) { try { payElement.destroy(); } catch (e) {} }
+  var opts = { mode: 'payment', amount: payFull ? FULL_PENCE : DEPOSIT_PENCE, currency: 'gbp', locale: 'en-GB' };
+  if (payFull) opts.paymentMethodTypes = spreadTypes().slice();
+  payElements = stripe.elements(opts);
+  payElement = payElements.create('payment', { layout: 'tabs' });
+  payElement.mount('#stripe-payment-element');
+  elKey = key;
+  payElement.on('change', function (e) {
+    if (!payFull && !spreadUnavailable && e && e.value && BNPL_TYPES.indexOf(e.value.type) !== -1) choosePayMode('spread');
+  });
+  payElement.on('loaderror', function () {
+    if (!payFull) return;
+    if (spreadIdx < SPREAD_SETS.length - 1) { spreadIdx++; elKey = null; renderSpreadChips(); buildPayElement(); return; }
+    spreadUnavailable = true;
+    var sb = document.getElementById('pm-spread-btn'); if (sb) sb.style.display = 'none';
+    choosePayMode('deposit');
+  });
+  var btn = document.getElementById('stripe-pay-btn'); if (btn) btn.textContent = payBtnLabel();
+}
+function choosePayMode(mode) {
+  if (mode === 'spread' && spreadUnavailable) return;
+  payFull = (mode === 'spread');
+  document.querySelectorAll('#pay-mode-choice .pm-opt').forEach(function (b) { b.classList.toggle('on', (b.dataset.mode === 'spread') === payFull); });
+  var bankTab = document.getElementById('tab-bank');
+  if (bankTab) bankTab.style.display = payFull ? 'none' : '';
+  if (payFull) switchTab('stripe');
+  buildPayElement();
+}
+renderSpreadChips();
+buildPayElement();
 
 function handleStripePay() {
   var btn     = document.getElementById('stripe-pay-btn');
@@ -476,7 +554,7 @@ function handleStripePay() {
     return fetch('/api/pay-booking-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: '<?= htmlspecialchars($token) ?>' })
+      body: JSON.stringify({ token: '<?= htmlspecialchars($token) ?>', pay_mode: payFull ? 'full' : 'deposit', spread_types: payFull ? spreadTypes() : undefined })
     });
   })
   .then(function(r) { return r.json(); })
@@ -501,7 +579,7 @@ function handleStripePay() {
     errorEl.textContent = err.message || 'Payment failed. Please try again or use bank transfer.';
     errorEl.style.display = '';
     btn.disabled = false;
-    btn.textContent = 'Pay <?= formatPrice($bk['deposit_amount']) ?> Securely';
+    btn.textContent = payBtnLabel();
   });
 }
 <?php endif; ?>

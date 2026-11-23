@@ -1620,6 +1620,11 @@ function emailBookingCreatedByAdmin(array $booking, array $customer, array $serv
         $payBlock = '';
         if ($paymentLink) {
             $safeLink = htmlspecialchars($paymentLink, ENT_QUOTES, 'UTF-8');
+            // The same link can spread the full price (owner-approved 23 Nov 2026), unless bank transfer only.
+            $fullAmt    = '£' . number_format((float)$booking['deposit_amount'] + (float)$booking['remaining_balance'], 2);
+            $spreadLine = (($booking['payment_method_allowed'] ?? 'both') !== 'bank_transfer')
+                ? "<p style=\"margin:14px 0 0;font-size:13px;color:#2A0020;\">Prefer to spread the cost? The same link lets you pay the full <strong>{$fullAmt}</strong> in interest-free instalments with Klarna, Clearpay or PayPal.</p>"
+                : '';
             $payBlock = <<<HTML
 <div style="background:#fff3f9;border:2px solid #CC1A8A;border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
   <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#2A0020;">💳 Deposit Payment Required</p>
@@ -1632,6 +1637,7 @@ function emailBookingCreatedByAdmin(array $booking, array $customer, array $serv
             text-decoration:none;font-weight:700;font-size:14px;display:inline-block;">
     Pay Deposit Now →
   </a>
+  {$spreadLine}
   <p style="margin:14px 0 0;font-size:11px;color:#7A4A70;">
     Or copy this link:<br>
     <a href="{$safeLink}" style="color:#CC1A8A;word-break:break-all;">{$safeLink}</a>

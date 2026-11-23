@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Pay link: spread the full price (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1200px;padding:24px 32px 32px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:28px;align-items:flex-start}
+.phone{width:400px;background:#F9EEF9;border-radius:28px;border:10px solid #1A0014;padding:16px 14px;flex:none}
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;font-size:12.5px}
+.title{font-family:Montserrat;font-weight:800;color:#4B0082;font-size:14px;margin-bottom:8px}
+.r{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1edf5}
+.t{font-family:Montserrat;font-weight:700;color:#4B0082;font-size:13px;margin:4px 0 8px}
+.ch{border:2px solid #e5dff0;border-radius:12px;padding:10px 12px;margin-bottom:8px;line-height:1.5;position:relative}
+.ch.on{border-color:#CC1A8A;background:#F9EEF9}
+.ch b{font-family:Montserrat;color:#4B0082;font-size:13px;display:block}
+.ch .amt{position:absolute;right:12px;top:10px;font-family:Montserrat;font-weight:800;color:#CC1A8A}
+.chips{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}.chip{border-radius:6px;padding:3px 7px;font:700 10.5px Arial}
+.kl{background:#FFB3C7}.cp{background:#B2FCE4}.pp{background:#FFC439;color:#003087}
+.newo{outline:2px dashed #D4AF37;outline-offset:5px;border-radius:12px}
+.stripe{border:1px solid #e0e0e0;border-radius:10px;padding:16px;margin-top:10px;color:#888;text-align:center}
+.btn{background:#800080;color:#fff;border-radius:30px;text-align:center;font-family:Montserrat;font-weight:700;padding:11px;margin-top:10px}
+.mail{background:#fff;border-radius:12px;padding:16px 18px;flex:1;font-size:13px;line-height:1.6}
+.mail h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 8px}
+.mbtn{display:inline-block;background:#CC1A8A;color:#fff;border-radius:22px;padding:8px 18px;font-weight:700;margin:6px 0}
+.hl{background:#fffbea;outline:2px dashed #D4AF37;outline-offset:3px;border-radius:6px;padding:2px 4px}
+</style></head><body>
+<div class="cap"><b>Bookings you create in the admin:</b> the payment link you send now gives clients the same choice as the website: <b>pay the deposit</b> or <b>spread the full price</b> with Klarna, Clearpay or PayPal Pay in 3. Nothing changes in how you create the booking.</div>
+<div class="row">
+  <div class="phone">
+    <div class="card"><div class="title">Your booking</div>
+      <div class="r"><span>Service</span><b>Knotless Braids — Medium</b></div>
+      <div class="r"><span>Date</span><b>Fri, 12 Dec 2026 · 9:30 AM</b></div>
+      <div class="r"><span>Total price</span><b>£180.00</b></div>
+    </div>
+    <div class="card">
+      <div class="newo">
+        <div class="t">How would you like to pay?</div>
+        <div class="ch"><span class="amt">£54.00</span><b>Pay the deposit now</b>Card, Apple Pay, PayPal or bank transfer. £126.00 on the day.</div>
+        <div class="ch on"><span class="amt">£180.00</span><b>Spread the full price</b>Interest-free instalments, nothing to pay on the day.
+          <div class="chips"><span class="chip kl">Klarna · 3 × £60.00</span><span class="chip cp">Clearpay · 4 × £45.00</span><span class="chip pp">PayPal Pay in 3</span></div></div>
+      </div>
+      <div class="stripe">Klarna · Clearpay · PayPal</div>
+      <div class="btn">Continue — spread £180.00</div>
+    </div>
+  </div>
+  <div class="mail">
+    <h3>The email your client gets (unchanged, plus one line)</h3>
+    <p>Hi Amara, your appointment for <b>Knotless Braids</b> on <b>Friday 12 December at 9:30 AM</b> has been booked.</p>
+    <p><span class="mbtn">Pay your deposit</span></p>
+    <p class="hl">Prefer to spread the cost? The same link lets you pay the full £180.00 in interest-free instalments with Klarna, Clearpay or PayPal.</p>
+    <h3 style="margin-top:14px">For you</h3>
+    <ul>
+      <li>If the client spreads the full price, the booking shows <b>paid in full</b>, with nothing to collect on the day.</li>
+      <li>If you set a booking to "bank transfer only", the link stays deposit-only (no spread option).</li>
+      <li>Same automatic safety as the website: any of Klarna, Clearpay or PayPal that's switched off in Stripe is hidden.</li>
+    </ul>
+  </div>
+</div>
+</body></html>
