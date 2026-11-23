@@ -263,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
       </div>
     </div>
     <div style="text-align:center;margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="/services" class="btn btn-outline btn-lg">View All Services &amp; Prices</a>
+      <a href="/booking" class="btn btn-outline btn-lg">View All Services &amp; Prices</a>
       <a href="/gallery" class="btn btn-gold btn-lg">View Our Gallery</a>
     </div>
   </div>

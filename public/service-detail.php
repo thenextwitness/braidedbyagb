@@ -11,7 +11,7 @@ $db = getDB();
 
 $slug = sanitize($_GET['slug'] ?? '');
 if (!$slug) {
-    header('Location: /services');
+    header('Location: /booking');
     exit;
 }
 
@@ -23,7 +23,7 @@ $svc = $stmt->fetch();
 if (!$svc) {
     http_response_code(404);
     // Graceful redirect rather than a raw 404
-    header('Location: /services');
+    header('Location: /booking');
     exit;
 }
 
@@ -494,7 +494,7 @@ $duration = formatDuration((int)$svc['duration_mins']);
     <nav aria-label="Breadcrumb">
       <a href="/">Home</a>
       <span class="sep">›</span>
-      <a href="/services">Services</a>
+      <a href="/booking">Services &amp; Prices</a>
       <span class="sep">›</span>
       <span class="current"><?= htmlspecialchars($svc['name']) ?></span>
     </nav>

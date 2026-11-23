@@ -3,6 +3,12 @@
 // BraidedbyAGB — Services Overview Page
 // FILE: /public/services.php
 // ============================================================
+// Owner choice 23 Nov 2026 (option A, docs/mockups/2026-11-services-in-booking.png):
+// the services list now lives inside the booking page, with photos and details.
+// Old links and Google results land there. (Each style's own page stays.)
+header('Location: /booking', true, 301);
+exit;
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/helpers.php';
 

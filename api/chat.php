@@ -117,7 +117,7 @@ if (has('^(hi|hello|hey|hiya|good (morning|afternoon|evening)|howdy|sup|yo)\b', 
         $list .= "\n{$cat}:\n";
         foreach ($svcs as $s) $list .= "  - {$s['name']} from " . number_format((float)$s['price_from'], 0) . "\n";
     }
-    $reply = "Here's everything we offer:{$list}\nFull details at braidedbyagb.co.uk/services";
+    $reply = "Here's everything we offer:{$list}\nFull details at braidedbyagb.co.uk/booking";
     $qr = ['How much does it cost?', 'How do I book?', 'How long does it take?'];
 
 // PRICING
@@ -130,19 +130,19 @@ if (has('^(hi|hello|hey|hiya|good (morning|afternoon|evening)|howdy|sup|yo)\b', 
 // BOX BRAIDS
 } elseif (has('\bbox.?braid\b', $q)) {
     $s = svc($services, 'box-braids');
-    $reply = $s ? svcBlock($s) : "Box braids are one of our most popular styles! See braidedbyagb.co.uk/services for full pricing.";
+    $reply = $s ? svcBlock($s) : "Box braids are one of our most popular styles! See braidedbyagb.co.uk/booking for full pricing.";
     $qr = ['How do I book?', "What's the deposit?", 'What other styles do you offer?'];
 
 // KNOTLESS
 } elseif (has('\bknotless\b', $q)) {
     $s = svc($services, 'knotless-braids');
-    $reply = $s ? svcBlock($s) : "Knotless braids are a gentle, natural-looking option. See braidedbyagb.co.uk/services for prices.";
+    $reply = $s ? svcBlock($s) : "Knotless braids are a gentle, natural-looking option. See braidedbyagb.co.uk/booking for prices.";
     $qr = ['How do I book?', "What's the deposit?"];
 
 // FEED-IN
 } elseif (has('\bfeed.?in\b', $q)) {
     $s = svc($services, 'feed-in-braids');
-    $reply = $s ? svcBlock($s) : "We offer feed-in braids! Check braidedbyagb.co.uk/services for pricing.";
+    $reply = $s ? svcBlock($s) : "We offer feed-in braids! Check braidedbyagb.co.uk/booking for pricing.";
     $qr = ['How do I book?', 'What other styles do you offer?'];
 
 // CORNROWS
@@ -153,13 +153,13 @@ if (has('^(hi|hello|hey|hiya|good (morning|afternoon|evening)|howdy|sup|yo)\b', 
         $reply .= "- {$s['name']}: from " . number_format((float)$s['price_from'], 0) . " | " . dur((int)$s['duration_mins']) . "\n";
         $reply .= "  braidedbyagb.co.uk/booking/{$s['slug']}\n\n";
     }
-    if (!$cornrows) $reply = "Yes, we do cornrows! Check braidedbyagb.co.uk/services for pricing.";
+    if (!$cornrows) $reply = "Yes, we do cornrows! Check braidedbyagb.co.uk/booking for pricing.";
     $qr = ['How do I book?', 'What other styles do you offer?'];
 
 // TWISTS
 } elseif (has('\b(twist|passion twist|marley)\b', $q)) {
     $s = svc($services, 'twists');
-    $reply = $s ? svcBlock($s) : "We offer passion and Marley twists! See braidedbyagb.co.uk/services.";
+    $reply = $s ? svcBlock($s) : "We offer passion and Marley twists! See braidedbyagb.co.uk/booking.";
     $qr = ['How do I book?', 'What other styles do you offer?'];
 
 // LOCS
@@ -170,7 +170,7 @@ if (has('^(hi|hello|hey|hiya|good (morning|afternoon|evening)|howdy|sup|yo)\b', 
         $reply .= "- {$s['name']}: from " . number_format((float)$s['price_from'], 0) . " | " . dur((int)$s['duration_mins']) . "\n";
         $reply .= "  braidedbyagb.co.uk/booking/{$s['slug']}\n\n";
     }
-    if (!$locs) $reply = "We offer starter locs and loc retwists! Check braidedbyagb.co.uk/services.";
+    if (!$locs) $reply = "We offer starter locs and loc retwists! Check braidedbyagb.co.uk/booking.";
     $qr = ['How do I book?', 'What other styles do you offer?'];
 
 // KIDS

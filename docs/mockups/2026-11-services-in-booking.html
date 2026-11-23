@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Services merged into booking (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:28px;align-items:flex-start}
+.page{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:24px 26px}
+.stephead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.num{width:30px;height:30px;border-radius:50%;background:#800080;color:#fff;display:grid;place-items:center;font-family:Montserrat;font-weight:800;font-size:14px}
+.stephead h2{font-family:Montserrat;color:#4B0082;font-size:20px;margin:0}
+.sub{font-size:13px;color:#6b5c78;margin:0 0 14px 40px}
+.cat{font-family:Montserrat;font-size:13px;font-weight:800;color:#800080;letter-spacing:.06em;text-transform:uppercase;margin:16px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{border:2px solid #e5dff0;border-radius:12px;overflow:hidden;background:#fff;position:relative}
+.card.sel{border-color:#800080;box-shadow:0 0 0 3px rgba(128,0,128,.12)}
+.ph{height:118px;background-size:cover;background-position:center}
+.ph.none{background:linear-gradient(135deg,#800080,#4B0082);display:grid;place-items:center;color:#D4AF37;font-family:Montserrat;font-weight:800;font-size:13px;letter-spacing:.08em}
+.cb{padding:9px 11px 11px}
+.cn{font-family:Montserrat;font-weight:700;font-size:13px;color:#4B0082}
+.cp{font-size:12px;color:#800080;font-weight:700;margin-top:2px}.cp span{color:#6b5c78;font-weight:400}
+.new{position:absolute;top:8px;left:8px;background:#D4AF37;color:#4B0082;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px}
+.panel{grid-column:1/-1;border:2px solid #800080;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(75,0,130,.12);display:flex;gap:20px;outline:2px dashed #D4AF37;outline-offset:5px}
+.pimg{width:300px;flex:none}
+.pimg .big{height:300px;border-radius:10px;background-size:cover;background-position:center}
+.pbody{flex:1;font-size:13px;line-height:1.55}
+.pbody h3{font-family:Montserrat;color:#4B0082;font-size:18px;margin:0 0 4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.chip{background:#F9EEF9;color:#4B0082;border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:700}
+.desc{border-left:4px solid #800080;background:#faf7fb;padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:12px}
+.h4{font-family:Montserrat;font-weight:700;font-size:13px;color:#4B0082;margin:12px 0 6px}
+.vg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.vb{border:2px solid #e5dff0;border-radius:9px;padding:8px;text-align:center;font-size:12px}
+.vb b{display:block;color:#4B0082}.vb span{color:#800080;font-weight:800}.vb small{display:block;color:#6b5c78}
+.vb.sel{border-color:#800080;background:#F9EEF9}
+.acc{border:1px solid #e5dff0;border-radius:9px;padding:9px 12px;margin-top:8px;display:flex;justify-content:space-between;font-weight:700;color:#4B0082;font-size:12.5px}
+.rv{background:#fffbea;border:1px solid #f0e2a8;border-radius:9px;padding:9px 12px;margin-top:8px;font-size:12.5px}.rv .st{color:#D4AF37;letter-spacing:2px}
+.btn{background:#800080;color:#fff;border-radius:30px;text-align:center;font-family:Montserrat;font-weight:700;padding:12px;margin-top:14px;font-size:14px}
+.newtag{display:inline-block;background:#fdf6dd;color:#8a6d00;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.phone{width:390px;background:#fff;border-radius:28px;border:10px solid #1A0014;padding:16px 14px;flex:none}
+.phone .grid{grid-template-columns:1fr 1fr;gap:9px}
+.phone .ph{height:96px}
+.phone .panel{flex-direction:column;padding:12px;gap:10px;outline:none}
+.phone .pimg{width:100%}.phone .pimg .big{height:190px}
+.phone .vg{grid-template-columns:1fr 1fr}
+.nav{background:#fff;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:26px;font-family:Montserrat;font-weight:700;font-size:13px;color:#4B0082}
+.nav .logo{font-weight:800;letter-spacing:.06em;margin-right:auto}
+.nav .hl{outline:2px solid #D4AF37;outline-offset:4px;border-radius:4px}
+.nav .bk{background:#800080;color:#fff;border-radius:22px;padding:8px 16px}
+.rules{background:#fff;border-radius:12px;padding:16px 22px;font-size:13.5px;line-height:1.6;flex:1}
+.rules h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 6px}.rules li{margin-bottom:5px}
+.rec{background:#fdf6dd;color:#8a6d00;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px;margin-left:6px}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1: Booking page, step 1 (computer).</b> Each service card now shows its <b>photo</b>, starting price and how long it takes. Tap a card and its <b>full details</b> open right underneath, inside the booking (dashed gold = new): big photo, description, options with times, add-ons, "Before your appointment", aftercare and client reviews. Then "Continue" as now. Nobody has to visit a separate Services page.</div>
+<div class="page">
+  <div class="stephead"><span class="num">1</span><h2>Choose Your Service</h2></div>
+  <p class="sub">Tap a style to see photos, prices and details.</p>
+  <div class="cat">Braids</div>
+  <div class="grid">
+    <div class="card"><div class="ph none">BRAIDEDBYAGB</div><div class="cb"><div class="cn">Box braids</div><div class="cp">From £85 <span>· 4–8 hrs</span></div></div></div>
+    <div class="card"><div class="ph none">BRAIDEDBYAGB</div><div class="cb"><div class="cn">Knotless Braids</div><div class="cp">From £95 <span>· 5–8 hrs</span></div></div></div>
+    <div class="card sel"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/08e990b4f6ebdb51.jpg)"></div><div class="cb"><div class="cn">Boho braids</div><div class="cp">From £95 <span>· 5–8 hrs</span></div></div></div>
+    <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/7c3b665d2e2b9b33.png)"></div><div class="cb"><div class="cn">Feed-in Braids</div><div class="cp">From £65 <span>· 3–4 hrs</span></div></div></div>
+    <div class="panel">
+      <div class="pimg"><div class="big" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/08e990b4f6ebdb51.jpg)"></div></div>
+      <div class="pbody">
+        <h3>Boho braids <span class="newtag">NEW: FULL DETAILS HERE</span></h3>
+        <div class="chips"><span class="chip">Braids</span><span class="chip">⏱ 5–8 hours</span><span class="chip">From £95</span></div>
+        <div class="desc">Stylish braided look with loose curly strands added throughout for a soft, textured, and effortless finish. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen. Hair extensions are not included.</div>
+        <div class="h4">Select your option</div>
+        <div class="vg">
+          <div class="vb"><b>Large</b><span>£95</span><small>⏱ 5h</small></div>
+          <div class="vb sel"><b>Medium</b><span>£110</span><small>⏱ 6h</small></div>
+          <div class="vb"><b>Small</b><span>£140</span><small>⏱ 7h</small></div>
+          <div class="vb"><b>Extra small</b><span>£230</span><small>⏱ 8h</small></div>
+        </div>
+        <div class="h4">Optional add-ons <span style="font-weight:400;color:#6b5c78">(as now)</span></div>
+        <div style="color:#6b5c78">☐ Wash +£10 &nbsp; ☐ Blow-dry +£10 &nbsp; ☐ Wash and blow-dry +£15 &nbsp; ☐ Waist-length +£40 …</div>
+        <div class="acc"><span>📋 Before your appointment</span><span>＋</span></div>
+        <div class="acc"><span>💜 Aftercare</span><span>＋</span></div>
+        <div class="rv"><span class="st">★★★★★</span> "Absolutely love my boho braids, so neat and light!" <b>Chloe B.</b></div>
+        <div class="btn">Continue to Date &amp; Time →</div>
+      </div>
+    </div>
+    <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/f21f2e40f3e2d4e2.jpeg)"></div><div class="cb"><div class="cn">Two Braids</div><div class="cp">From £45 <span>· 1–2 hrs</span></div></div></div>
+    <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/6eb896141fad8eca.jpeg)"></div><div class="cb"><div class="cn">Men’s braids</div><div class="cp">From £40 <span>· 2–3 hrs</span></div></div></div>
+    <div class="card"><div class="ph none">BRAIDEDBYAGB</div><div class="cb"><div class="cn">Microbraids</div><div class="cp">From £180 <span>· 8–10 hrs</span></div></div></div>
+    <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/6fea1fb29a239571.jpeg)"></div><div class="cb"><div class="cn">Half-cornrows / half-knotless</div><div class="cp">From £90 <span>· 5–6 hrs</span></div></div></div>
+  </div>
+  <p style="font-size:11.5px;color:#6b5c78;margin:12px 0 0">Prices, times and the review shown are examples for the picture. The real page uses your live prices, times and approved reviews. "Before your appointment", Aftercare and Reviews only appear when that service has them, and they open with a tap so the box stays short.</p>
+</div>
+
+<div class="cap"><b>Frame 2: The same on a phone</b> (most of your clients). Two photo cards per row; the details open underneath the tapped one.</div>
+<div class="row">
+  <div class="phone">
+    <div class="stephead"><span class="num">1</span><h2 style="font-size:17px">Choose Your Service</h2></div>
+    <div class="cat">Braids</div>
+    <div class="grid">
+      <div class="card sel"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/08e990b4f6ebdb51.jpg)"></div><div class="cb"><div class="cn">Boho braids</div><div class="cp">From £95 <span>· 5–8 hrs</span></div></div></div>
+      <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/7c3b665d2e2b9b33.png)"></div><div class="cb"><div class="cn">Feed-in Braids</div><div class="cp">From £65 <span>· 3–4 hrs</span></div></div></div>
+      <div class="panel">
+        <div class="pimg"><div class="big" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/08e990b4f6ebdb51.jpg)"></div></div>
+        <div class="pbody">
+          <h3 style="font-size:16px">Boho braids</h3>
+          <div class="chips"><span class="chip">⏱ 5–8 hours</span><span class="chip">From £95</span></div>
+          <div class="desc" style="font-size:12px">Stylish braided look with loose curly strands added throughout for a soft, textured finish…</div>
+          <div class="h4">Select your option</div>
+          <div class="vg"><div class="vb"><b>Large</b><span>£95</span><small>⏱ 5h</small></div><div class="vb sel"><b>Medium</b><span>£110</span><small>⏱ 6h</small></div></div>
+          <div class="acc"><span>💜 Aftercare</span><span>＋</span></div>
+          <div class="btn" style="font-size:13px">Continue to Date &amp; Time →</div>
+        </div>
+      </div>
+      <div class="card"><div class="ph none">BRAIDEDBYAGB</div><div class="cb"><div class="cn">Box braids</div><div class="cp">From £85</div></div></div>
+      <div class="card"><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/services/f21f2e40f3e2d4e2.jpeg)"></div><div class="cb"><div class="cn">Two Braids</div><div class="cp">From £45</div></div></div>
+    </div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:18px">
+    <div class="cap" style="margin:0"><b>Frame 3: The menu.</b> "Services" now opens this booking page, so the photos and details are where clients already go. The old Services list page sends people to the booking page automatically (old links and Google results still work).</div>
+    <div class="nav"><span class="logo">BRAIDEDBYAGB</span><span>Home</span><span class="hl">Services &amp; Prices → booking page</span><span>Shop</span><span>Academy</span><span>Gallery</span><span class="bk">Book Now</span></div>
+    <div class="rules">
+      <h3>Your choice: the old Services page</h3>
+      <p><b>A. Send it to the booking page</b><span class="rec">RECOMMENDED</span><br>One place for everything. Anyone who clicks an old "Services" link or Google result lands on the booking page with the photos and details.</p>
+      <p><b>B. Keep it as well</b><br>The booking page still gets photos and details, and the Services page stays as it is.</p>
+      <h3 style="margin-top:12px">Always true</h3>
+      <ul>
+        <li>Each style's own page (for example "Boho braids") stays, because Google sends people there. Its "Book Now" button opens the booking page with that style already picked, as it does today.</li>
+        <li><b>20 of your 28 services have no photo yet.</b> Those show the purple BraidedbyAGB tile until you add one (Admin → Services → edit → photo).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>

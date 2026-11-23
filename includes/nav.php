@@ -31,7 +31,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <!-- Desktop Navigation -->
     <nav class="main-nav" aria-label="Main navigation">
       <ul class="nav-list">
-        <li><a href="/services" class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">Services</a></li>
+        <li><a href="/booking" class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">Services &amp; Prices</a></li>
         <li><a href="/gallery" class="nav-link <?= $currentPage === 'gallery' ? 'active' : '' ?>">Gallery</a></li>
         <li><a href="/academy" class="nav-link <?= in_array($currentPage, ['academy','course','course-enrol'], true) ? 'active' : '' ?>">Academy</a></li>
         <li><a href="/shop" class="nav-link <?= $currentPage === 'shop' ? 'active' : '' ?>">Shop</a></li>
@@ -59,7 +59,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
   <!-- Mobile Menu -->
   <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
     <ul class="mobile-nav-list">
-      <li><a href="/services" class="mobile-nav-link">Services</a></li>
+      <li><a href="/booking" class="mobile-nav-link">Services &amp; Prices</a></li>
       <li><a href="/gallery" class="mobile-nav-link">Gallery</a></li>
       <li><a href="/academy" class="mobile-nav-link">Academy</a></li>
       <li><a href="/shop" class="mobile-nav-link">Shop Extensions</a></li>

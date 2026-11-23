@@ -16,7 +16,6 @@ $base = 'https://braidedbyagb.co.uk';
 // Static pages
 $static = [
     ['loc' => '',           'priority' => '1.0',  'changefreq' => 'weekly'],
-    ['loc' => '/services',  'priority' => '0.9',  'changefreq' => 'weekly'],
     ['loc' => '/shop',      'priority' => '0.8',  'changefreq' => 'weekly'],
     ['loc' => '/booking',   'priority' => '0.9',  'changefreq' => 'monthly'],
     ['loc' => '/about',     'priority' => '0.6',  'changefreq' => 'monthly'],

@@ -41,6 +41,7 @@ $rebookAddons  = array_values(array_filter(array_map('intval', explode(',', (str
 // Fetch all active services with variants
 $services = $db->query("
     SELECT s.id, s.name, s.slug, s.description, s.duration_mins, s.category, s.prep_notes, s.price_from,
+           s.image_url, s.aftercare, s.is_new,
            JSON_ARRAYAGG(
                JSON_OBJECT(
                    'id', sv.id,
@@ -56,12 +57,46 @@ $services = $db->query("
     ORDER BY s.display_order ASC
 ")->fetchAll();
 
+// Up to 2 approved reviews per service, shown in the service's details box
+// (owner-approved merge of the Services page into booking: docs/mockups/2026-11-services-in-booking.png).
+$svcReviews = [];
+try {
+    $rq = $db->query("SELECT r.service_id, r.rating, r.review_text, c.name
+                      FROM reviews r JOIN customers c ON c.id = r.customer_id
+                      WHERE r.status = 'approved' AND r.service_id IS NOT NULL AND r.review_type = 'service'
+                      ORDER BY r.is_featured DESC, r.approved_at DESC, r.id DESC");
+    foreach ($rq->fetchAll() as $r) {
+        $sid = (int)$r['service_id'];
+        if (count($svcReviews[$sid] ?? []) >= 2) continue;
+        $parts = preg_split('/\s+/', trim((string)$r['name']));
+        $who   = ($parts[0] ?? '') . (isset($parts[1]) && $parts[1] !== '' ? ' ' . mb_substr($parts[1], 0, 1) . '.' : '');
+        $svcReviews[$sid][] = ['rating' => max(1, min(5, (int)$r['rating'])), 'text' => (string)$r['review_text'], 'name' => $who];
+    }
+} catch (Throwable $e) { $svcReviews = []; }
+
+// Card facts: lowest price and the time range across the options.
+$svcFacts = function (array $svc, array $variants): array {
+    $prices = array_map(fn($v) => (float)$v['price'], $variants);
+    $durs   = array_values(array_filter(array_map(fn($v) => (int)$v['duration'], $variants)));
+    if (!$durs && (int)$svc['duration_mins'] > 0) $durs = [(int)$svc['duration_mins']];
+    $fmt = function (int $m): string { return rtrim(rtrim(number_format($m / 60, 1), '0'), '.'); };
+    $time = '';
+    if ($durs) {
+        $lo = min($durs); $hi = max($durs);
+        if ($lo === $hi) $time = $lo < 60 ? $lo . ' mins' : $fmt($lo) . ($lo === 60 ? ' hr' : ' hrs');
+        else             $time = $fmt($lo) . '–' . $fmt($hi) . ' hrs';
+    }
+    return ['from' => $prices ? min($prices) : (float)$svc['price_from'], 'time' => $time];
+};
+
 // Build JS-friendly services object
 $servicesJs = [];
+$cardFacts  = [];
 foreach ($services as $svc) {
     $variants = json_decode($svc['variants_json'], true);
     // Filter out null variants (services with no variants)
-    $variants = array_filter($variants ?? [], fn($v) => $v['id'] !== null);
+    $variants = array_values(array_filter($variants ?? [], fn($v) => $v['id'] !== null));
+    $cardFacts[$svc['id']] = $svcFacts($svc, $variants);
     $servicesJs[$svc['id']] = [
         'id'          => $svc['id'],
         'name'        => $svc['name'],
@@ -70,6 +105,12 @@ foreach ($services as $svc) {
         'price_from'  => $svc['price_from'],
         'prep_notes'  => $svc['prep_notes'],
         'description' => $svc['description'],
+        'image'       => (string)($svc['image_url'] ?? ''),
+        'aftercare'   => (string)($svc['aftercare'] ?? ''),
+        'category'    => (string)($svc['category'] ?? ''),
+        'from'        => $cardFacts[$svc['id']]['from'],
+        'time'        => $cardFacts[$svc['id']]['time'],
+        'reviews'     => $svcReviews[(int)$svc['id']] ?? [],
         'variants'    => array_values($variants),
     ];
 }
@@ -267,6 +308,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <span class="step-number">1</span>
             <h2 class="step-title">Choose Your Service</h2>
           </div>
+          <p class="service-pick-hint">Tap a style to see photos, prices and details.</p>
 
           <?php foreach (groupServicesByCategory($services) as $catName => $catServices): ?>
           <h3 class="service-category-title"><?= htmlspecialchars($catName) ?></h3>
@@ -274,10 +316,19 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <?php foreach ($catServices as $svc):
               $isActive = $preselected && $preselected['id'] == $svc['id'];
             ?>
+            <?php $cf = $cardFacts[$svc['id']] ?? ['from' => (float)$svc['price_from'], 'time' => '']; ?>
             <button class="service-select-card <?= $isActive ? 'selected' : '' ?>"
                     data-service-id="<?= (int)$svc['id'] ?>">
-              <div class="service-select-name"><?= htmlspecialchars($svc['name']) ?></div>
-              <div class="service-select-price">From £<?= number_format((float)$svc['price_from'], 0) ?></div>
+              <?php if (!empty($svc['image_url'])): ?>
+                <span class="service-select-photo"><img src="<?= htmlspecialchars($svc['image_url']) ?>" alt="<?= htmlspecialchars($svc['name']) ?>" loading="lazy"></span>
+              <?php else: ?>
+                <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+              <?php endif; ?>
+              <?php if (!empty($svc['is_new'])): ?><span class="service-select-new">New</span><?php endif; ?>
+              <span class="service-select-text">
+                <span class="service-select-name"><?= htmlspecialchars($svc['name']) ?></span>
+                <span class="service-select-price">From £<?= number_format((float)$cf['from'], 0) ?><?php if ($cf['time']): ?> <span class="service-select-time">· <?= htmlspecialchars($cf['time']) ?></span><?php endif; ?></span>
+              </span>
             </button>
             <?php endforeach; ?>
           </div>
@@ -288,6 +339,13 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
                service's row (placeServiceOptions), so nobody scrolls past the list. -->
           <div id="service-options-home"></div>
           <div id="service-options">
+          <div class="svc-panel">
+          <div class="svc-panel-photo" id="svc-panel-photo" style="display:none"><img id="svc-panel-img" alt=""></div>
+          <div class="svc-panel-body">
+          <div id="svc-panel-head" style="display:none">
+            <h3 class="svc-panel-name" id="svc-panel-name"></h3>
+            <div class="svc-panel-chips" id="svc-panel-chips"></div>
+          </div>
           <!-- Service description (shown once a service is chosen) -->
           <div id="service-desc-box" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-left:4px solid var(--color-primary);border-radius:0 var(--border-radius-lg,8px) var(--border-radius-lg,8px) 0">
             <p id="service-desc-text" style="margin:0;font-size:var(--text-sm);color:var(--color-text,#3a2540);line-height:1.6"></p>
@@ -299,21 +357,28 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <div class="variant-grid" id="variant-grid"></div>
           </div>
 
-          <!-- Prep notes -->
-          <div class="prep-note-box" id="prep-note-box" style="display:none">
-            <strong>📋 Preparation:</strong>
-            <span id="prep-note-text"></span>
-          </div>
-
           <!-- Add-ons -->
           <div class="addons-section" id="addons-section" style="display:none">
             <h4 class="addon-title">Optional Add-ons</h4>
             <div id="addon-list"></div>
           </div>
 
+          <!-- Prep notes / aftercare (tap to open) and client reviews -->
+          <details class="svc-more" id="prep-note-box" style="display:none">
+            <summary>📋 Before your appointment</summary>
+            <p id="prep-note-text"></p>
+          </details>
+          <details class="svc-more" id="aftercare-box" style="display:none">
+            <summary>💜 Aftercare</summary>
+            <p id="aftercare-text"></p>
+          </details>
+          <div id="svc-reviews"></div>
+
           <button class="btn btn-primary btn-lg w-full" id="step1-next" disabled onclick="goToStep(2)">
             Continue to Date & Time →
           </button>
+          </div><!-- /.svc-panel-body -->
+          </div><!-- /.svc-panel -->
           </div><!-- /#service-options -->
 
           <!-- Custom request nudge -->
@@ -692,7 +757,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
 // ═══════════════════════════════════════════════════════════
 
 // All services data from PHP
-const SERVICES    = <?= json_encode($servicesJs) ?>;
+const SERVICES    = <?= json_encode($servicesJs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const DEPOSIT_PCT = <?= $depositPct ?>;
 // "AGB bring your bestie": a share link (/booking?ref=CODE) is remembered for
 // 30 days and sent with the booking. The SERVER decides if it applies (new
@@ -824,6 +889,15 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 <?php endif; ?>
 
+function escHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+function fmtMins(m) {
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60), r = m % 60;
+  return h + 'h' + (r ? ' ' + r + 'm' : '');
+}
+
 function selectService(id) {
   const svc = SERVICES[id];
   if (!svc) return;
@@ -849,7 +923,8 @@ function selectService(id) {
       btn.dataset.variantId    = v.id;
       btn.dataset.variantName  = v.name;
       btn.dataset.variantPrice = v.price;
-      btn.innerHTML = `<span class="variant-btn-name">${v.name}</span><span class="variant-btn-price">£${parseFloat(v.price).toFixed(0)}</span>`;
+      btn.innerHTML = `<span class="variant-btn-name">${escHtml(v.name)}</span><span class="variant-btn-price">£${parseFloat(v.price).toFixed(0)}</span>`
+        + (parseInt(v.duration) > 0 ? `<span class="variant-btn-time">⏱ ${fmtMins(parseInt(v.duration))}</span>` : '');
       btn.addEventListener('click', () => {
         document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
@@ -883,12 +958,36 @@ function selectService(id) {
   // Prep notes
   const prepBox  = document.getElementById('prep-note-box');
   const prepText = document.getElementById('prep-note-text');
-  if (svc.prep_notes) {
+  if (svc.prep_notes && svc.prep_notes.trim()) {
     prepText.textContent = svc.prep_notes;
     prepBox.style.display = 'block';
+    prepBox.open = false;
   } else {
     prepBox.style.display = 'none';
   }
+
+  // Photo, name, chips, aftercare and reviews (the old Services page, merged in)
+  const photo = document.getElementById('svc-panel-photo');
+  const img   = document.getElementById('svc-panel-img');
+  if (svc.image) { img.src = svc.image; img.alt = svc.name; photo.style.display = ''; }
+  else { img.removeAttribute('src'); photo.style.display = 'none'; }
+  document.getElementById('svc-panel-head').style.display = '';
+  document.getElementById('svc-panel-name').textContent = svc.name;
+  const chips = [];
+  if (svc.category) chips.push(svc.category);
+  if (svc.time) chips.push('⏱ ' + svc.time);
+  chips.push('From £' + parseFloat(svc.from || svc.price_from || 0).toFixed(0));
+  document.getElementById('svc-panel-chips').innerHTML = chips.map(c => `<span class="svc-chip">${escHtml(c)}</span>`).join('');
+  const afterBox = document.getElementById('aftercare-box');
+  if (svc.aftercare && svc.aftercare.trim()) {
+    document.getElementById('aftercare-text').textContent = svc.aftercare;
+    afterBox.style.display = 'block';
+    afterBox.open = false;
+  } else {
+    afterBox.style.display = 'none';
+  }
+  document.getElementById('svc-reviews').innerHTML = (svc.reviews || []).map(r =>
+    `<div class="svc-review"><span class="svc-review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> “${escHtml(r.text)}” <strong>${escHtml(r.name)}</strong></div>`).join('');
 
   updateSummary();
 }
@@ -1269,6 +1368,10 @@ function resetDraftUI() {
   document.getElementById('addons-section').style.display    = 'none';
   document.getElementById('prep-note-box').style.display     = 'none';
   document.getElementById('service-desc-box').style.display  = 'none';
+  document.getElementById('svc-panel-head').style.display    = 'none';
+  document.getElementById('svc-panel-photo').style.display   = 'none';
+  document.getElementById('aftercare-box').style.display     = 'none';
+  document.getElementById('svc-reviews').innerHTML           = '';
   document.getElementById('addon-list').innerHTML            = '';
   document.getElementById('step1-next').disabled             = true;
   document.getElementById('step2-next').disabled             = true;
