@@ -1682,6 +1682,17 @@ step('bookings.reminder_day2_sent column',
     fn() => $db->exec("ALTER TABLE bookings ADD COLUMN reminder_day2_sent TINYINT(1) NOT NULL DEFAULT 0 AFTER two_day_fee"),
     $report);
 
+// Owner 23 Nov 2026: the approved close-up for Traditional Loc Retwists had been
+// wiped by the admin photo box (now fixed); put it back if it has no photo.
+step('Traditional Loc Retwists: restore close-up photo',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='loc_retwist_photo_restored_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->prepare("UPDATE services SET image_url = '/assets/images/services/traditional-loc-retwists.jpg'
+                      WHERE slug = 'traditional-loc-retwists' AND (image_url IS NULL OR image_url = '')")->execute();
+        $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('loc_retwist_photo_restored_2026_11', ?)")->execute([date('c')]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================

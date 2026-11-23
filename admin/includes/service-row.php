@@ -137,7 +137,13 @@ $addons   = $addonsByService[$svc['id']] ?? [];
           <?php endif; ?>
           <input class="admin-input" type="file" name="image_file" accept="image/jpeg,image/png,image/webp" style="padding:6px;cursor:pointer">
           <span style="font-size:0.7rem;color:var(--admin-muted)">Upload JPG/PNG/WebP (max 5MB) — or paste URL below:</span>
-          <input class="admin-input" type="url" name="image_url" value="<?= htmlspecialchars($svc['image_url'] ?? '') ?>" placeholder="https://… (optional if uploading above)" style="margin-top:6px">
+          <input class="admin-input" type="text" name="image_url" value="<?= htmlspecialchars($svc['image_url'] ?? '') ?>" placeholder="https://… (optional if uploading above)" style="margin-top:6px">
+          <span style="font-size:0.7rem;color:var(--admin-muted)">Leave this as it is to keep the current photo.</span>
+          <?php if (!empty($svc['image_url'])): ?>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;margin-top:6px;cursor:pointer">
+            <input type="checkbox" name="remove_image" value="1"> Remove this photo
+          </label>
+          <?php endif; ?>
         </div>
 
         <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px">

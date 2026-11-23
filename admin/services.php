@@ -63,8 +63,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $chk = $db->prepare("SELECT COUNT(*) FROM services WHERE id=?"); $chk->execute([$id]);
             if (!(int)$chk->fetchColumn()) $error = 'Not saved: that service no longer exists.';
 
-            // Image: file upload takes priority, then URL field, then keep existing
-            $img = sanitize($_POST['image_url'] ?? '');
+            // Image: file upload takes priority, then "Remove this photo", then a
+            // typed address (site path "/..." or https://), else KEEP the current
+            // photo. (The box used to be type=url, which refused the site's own
+            // "/..." photo paths; clearing it to get past that wiped the photo.)
+            $curImg = $db->prepare("SELECT image_url FROM services WHERE id=?"); $curImg->execute([$id]);
+            $img     = (string)($curImg->fetchColumn() ?: '');
+            $typed   = trim((string)($_POST['image_url'] ?? ''));
+            if (!empty($_POST['remove_image'])) {
+                $img = '';
+            } elseif ($typed !== '' && (preg_match('#^/[A-Za-z0-9/_\-.]+$#', $typed) || preg_match('#^https://[^\s<>"]+$#i', $typed))) {
+                $img = $typed;
+            }
             if (!$error && !empty($_FILES['image_file']['name']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
                 $up = uploadImage($_FILES['image_file'], 'services');
                 if ($up) { $img = $up; }
