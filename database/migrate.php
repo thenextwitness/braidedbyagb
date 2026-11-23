@@ -1627,6 +1627,28 @@ step('Traditional Loc Retwists: close-up service photo',
     },
     $report);
 
+// Owner 23 Nov 2026 (docs/mockups/2026-11-wash-prices.png): on every style,
+// add-on "Wash" = £15 and "Wash and blow-dry" = £20. Existing bookings keep
+// their booking_addons.price_charged, so only new bookings use the new prices.
+step('add-on prices: Wash £15, Wash and blow-dry £20 (all styles)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='wash_addon_prices_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->beginTransaction();
+        try {
+            $w  = $db->prepare("UPDATE service_addons SET price = 15.00 WHERE LOWER(TRIM(name)) = 'wash'");
+            $w->execute();
+            $wb = $db->prepare("UPDATE service_addons SET price = 20.00 WHERE LOWER(TRIM(name)) = 'wash and blow-dry'");
+            $wb->execute();
+            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('wash_addon_prices_2026_11', ?)")
+               ->execute([json_encode(['wash_rows' => $w->rowCount(), 'wash_blowdry_rows' => $wb->rowCount(), 'at' => date('c')])]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
