@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Deleting a client (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1200px;padding:24px 32px 32px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:flex-start}
+.col{flex:1;background:#f3f0f8;border-radius:12px;padding:16px}
+.col h3{font-family:Montserrat;color:#4B0082;font-size:14.5px;margin:0 0 10px}
+.box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;font-size:13px;line-height:1.55}
+.muted{color:#6b5c78;font-size:12px}
+.red{background:#7f1d1d;color:#fff;border-radius:8px;padding:9px;text-align:center;font-weight:700;margin-top:10px}
+.amber{background:#fff;color:#7A0050;border:2px solid #CC1A8A;border-radius:8px;padding:9px;text-align:center;font-weight:700;margin-top:10px}
+.note{background:#fffbea;border:1px solid #f0e2a8;border-radius:8px;padding:9px 11px;margin-top:10px;font-size:12.5px}
+.newo{outline:2px dashed #D4AF37;outline-offset:5px;border-radius:10px}
+.ok{background:#ecfdf5;border:1px solid #86efac;color:#166534;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:12.5px}
+</style></head><body>
+<div class="cap"><b>Client profile → Delete box.</b> Today the delete button shows a blank page whenever the client has a review, a review request or a shop order, because those were left behind. Now it always works, and it protects your accounts: a client you've taken money from has their <b>personal details removed</b> while the money records stay (HMRC expects you to keep financial records for 6 years).</div>
+<div class="row">
+  <div class="col"><h3>A. Client who never paid you anything</h3>
+    <div class="box newo">
+      <b>🗑 Delete client</b>
+      <p class="muted">Permanently deletes this client and everything linked to them: bookings, orders, notes, reviews, points, messages. This cannot be undone.</p>
+      <div class="red">🗑 Delete Client Permanently</div>
+      <div class="ok">✓ After: "Client deleted." and you're back on the client list.</div>
+    </div>
+  </div>
+  <div class="col"><h3>B. Client who has paid you (deposits, orders, completed visits)</h3>
+    <div class="box newo">
+      <b>🗑 Remove this client's details</b>
+      <p class="muted">This client has paid you £245.00 over 3 bookings, so those money records stay in your accounts.</p>
+      <div class="note">Their <b>name, email, phone, address, notes, hair notes and sign-in</b> are erased. Their bookings and payments remain, shown as <b>"Deleted client"</b>. Reviews they left are removed from the website.</div>
+      <div class="amber">Remove Personal Details</div>
+      <div class="ok">✓ After: "Personal details removed." Your revenue and reports are unchanged.</div>
+    </div>
+  </div>
+  <div class="col"><h3>Always</h3>
+    <div class="box">
+      <ul style="margin:0;padding-left:18px">
+        <li>Clients with an <b>upcoming booking</b> can't be deleted until it's cancelled (as now).</li>
+        <li>You confirm before anything is removed.</li>
+        <li>If something unexpected stops it, you get a clear message, never a blank page.</li>
+        <li>This also suits UK data-protection requests ("please delete my data").</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>

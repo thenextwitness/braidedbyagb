@@ -851,3 +851,6 @@ require_once __DIR__ . '/finance.php';
 
 // ── Batch messages to clients (email + WhatsApp queue) ──
 require_once __DIR__ . '/messaging.php';
+
+// ── Deleting a client / removing their personal details ──
+require_once __DIR__ . '/clients.php';

@@ -70,31 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("/admin/customers/$customerId#loyalty");
     }
 
+    // Owner-approved 23 Nov 2026 (docs/mockups/2026-11-client-delete.png): never a blank page.
     if ($action === 'delete') {
-        // Guard: refuse if active bookings exist
-        $activeStmt = $db->prepare("SELECT COUNT(*) FROM bookings WHERE customer_id=? AND status IN ('pending','confirmed')");
-        $activeStmt->execute([$customerId]);
-        if ((int)$activeStmt->fetchColumn() > 0) {
-            redirect("/admin/customers/$customerId?error=Cannot+delete%3A+client+has+active+bookings.+Cancel+them+first.");
-        }
-        // Delete all related records then the customer
-        $bookingIds = $db->prepare("SELECT id FROM bookings WHERE customer_id=?");
-        $bookingIds->execute([$customerId]);
-        foreach ($bookingIds->fetchAll(PDO::FETCH_COLUMN) as $bid) {
-            $db->prepare("DELETE FROM booking_addons WHERE booking_id=?")->execute([$bid]);
-            $db->prepare("DELETE FROM payments WHERE booking_id=?")->execute([$bid]);
-        }
-        $db->prepare("DELETE FROM bookings WHERE customer_id=?")->execute([$customerId]);
-        $orderIds = $db->prepare("SELECT id FROM orders WHERE customer_id=?");
-        $orderIds->execute([$customerId]);
-        foreach ($orderIds->fetchAll(PDO::FETCH_COLUMN) as $oid) {
-            $db->prepare("DELETE FROM order_items WHERE order_id=?")->execute([$oid]);
-        }
-        $db->prepare("DELETE FROM orders WHERE customer_id=?")->execute([$customerId]);
-        $db->prepare("DELETE FROM loyalty_transactions WHERE customer_id=?")->execute([$customerId]);
-        $db->prepare("DELETE FROM customer_notes WHERE customer_id=?")->execute([$customerId]);
-        $db->prepare("DELETE FROM customers WHERE id=?")->execute([$customerId]);
-        redirect("/admin/customers?msg=Client+deleted+successfully.");
+        $why = deleteClientPermanently($db, $customerId);
+        if ($why) redirect("/admin/customers/$customerId?error=" . urlencode($why));
+        redirect("/admin/customers?msg=" . urlencode('Client deleted.'));
+    }
+    if ($action === 'anonymise') {
+        $why = anonymiseClient($db, $customerId);
+        if ($why) redirect("/admin/customers/$customerId?error=" . urlencode($why));
+        redirect("/admin/customers/$customerId?msg=" . urlencode('Personal details removed. Their bookings and payments stay in your accounts.'));
     }
 
     redirect("/admin/customers/$customerId");
@@ -157,6 +142,11 @@ function statusBadge(string $status): string {
 }
 ?>
 
+<?php if (!empty($_GET['msg'])): ?>
+<div style="background:#ecfdf5;border:1px solid #86efac;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;color:#166534">
+  ✓ <?= htmlspecialchars($_GET['msg']) ?>
+</div>
+<?php endif; ?>
 <?php if (!empty($_GET['error'])): ?>
 <div style="background:#fee2e2;border:1px solid #fca5a5;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;color:#991b1b">
   ⚠ <?= htmlspecialchars($_GET['error']) ?>
@@ -386,13 +376,29 @@ try {
     <?php endif; ?>
 
     <hr style="margin:16px 0;border:none;border-top:1px solid var(--admin-border,#e5e7eb)">
-    <p style="font-size:0.78rem;color:var(--admin-muted);margin-bottom:10px">
-      ⚠ Permanently delete this client and all their data (bookings, orders, notes, loyalty history). This cannot be undone. Not allowed if active bookings exist.
-    </p>
-    <form method="POST" onsubmit="return confirm('DELETE <?= htmlspecialchars(addslashes($c['name'])) ?>?\n\nThis will permanently remove all their bookings, orders, notes and loyalty history. This cannot be undone.')">
-      <input type="hidden" name="action" value="delete">
-      <button class="btn-admin btn-admin-sm" style="background:#7f1d1d;color:#fff;border:none;width:100%">🗑 Delete Client Permanently</button>
-    </form>
+    <?php $money = clientMoneyHistory($db, (int)$customerId); $cNameJs = htmlspecialchars(addslashes($c['name'])); ?>
+    <?php if ($c['name'] === 'Deleted client' && str_ends_with((string)$c['email'], '@deleted.invalid')): ?>
+      <p style="font-size:0.78rem;color:var(--admin-muted);margin:0">This client's personal details have been removed. Their bookings and payments are kept for your accounts.</p>
+    <?php elseif (!$money['has_money']): ?>
+      <p style="font-size:0.78rem;color:var(--admin-muted);margin-bottom:10px">
+        <strong>🗑 Delete client</strong><br>Permanently deletes this client and everything linked to them: bookings, orders, notes, reviews, points, messages. This cannot be undone.<?= $money['upcoming'] ? ' <strong>Cancel their upcoming booking first.</strong>' : '' ?>
+      </p>
+      <form method="POST" onsubmit="return confirm('DELETE <?= $cNameJs ?>?\n\nThis permanently removes this client and everything linked to them. This cannot be undone.')">
+        <input type="hidden" name="action" value="delete">
+        <button class="btn-admin btn-admin-sm" style="background:#7f1d1d;color:#fff;border:none;width:100%">🗑 Delete Client Permanently</button>
+      </form>
+    <?php else: ?>
+      <p style="font-size:0.78rem;color:var(--admin-muted);margin-bottom:8px">
+        <strong>🗑 Remove this client's details</strong><br>This client has paid you <?= formatPrice($money['paid']) ?> over <?= (int)$money['bookings'] ?> booking<?= $money['bookings'] == 1 ? '' : 's' ?>, so those money records stay in your accounts.
+      </p>
+      <p style="font-size:0.76rem;background:#fffbea;border:1px solid #f0e2a8;border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        Their <strong>name, email, phone, address, notes, hair notes and sign-in</strong> are erased. Their bookings and payments remain, shown as <strong>"Deleted client"</strong>. Reviews they left are removed from the website.<?= $money['upcoming'] ? ' <strong>Cancel their upcoming booking first.</strong>' : '' ?>
+      </p>
+      <form method="POST" onsubmit="return confirm('Remove <?= $cNameJs ?>\'s personal details?\n\nTheir bookings and payments stay for your accounts. This cannot be undone.')">
+        <input type="hidden" name="action" value="anonymise">
+        <button class="btn-admin btn-admin-sm" style="background:#fff;color:#7A0050;border:2px solid #CC1A8A;width:100%;font-weight:700">Remove Personal Details</button>
+      </form>
+    <?php endif; ?>
   </div>
 </div>
 

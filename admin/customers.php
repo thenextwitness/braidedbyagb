@@ -47,6 +47,9 @@ $stmt = $db->prepare("
 $stmt->execute($params);
 $customers = $stmt->fetchAll();
 ?>
+<?php if (!empty($_GET['msg'])): ?>
+<div style="background:#ecfdf5;border:1px solid #86efac;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;color:#166534">✓ <?= htmlspecialchars($_GET['msg']) ?></div>
+<?php endif; ?>
 
 <div class="page-header">
   <div>
