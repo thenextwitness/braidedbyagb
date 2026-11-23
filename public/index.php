@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     <a href="/" class="sp-logo"><img src="/assets/images/braidedbyagblogo.png" alt="BraidedbyAGB"></a>
     <nav class="sp-nav-links" id="spNavLinks">
       <a href="#about">About</a>
-      <a href="#services">Services</a>
+      <a href="/booking">Services</a>
       <a href="/gallery">Gallery</a>
       <a href="#testimonials">Testimonials</a>
       <a href="#policy">Policy</a>
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
   </div>
   <div class="sp-mobile-menu" id="spMobileMenu">
     <a href="#about">About</a>
-    <a href="#services">Services</a>
+    <a href="/booking">Services</a>
     <a href="/gallery">Gallery</a>
     <a href="#testimonials">Testimonials</a>
     <a href="#policy">Policy</a>
@@ -231,65 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
   </div>
 </section>
 
-<!-- SERVICES -->
-<section class="sp-section sp-services" id="services">
-  <div class="sp-container">
-    <p class="sp-label dark">What We Offer</p>
-    <h2 class="sp-title dark">Our Services</h2>
-    <p class="sp-lead dark">Every style crafted with precision and care using premium techniques.</p>
-    <?php if (!empty($services)): ?>
-    <div class="sp-svc-grid">
-      <?php foreach ($services as $svc):
-        $slug=$svc['slug']??''; $style=getServiceStyle($slug);
-        $price=$svc['min_price']??$svc['price_from']; $dur=formatDuration((int)$svc['duration_mins']);
-      ?>
-      <article class="sp-svc-card">
-        <?php if (!empty($svc['is_new'])): ?><span class="sp-badge-new">New</span><?php endif; ?>
-        <div class="sp-svc-vis" style="background:<?= $style['grad'] ?>">
-          <?php if (!empty($svc['image_url'])): ?>
-            <img src="<?= htmlspecialchars($svc['image_url']) ?>" alt="<?= htmlspecialchars($svc['name']) ?>">
-          <?php else: ?>
-            <span class="sp-svc-tag"><?= $style['tag'] ?></span>
-          <?php endif; ?>
-          <div class="sp-svc-price">From £<?= number_format((float)$price,0) ?></div>
-        </div>
-        <div class="sp-svc-body">
-          <h3><?= htmlspecialchars($svc['name']) ?></h3>
-          <?php if (!empty($svc['description'])): ?><p><?= htmlspecialchars(mb_strimwidth($svc['description'],0,90,'...')) ?></p><?php endif; ?>
-          <div class="sp-svc-foot"><span>⏱ <?= $dur ?></span><a href="/booking/<?= htmlspecialchars($slug) ?>" class="btn btn-primary btn-sm">Book Now</a></div>
-        </div>
-      </article>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-    <!-- Custom -->
-    <div class="sp-custom">
-      <div class="sp-custom-icon">✦</div>
-      <div class="sp-custom-text">
-        <h3>Have Something Unique in Mind?</h3>
-        <p>Zigzag cornrows, geometric partings, braids with beads, goddess styles — if you can imagine it, we can create it.</p>
-        <ul>
-          <li>Geometric &amp; zigzag partings</li>
-          <li>Braids with beads or accessories</li>
-          <li>Custom cornrow patterns &amp; designs</li>
-          <li>Mixed technique styles</li>
-        </ul>
-      </div>
-      <div class="sp-custom-cta">
-        <p>Get in touch to discuss your vision</p>
-        <a href="<?= waUrl() ?>?text=Hi!%20I%27d%20like%20to%20enquire%20about%20a%20custom%20braid%20style%20%E2%80%94%20" target="_blank" rel="noopener" class="btn btn-gold">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="margin-right:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
-          Chat on WhatsApp
-        </a>
-        <a href="#contact" class="btn btn-outline">Send an Enquiry</a>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="/booking" class="btn btn-outline btn-lg">View All Services &amp; Prices</a>
-      <a href="/gallery" class="btn btn-gold btn-lg">View Our Gallery</a>
-    </div>
-  </div>
-</section>
+<!-- (Our Services section removed 23 Nov 2026 at the owner's request: services live on /booking with photos and details. docs/mockups/2026-11-remove-home-services.png) -->
 
 <!-- TESTIMONIALS -->
 <section class="sp-section sp-testimonials" id="testimonials">
@@ -307,8 +249,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
         ?>
         <div class="sp-review">
           <div class="sp-stars"><?php for($i=1;$i<=5;$i++): ?><span class="<?= $i<=$rStars?'on':'' ?>">★</span><?php endfor; ?></div>
-          <blockquote>"<?= htmlspecialchars($rText) ?>"</blockquote>
-          <div class="sp-review-meta"><strong><?= htmlspecialchars($rName) ?></strong><?php if($rSvc): ?><span><?= htmlspecialchars($rSvc) ?></span><?php endif; ?></div>
+          <blockquote>"<?= htmlspecialchars(html_entity_decode((string)$rText, ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>"</blockquote>
+          <div class="sp-review-meta"><strong><?= htmlspecialchars(html_entity_decode((string)$rName, ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></strong><?php if($rSvc): ?><span><?= htmlspecialchars($rSvc) ?></span><?php endif; ?></div>
         </div>
         <?php endforeach; ?>
       </div>

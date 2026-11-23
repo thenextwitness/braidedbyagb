@@ -594,8 +594,8 @@ $duration = formatDuration((int)$svc['duration_mins']);
             <div class="svc-review-stars">
               <?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5 - (int)$r['rating']) ?>
             </div>
-            <p class="svc-review-text">"<?= htmlspecialchars($r['review_text']) ?>"</p>
-            <div class="svc-review-author"><?= htmlspecialchars($r['client_name']) ?></div>
+            <p class="svc-review-text">"<?= htmlspecialchars(html_entity_decode((string)$r['review_text'], ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>"</p>
+            <div class="svc-review-author"><?= htmlspecialchars(html_entity_decode((string)$r['client_name'], ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></div>
           </div>
           <?php endforeach; ?>
         </div>

@@ -75,7 +75,7 @@ try {
         if (count($svcReviews[$sid] ?? []) >= 2) continue;
         $parts = preg_split('/\s+/', trim((string)$r['name']));
         $who   = ($parts[0] ?? '') . (isset($parts[1]) && $parts[1] !== '' ? ' ' . mb_substr($parts[1], 0, 1) . '.' : '');
-        $svcReviews[$sid][] = ['rating' => max(1, min(5, (int)$r['rating'])), 'text' => (string)$r['review_text'], 'name' => $who];
+        $svcReviews[$sid][] = ['rating' => max(1, min(5, (int)$r['rating'])), 'text' => html_entity_decode((string)$r['review_text'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'name' => html_entity_decode($who, ENT_QUOTES | ENT_HTML5, 'UTF-8')];
     }
 } catch (Throwable $e) { $svcReviews = []; }
 
