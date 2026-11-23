@@ -582,7 +582,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
         <div class="booking-step" id="step-5">
           <div class="booking-step-header">
             <span class="step-number">5</span>
-            <h2 class="step-title">Review & Pay Deposit</h2>
+            <h2 class="step-title">Review & Pay</h2>
           </div>
 
           <!-- Add another appointment -->
