@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Review request: once only (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:stretch}
+.col{flex:1;background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.col h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 14px}
+.badge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;border-radius:10px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+.badge.now{background:#fde3ea;color:#a0153e}.badge.new{background:#fdf6dd;color:#8a6d00}
+.ev{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px}
+.dot{width:34px;height:34px;border-radius:50%;background:#800080;color:#fff;display:grid;place-items:center;font-size:15px;flex:none}
+.ev.x .dot{background:#e5dff0;color:#a0153e}
+.ev.x .t{text-decoration:line-through;color:#9B8BA5}
+.t b{font-family:Montserrat;color:#4B0082;font-size:13px;display:block}.t span{font-size:12.5px;color:#6b5c78}
+.admin{background:#f3f0f8;border-radius:12px;padding:20px;flex:1}
+.acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:18px 20px}
+.atitle{font-family:Montserrat;font-weight:800;font-size:14px;color:#4B0082;margin-bottom:12px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:8px 0}
+.box{width:16px;height:16px;border-radius:4px;background:#800080;flex:none;margin-top:1px;color:#fff;font-size:11px;display:grid;place-items:center}
+.gone{opacity:.45;text-decoration:line-through}
+.ahint{font-size:11.5px;color:#6b5c78;margin-top:4px;line-height:1.45}
+.newbox{outline:2px solid #D4AF37;outline-offset:4px;border-radius:6px;padding:4px 6px}
+.opt{background:#fff;border-radius:12px;padding:18px 22px;flex:1;font-size:13.5px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.opt h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 6px}
+.rec{background:#fdf6dd;color:#8a6d00;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px;margin-left:6px}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Frame 1: What a client gets after an appointment.</b> Today a client who hasn't left a review gets the review request, then a reminder 4 days later. <b>New:</b> one review request, and that's it.</div>
+<div class="row">
+  <div class="col"><h3>Today<span class="badge now">UP TO 3 REVIEW EMAILS</span></h3>
+    <div class="ev"><div class="dot">💜</div><div class="t"><b>2 hours later: "Thank you for coming in"</b><span>Aftercare tips and social links (this one stays)</span></div></div>
+    <div class="ev"><div class="dot">⭐</div><div class="t"><b>Next day: "How was your visit?"</b><span>Website and Google review buttons</span></div></div>
+    <div class="ev"><div class="dot">⭐</div><div class="t"><b>4 days later: review reminder</b><span>Sent if they haven't reviewed yet</span></div></div>
+    <div class="ev"><div class="dot">⭐</div><div class="t"><b>2 services in one visit = 2 review requests</b><span>e.g. braids + a wash: each booking asks separately</span></div></div>
+  </div>
+  <div class="col"><h3>New<span class="badge new">ONE REVIEW EMAIL</span></h3>
+    <div class="ev"><div class="dot">💜</div><div class="t"><b>2 hours later: "Thank you for coming in"</b><span>Unchanged</span></div></div>
+    <div class="ev"><div class="dot">⭐</div><div class="t"><b>Next day: "How was your visit?"</b><span>The only review email they get for that visit</span></div></div>
+    <div class="ev x"><div class="dot">✕</div><div class="t"><b>Review reminder</b><span>Removed completely</span></div></div>
+    <div class="ev x"><div class="dot">✕</div><div class="t"><b>Second request for the same visit</b><span>Several services on one day = one email</span></div></div>
+  </div>
+</div>
+
+<div class="cap"><b>Frame 2: Settings → Follow-ups.</b> The reminder switch is removed, so it can't be turned back on by accident. Gold outline = new rule (choose below).</div>
+<div class="row">
+  <div class="admin"><div class="acard">
+    <div class="atitle">⭐ Review request</div>
+    <div class="chk"><span class="box">✓</span><span><b>Review request</b>: one email after the appointment, with two buttons: review on our website, or on Google</span></div>
+    <div class="ahint">Send it this many hours after the appointment is completed: <b>24</b></div>
+    <div class="chk gone"><span class="box" style="background:#ccc">✓</span><span><b>One reminder</b> 4 days later</span></div>
+    <div class="newbox"><div class="chk"><span class="box">✓</span><span><b>Regular clients: ask at most once every 3 months</b></span></div>
+    <div class="ahint">A client who comes every 6 weeks gets a review request about every other visit, not after every one.</div></div>
+  </div></div>
+  <div class="opt">
+    <h3>Your choice: regular clients</h3>
+    <p><b>A. At most once every 3 months</b><span class="rec">RECOMMENDED</span><br>Regulars aren't asked after every single visit. New clients are always asked after their first visit.</p>
+    <p><b>B. After every appointment</b><br>Every visit gets one review request (still only one, never a reminder).</p>
+  </div>
+</div>
+</body></html>

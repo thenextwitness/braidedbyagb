@@ -106,8 +106,10 @@ try {
 //    review_delay_hours after the appointment is marked completed (default:
 //    next day). Website + Google buttons, never a discount. The link is saved
 //    only once the email has gone, so a failed send never leaves duplicates.
-// 3b. ONE REMINDER 4 days after the request (≈ 5 days after the appointment),
-//    only if no website review came back and the link is still valid.
+//    Owner rule (23 Nov 2026, docs/mockups/2026-11-review-once.png): ONE
+//    review email per visit, never a reminder. Several services on the same day
+//    = one email; regular clients are asked at most once every 3 months
+//    (review_once_per_3m, default on). Skipped bookings get review_request_sent = 2.
 // ─────────────────────────────────────────────────────────
 try {
     $hrNow = (int)$now->format('H');
@@ -127,7 +129,21 @@ try {
             LIMIT 30
         ");
         $stmt->execute([$cutoff]);
+        $limit3m = getSetting('review_once_per_3m', '1') === '1';
+        $asked = $db->prepare("
+            SELECT COUNT(*) FROM review_requests rr
+            LEFT JOIN bookings b2 ON b2.id = rr.booking_id
+            WHERE rr.customer_id = ? AND rr.review_type = 'service'
+              AND (b2.booked_date = ? OR (? = 1 AND rr.sent_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)))
+        ");
+        $skip = $db->prepare("UPDATE bookings SET review_request_sent = 2 WHERE id = ? AND review_request_sent = 0");
         foreach ($stmt->fetchAll() as $b) {
+            $asked->execute([$b['customer_id'], $b['booked_date'], $limit3m ? 1 : 0]);
+            if ((int)$asked->fetchColumn() > 0) {   // same visit, or asked in the last 3 months
+                $skip->execute([$b['id']]);
+                cronLog("[review] Skipped {$b['booking_ref']}: already asked (same visit / last 3 months)");
+                continue;
+            }
             $token    = generateToken(64);
             $customer = ['name' => $b['c_name'], 'email' => $b['c_email']];
             $service  = ['name' => $b['s_name']];
@@ -142,29 +158,6 @@ try {
             }
         }
 
-        if (getSetting('review_reminder_enabled', '1') === '1') {
-            $rem = $db->query("
-                SELECT rr.id, rr.token, b.*, c.name AS c_name, c.email AS c_email, s.name AS s_name
-                FROM review_requests rr
-                JOIN bookings  b ON b.id = rr.booking_id
-                JOIN customers c ON c.id = rr.customer_id
-                JOIN services  s ON s.id = b.service_id
-                WHERE rr.review_type = 'service'
-                  AND rr.submitted_at IS NULL
-                  AND rr.reminder_sent_at IS NULL
-                  AND rr.sent_at <= DATE_SUB(NOW(), INTERVAL 4 DAY)
-                  AND rr.expires_at > NOW()
-                  AND COALESCE(c.is_blocked, 0) = 0
-                LIMIT 30
-            ")->fetchAll();
-            $markRem = $db->prepare("UPDATE review_requests SET reminder_sent_at = NOW() WHERE id = ?");
-            foreach ($rem as $r) {
-                if (emailReviewRequest($r, ['name' => $r['c_name'], 'email' => $r['c_email']], ['name' => $r['s_name']], $r['token'], true)) {
-                    $markRem->execute([(int)$r['id']]);
-                    cronLog("[review] Reminder → {$r['c_email']} ({$r['booking_ref']})");
-                }
-            }
-        }
     }
 } catch (Throwable $e) {
     cronLog('[ERROR] Review requests: ' . $e->getMessage());

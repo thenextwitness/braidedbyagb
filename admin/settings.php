@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle checkboxes separately
         $checkboxes = [
             'review_requests_enabled',
-            'review_reminder_enabled',
+            'review_once_per_3m',
             'admin_notify_morning',
             'admin_notify_evening',
             'admin_notify_30min',
@@ -338,14 +338,15 @@ $isError = str_starts_with($msg, 'ERROR:');
         <div class="admin-form-group" style="margin-top:14px">
           <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
             <input type="checkbox" name="review_requests_enabled" <?= $g('review_requests_enabled','1') === '1' ? 'checked' : '' ?>>
-            <span><strong>Review request</strong> — one email with two buttons: review on our website, or on Google</span>
+            <span><strong>Review request</strong> — one email after the appointment, with two buttons: review on our website, or on Google</span>
           </label>
           <label class="admin-label" style="margin-top:8px">Send it this many hours after the appointment is completed</label>
           <input class="admin-input" type="number" name="review_delay_hours" value="<?= htmlspecialchars($g('review_delay_hours','24')) ?>" min="1" max="336" style="max-width:120px">
           <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin-top:10px">
-            <input type="checkbox" name="review_reminder_enabled" <?= $g('review_reminder_enabled','1') === '1' ? 'checked' : '' ?>>
-            <span><strong>One reminder</strong> 4 days later, only if they haven't left a website review yet</span>
+            <input type="checkbox" name="review_once_per_3m" <?= $g('review_once_per_3m','1') === '1' ? 'checked' : '' ?>>
+            <span><strong>Regular clients: ask at most once every 3 months</strong></span>
           </label>
+          <small style="color:var(--admin-muted);display:block">Clients only ever get one review email per visit (several services on one day = one email), and never a reminder. With this on, a client who comes every 6 weeks is asked about every other visit.</small>
           <label class="admin-label" style="margin-top:8px">Your Google review link</label>
           <input class="admin-input" type="url" name="google_review_url" value="<?= htmlspecialchars($g('google_review_url','')) ?>" placeholder="https://g.page/r/…/review">
           <small style="color:var(--admin-muted)">Find it in your Google Business Profile → <strong>Ask for reviews</strong> → copy the link. Leave blank to show only the website button. Every client is asked (not just happy ones) and reviews are never rewarded with a discount: this follows Google's rules.</small>

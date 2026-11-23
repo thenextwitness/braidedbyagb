@@ -453,7 +453,7 @@ function copyPayLink() {
   $firstName = trim(explode(' ', (string)$bk['c_name'])[0]) ?: 'there';
   $bookAgain = rebookUrl($db, (int)$bookingId, true) ?: rtrim(SITE_URL, '/') . '/booking';
   $waRebook  = waClientLink($bk['c_phone'] ?? '', "Hi {$firstName}! It's nearly time to refresh your {$bk['s_name']} 💕 You can book your next appointment here (your choices are saved): {$bookAgain}");
-  // Thank-you + reviews card (cron jobs 11 and 3/3b; both count from completion = updated_at).
+  // Thank-you + reviews card (cron jobs 11 and 3; both count from completion = updated_at).
   $completedAt = strtotime((string)($bk['updated_at'] ?? 'now'));
   $thanksOn  = getSetting('aftercare_enabled', '1') === '1';
   $thanksDue = $completedAt + max(1, (int)getSetting('aftercare_delay_hours', '2')) * 3600;
@@ -525,14 +525,9 @@ function copyPayLink() {
       <?php elseif (strtotime($bk['booked_date']) < strtotime('-7 days')): ?>Thank-you email: not sent (only appointments from the last 7 days get one)
       <?php else: ?>⏳ Thank-you email due around <?= $when($thanksDue) ?><?php endif; ?></div>
     <div><?php if ($rr && $rr['sent_at']): ?><span style="color:#16a34a;font-weight:700">✓</span> Review request sent — <?= $when($rr['sent_at']) ?>
+      <?php elseif ((int)($bk['review_request_sent'] ?? 0) === 2): ?>Review request: not sent, because this client was already asked (for another service on the same visit, or in the last 3 months)
       <?php elseif (!$reviewOn): ?>Review request: switched off in Settings → Follow-ups
       <?php else: ?>⏳ Review request due around <?= $when(max($reviewDue, time())) ?> (sent between 9 AM and 8 PM)<?php endif; ?></div>
-    <?php if ($rr && $rr['sent_at'] && !$rr['submitted_at']): ?>
-    <div><?php if ($rr['reminder_sent_at']): ?><span style="color:#16a34a;font-weight:700">✓</span> Reminder sent — <?= $when($rr['reminder_sent_at']) ?>
-      <?php elseif (getSetting('review_reminder_enabled', '1') !== '1'): ?>Reminder: switched off
-      <?php elseif (strtotime($rr['expires_at']) < time()): ?>Reminder: not sent (the review link has expired)
-      <?php else: ?>⏳ Reminder due around <?= $when(strtotime($rr['sent_at']) + 4 * 86400) ?> (cancelled automatically if they review first)<?php endif; ?></div>
-    <?php endif; ?>
     <div>Website review: <strong><?= ($rr && $rr['submitted_at']) ? 'left on ' . $when($rr['submitted_at']) : 'not yet' ?></strong></div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
