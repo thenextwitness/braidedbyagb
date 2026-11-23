@@ -522,8 +522,9 @@
    docs/mockups/2026-11-services-in-booking.png; replaces the Services list page) ── */
 .service-pick-hint { font-size: var(--text-sm); color: var(--color-text-muted, #6b5c78); margin: -6px 0 var(--space-4); }
 .service-select-card { padding: 0; overflow: hidden; position: relative; display: flex; flex-direction: column; }
-.service-select-photo { display: block; width: 100%; aspect-ratio: 4 / 3; background: var(--color-bg-light, #F9EEF9); overflow: hidden; }
-.service-select-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Whole photo, never cropped (owner 23 Nov 2026, docs/mockups/2026-11-photo-fit.png): most photos are portrait. */
+.service-select-photo { display: block; width: 100%; aspect-ratio: 4 / 5; background: var(--color-bg-light, #F9EEF9); overflow: hidden; }
+.service-select-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .service-select-photo.is-empty {
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--color-primary, #800080), var(--color-deep-purple, #4B0082));
@@ -540,7 +541,7 @@
 
 .svc-panel { display: flex; gap: var(--space-5); align-items: flex-start; }
 .svc-panel-photo { flex: 0 0 38%; max-width: 300px; }
-.svc-panel-photo img { width: 100%; border-radius: 10px; display: block; object-fit: cover; aspect-ratio: 1 / 1; }
+.svc-panel-photo img { width: 100%; height: auto; max-height: 460px; border-radius: 10px; display: block; object-fit: contain; background: var(--color-bg-light, #F9EEF9); }
 .svc-panel-body { flex: 1; min-width: 0; }
 .svc-panel-name { font-family: var(--font-primary); color: var(--color-deep-purple); font-size: var(--text-lg); margin: 0 0 6px; }
 .svc-panel-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
@@ -555,6 +556,6 @@
 @media (max-width: 640px) {
   .svc-panel { flex-direction: column; gap: var(--space-3); }
   .svc-panel-photo { flex: none; width: 100%; max-width: none; }
-  .svc-panel-photo img { aspect-ratio: 4 / 3; }
+  .svc-panel-photo img { max-height: 420px; }
   .service-select-text { padding: 8px 10px 10px; }
 }

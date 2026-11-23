@@ -158,9 +158,13 @@ $duration = formatDuration((int)$svc['duration_mins']);
 
     /* ── Image ── */
     .svc-detail-image {
+      /* whole photo, never cropped (most service photos are portrait) */
+      display: block;
       width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
+      height: auto;
+      max-height: 640px;
+      object-fit: contain;
+      background: var(--color-bg-light, #F9EEF9);
       border-radius: 16px;
       margin-bottom: 32px;
       box-shadow: 0 12px 40px rgba(75,0,130,0.12);
