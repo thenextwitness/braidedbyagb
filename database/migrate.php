@@ -1693,6 +1693,18 @@ step('Traditional Loc Retwists: restore close-up photo',
     },
     $report);
 
+// Owner 23 Nov 2026 (docs/mockups/2026-11-faux-locs-crop.png, option B): Faux Locs
+// uses a close crop of its photo. Only replaces the exact original upload (which
+// stays in uploads/), so a newer photo the owner uploads is never overwritten.
+step('Faux Locs: close-up service photo',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='faux_locs_photo_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->prepare("UPDATE services SET image_url = '/assets/images/services/faux-locs.jpg'
+                      WHERE slug = 'faux-locs' AND image_url = '/uploads/services/89c4f2571292dae0.jpeg'")->execute();
+        $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('faux_locs_photo_2026_11', ?)")->execute([date('c')]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
