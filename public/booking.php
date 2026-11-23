@@ -905,7 +905,7 @@ function selectService(id) {
   draft.serviceName  = svc.name;
   draft.variantId    = null;
   draft.variantName  = '';
-  draft.servicePrice = parseFloat(svc.price_from) || 0;
+  draft.servicePrice = parseFloat(svc.from || svc.price_from) || 0;   // lowest option price, same as the card
   draft.durationMins = parseInt(svc.duration) || 0;
   draft.addons       = [];
 
