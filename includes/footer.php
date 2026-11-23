@@ -58,11 +58,11 @@
             <li><a href="/services/box-braids">Box Braids</a></li>
             <li><a href="/services/knotless-braids">Knotless Braids</a></li>
             <li><a href="/services/feed-in-braids">Feed-In Braids</a></li>
-            <li><a href="/services/cornrows-simple">Cornrows</a></li>
-            <li><a href="/services/twists">Twists (Passion/Marley)</a></li>
-            <li><a href="/services/kids-styles">Kids Styles</a></li>
-            <li><a href="/services/starter-locs">Starter Locs <span class="badge-new-sm">New</span></a></li>
-            <li><a href="/services/loc-retwists">Loc Retwists <span class="badge-new-sm">New</span></a></li>
+            <li><a href="/services/cornrows-for-women">Cornrows</a></li>
+            <li><a href="/services/kinky-twists">Twists</a></li>
+            <li><a href="/services/knotless-braids-kids-age-5-12">Kids Styles</a></li>
+            <li><a href="/services/full-head-starter-locs">Starter Locs <span class="badge-new-sm">New</span></a></li>
+            <li><a href="/services/traditional-loc-retwists">Loc Retwists <span class="badge-new-sm">New</span></a></li>
           </ul>
         </div>
 

@@ -98,6 +98,39 @@ function formatDuration(int $minutes): string {
     return $h . 'h ' . $m . 'm';
 }
 
+/** Web address for a service name ("Boho braids" -> "boho-braids"), unique in services. */
+function uniqueServiceSlug(PDO $db, string $name, int $exceptId = 0): string {
+    $t = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $t = str_replace(["\u{2019}", "\u{2018}", "'", '&'], ['', '', '', ' and '], $t);
+    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(trim($t))), '-') ?: 'service';
+    $q = $db->prepare("SELECT COUNT(*) FROM services WHERE slug = ? AND id <> ?");
+    $slug = $base; $n = 2;
+    while (true) {
+        $q->execute([$slug, $exceptId]);
+        if (!(int)$q->fetchColumn()) return $slug;
+        $slug = $base . '-' . $n++;
+    }
+}
+
+/** Current address of a live service whose OLD address was $slug (service_slug_redirects), or null. */
+function serviceSlugRedirect(PDO $db, string $slug): ?string {
+    if ($slug === '') return null;
+    try {
+        $q = $db->prepare("SELECT s.slug FROM service_slug_redirects r JOIN services s ON s.id = r.service_id
+                           WHERE r.old_slug = ? AND s.is_active = 1 LIMIT 1");
+        $q->execute([$slug]);
+        $to = $q->fetchColumn();
+        return ($to !== false && $to !== $slug) ? (string)$to : null;
+    } catch (Throwable $e) { return null; }   // table not created yet
+}
+
+/** SQL for a service's photo: its own, else the newest active Gallery photo tagged to it. */
+function serviceImageSql(string $alias = 's'): string {
+    return "COALESCE(NULLIF({$alias}.image_url, ''), (SELECT g.image_url FROM gallery_images g
+             WHERE g.service_id = {$alias}.id AND g.is_active = 1 AND g.image_url <> ''
+             ORDER BY g.display_order ASC, g.id DESC LIMIT 1))";
+}
+
 function slugify(string $text): string {
     $text = strtolower(trim($text));
     $text = preg_replace('/[^a-z0-9\s-]/', '', $text);

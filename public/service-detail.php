@@ -16,10 +16,14 @@ if (!$slug) {
 }
 
 // Load service
-$stmt = $db->prepare("SELECT * FROM services WHERE slug = ? AND is_active = 1");
+$stmt = $db->prepare("SELECT s.*, " . serviceImageSql('s') . " AS image_url FROM services s WHERE s.slug = ? AND s.is_active = 1");
 $stmt->execute([$slug]);
 $svc = $stmt->fetch();
 
+if (!$svc && ($to = serviceSlugRedirect($db, $slug))) {
+    header('Location: /services/' . rawurlencode($to), true, 301);   // old address -> current one
+    exit;
+}
 if (!$svc) {
     http_response_code(404);
     // Graceful redirect rather than a raw 404

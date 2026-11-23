@@ -26,13 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $prep     = sanitize($_POST['prep_notes'] ?? '');
             if (!$name) { $error = 'Service name is required.'; }
             else {
-                // Generate slug
-                $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $name));
-                $slug = trim($slug, '-');
-                // Ensure unique slug
-                $existing = $db->prepare("SELECT id FROM services WHERE slug=?");
-                $existing->execute([$slug]);
-                if ($existing->fetch()) $slug .= '-' . time();
+                // Web address from the name ("Boho braids" -> boho-braids), unique.
+                $slug = uniqueServiceSlug($db, $name);
 
                 // Handle image upload
                 $imageUrl = '';

@@ -33,6 +33,11 @@ if ($serviceSlug) {
     $stmt = $db->prepare("SELECT * FROM services WHERE slug = ? AND is_active = 1");
     $stmt->execute([$serviceSlug]);
     $preselected = $stmt->fetch();
+    if (!$preselected && ($to = serviceSlugRedirect($db, $serviceSlug))) {
+        $qs = $_GET; unset($qs['service']);
+        header('Location: /booking/' . rawurlencode($to) . ($qs ? '?' . http_build_query($qs) : ''), true, 301);
+        exit;
+    }
 }
 // "Book again" prefill (?variant=&addons=): same option + add-ons as a past booking.
 $rebookVariant = (int)($_GET['variant'] ?? 0);
@@ -41,7 +46,7 @@ $rebookAddons  = array_values(array_filter(array_map('intval', explode(',', (str
 // Fetch all active services with variants
 $services = $db->query("
     SELECT s.id, s.name, s.slug, s.description, s.duration_mins, s.category, s.prep_notes, s.price_from,
-           s.image_url, s.aftercare, s.is_new,
+           " . serviceImageSql('s') . " AS image_url, s.aftercare, s.is_new,
            JSON_ARRAYAGG(
                JSON_OBJECT(
                    'id', sv.id,

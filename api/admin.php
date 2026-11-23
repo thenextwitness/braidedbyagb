@@ -1243,11 +1243,7 @@ switch ($endpoint) {
             $cat      = trim($body['category']     ?? '');
             if (!$name) { http_response_code(400); echo json_encode(['error' => 'Name required']); exit; }
             // Auto-generate unique slug
-            $base = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
-            $slug = $base; $n = 1;
-            while ($db->prepare("SELECT id FROM services WHERE slug=?")->execute([$slug]) && $db->query("SELECT id FROM services WHERE slug='$slug'")->fetchColumn()) {
-                $slug = $base . '-' . $n++;
-            }
+            $slug = uniqueServiceSlug($db, $name);
             $db->prepare("INSERT INTO services (name, slug, description, price_from, duration_mins, category, is_active) VALUES (?,?,?,?,?,?,1)")
                ->execute([$name, $slug, $desc ?: null, $price, $dur, $cat ?: null]);
             $id = (int)$db->lastInsertId();

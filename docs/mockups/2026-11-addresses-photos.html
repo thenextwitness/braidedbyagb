@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Service addresses + photos (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 40px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:26px 0 14px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:flex-start}
+.box{background:#fff;border-radius:12px;padding:18px 22px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{font-family:Montserrat;color:#4B0082;text-align:left;font-size:12px;padding:6px 8px;border-bottom:2px solid #e5dff0}
+td{padding:5px 8px;border-bottom:1px solid #f1edf5;font-family:Consolas,monospace;font-size:12px}
+td.n{font-family:Lato;font-weight:700;color:#4B0082}
+td.old{color:#a0153e;text-decoration:line-through}
+td.new{color:#1b7a3a;font-weight:700}
+.browser{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.bar{background:#f1edf5;padding:10px 14px;font-family:Consolas,monospace;font-size:13px;display:flex;gap:10px;align-items:center}
+.url{background:#fff;border-radius:16px;padding:6px 14px;flex:1}
+.url b{color:#1b7a3a}.url s{color:#a0153e}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{border:2px solid #e5dff0;border-radius:12px;overflow:hidden;background:#fff;position:relative}
+.ph{height:150px;background-size:cover;background-position:center}
+.ph.none{background:linear-gradient(135deg,#CC1A8A,#7A0050);display:grid;place-items:center;color:#D4AF37;font-family:Montserrat;font-weight:800;font-size:12px;letter-spacing:.08em}
+.cb{padding:9px 11px}.cn{font-family:Montserrat;font-weight:700;font-size:13px;color:#4B0082}.cp{font-size:12px;color:#CC1A8A;font-weight:700}
+.from{position:absolute;top:8px;left:8px;background:#D4AF37;color:#4B0082;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px}
+.rules{font-size:13.5px;line-height:1.6}.rules h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 6px}.rules li{margin-bottom:5px}
+.rec{background:#fdf6dd;color:#8a6d00;font-size:10px;font-weight:800;border-radius:9px;padding:2px 8px;margin-left:6px}
+.no{color:#a0153e;font-weight:800}.yes{color:#1b7a3a;font-weight:800}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Part 1: Correct web addresses.</b> Each style's address is rebuilt from its name, so nothing is missing any more. The <b>old addresses keep working</b> and forward to the new ones automatically (people with old links, Google, Instagram bio links). New services you add later get correct addresses from the start.</div>
+<div class="row">
+  <div class="box" style="flex:1.25">
+    <table>
+      <tr><th>Service</th><th>Address today (broken)</th><th>New address</th></tr>
+      <tr><td class="n">Boho braids</td><td class="old">/services/oho-braids</td><td class="new">/services/boho-braids</td></tr>
+      <tr><td class="n">Box braids</td><td class="old">/services/ox-braids-1772838229</td><td class="new">/services/box-braids</td></tr>
+      <tr><td class="n">Knotless Braids</td><td class="old">/services/notless-raids</td><td class="new">/services/knotless-braids</td></tr>
+      <tr><td class="n">Feed-in Braids</td><td class="old">/services/eed-in-raids</td><td class="new">/services/feed-in-braids</td></tr>
+      <tr><td class="n">Microlocs Retwists</td><td class="old">/services/etwists</td><td class="new">/services/microlocs-retwists</td></tr>
+      <tr><td class="n">Faux Locs</td><td class="old">/services/aux-ocs</td><td class="new">/services/faux-locs</td></tr>
+      <tr><td class="n">Sisterlocs Retightening</td><td class="old">/services/isterlocks-etightening</td><td class="new">/services/sisterlocs-retightening</td></tr>
+      <tr><td class="n">Men’s braids</td><td class="old">/services/en-s-braids</td><td class="new">/services/mens-braids</td></tr>
+      <tr><td class="n">Cornrows (For Women)</td><td class="old">/services/ornrows</td><td class="new">/services/cornrows-for-women</td></tr>
+      <tr><td class="n">Two Braids</td><td class="old">/services/wo-raids</td><td class="new">/services/two-braids</td></tr>
+      <tr><td class="n">Kinky Twists</td><td class="old">/services/inky-wists</td><td class="new">/services/kinky-twists</td></tr>
+      <tr><td class="n">Takedown Service</td><td class="old">/services/akedown-ervice</td><td class="new">/services/takedown-service</td></tr>
+      <tr><td class="n">Crochet Services</td><td class="old">/services/rochet-ervices</td><td class="new">/services/crochet-services</td></tr>
+      <tr><td class="n">Wash and Condition</td><td class="old">/services/ash-and-ondition</td><td class="new">/services/wash-and-condition</td></tr>
+      <tr><td class="n">Deep Hair treatment</td><td class="old">/services/eep-air-treatment</td><td class="new">/services/deep-hair-treatment</td></tr>
+      <tr><td class="n" colspan="3" style="font-family:Lato;color:#6b5c78;font-weight:400">…and 9 more fixed the same way. 4 are already correct (e.g. french-curls) and stay as they are. The booking links change the same way (/booking/boho-braids).</td></tr>
+    </table>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+    <div class="browser">
+      <div class="bar">🔗 <span class="url"><s>braidedbyagb.co.uk/services/oho-braids</s></span></div>
+      <div class="bar" style="background:#fff">↳ forwards instantly to <span class="url"><b>braidedbyagb.co.uk/services/boho-braids</b></span></div>
+    </div>
+    <div class="box rules">
+      <h3>Also fixed</h3>
+      <ul>
+        <li>The <b>footer links</b> (Box braids, Knotless, Feed-in, Cornrows, Twists, Kids, Starter locs, Loc retwists) currently lead nowhere useful. They will open the right style.</li>
+        <li>Google gets the new addresses through your sitemap automatically.</li>
+        <li>Renaming a service later won't change its address, so links you've shared keep working.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="cap"><b>Part 2: Photos.</b> 4 of the services without a photo already have photos of <b>your own work</b> in your Gallery, tagged to that style. Those will be used automatically (gold "from gallery" tag is only for this picture). Uploading a photo in Admin → Services always takes priority.</div>
+<div class="cards">
+  <div class="card"><span class="from">from gallery</span><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/gallery/d2859a1a7e111392.jpeg)"></div><div class="cb"><div class="cn">French curls</div><div class="cp">From £100 · 6–7 hrs</div></div></div>
+  <div class="card"><span class="from">from gallery</span><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/gallery/1bba77d7e3d521fb.jpeg)"></div><div class="cb"><div class="cn">Microlocs Retwists</div><div class="cp">From £70 · 3–6 hrs</div></div></div>
+  <div class="card"><span class="from">from gallery</span><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/gallery/c4d8baf4c7ac5072.jpeg)"></div><div class="cb"><div class="cn">Traditional Loc Retwists</div><div class="cp">From £70 · 3 hrs</div></div></div>
+  <div class="card"><span class="from">from gallery</span><div class="ph" style="background-image:url(https://braidedbyagb.co.uk/uploads/gallery/84c74ffdaa2048b3.jpeg)"></div><div class="cb"><div class="cn">Box braids (Kids, Age 5-12)</div><div class="cp">From £60 · 2–4 hrs</div></div></div>
+</div>
+
+<div class="row" style="margin-top:18px">
+  <div class="box rules" style="flex:1">
+    <h3>About AI-generated photos</h3>
+    <p><span class="no">✕ Not recommended</span> for showing your services. An AI photo shows hair you didn't do, and clients choose and pay based on what they see:</p>
+    <ul>
+      <li>UK advertising rules (ASA / CAP code) say pictures of results must not mislead. A made-up "result" can count as misleading.</li>
+      <li>AI gets braids subtly wrong (parts, tension, hairlines). Braiders and clients notice, and it can make real work look less trustworthy.</li>
+      <li>A client who brings an AI picture as "the look I booked" may expect something that isn't achievable.</li>
+    </ul>
+  </div>
+  <div class="box rules" style="flex:1">
+    <h3>What I recommend instead</h3>
+    <ul>
+      <li><span class="yes">✓</span> <b>Now:</b> use your Gallery photos automatically (above): 4 services covered today.</li>
+      <li><span class="yes">✓</span> <b>Quick win:</b> your Instagram already shows your work. Save your best photo for each style and upload it in Admin → Services → edit → photo (about 1 minute each).</li>
+      <li><span class="yes">✓</span> <b>Ongoing:</b> clients already tick "you can use photos of my hair" when booking. Snap a photo at the end of those appointments.</li>
+      <li><span class="yes">✓</span> Until then, the purple BraidedbyAGB tile stays (it looks tidy and on-brand).</li>
+    </ul>
+  </div>
+</div>
+</body></html>

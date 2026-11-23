@@ -1538,6 +1538,80 @@ step('referral_credit_uses table',
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
     $report);
 
+// ── Correct service web addresses (owner-approved 23 Nov 2026,
+// docs/mockups/2026-11-addresses-photos.png). The old slug code dropped capital
+// letters ("Boho braids" -> "oho-braids"). Every old address is kept in
+// service_slug_redirects and forwards (301) to the service's current address.
+step('service_slug_redirects table',
+    fn() => tableExists($db, $dbName, 'service_slug_redirects'),
+    fn() => $db->exec("CREATE TABLE service_slug_redirects (
+        old_slug   VARCHAR(191) NOT NULL PRIMARY KEY,
+        service_id INT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_ssr_service (service_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"),
+    $report);
+
+step('service web addresses rebuilt from names (old ones forward)',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='service_slugs_fixed_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $mk = function (string $name): string {
+            $t = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $t = str_replace(["\u{2019}", "\u{2018}", "'", '&'], ['', '', '', ' and '], $t);
+            $t = strtolower(trim($t));
+            $t = preg_replace('/[^a-z0-9]+/', '-', $t);
+            return trim($t, '-') ?: 'service';
+        };
+        $rows   = $db->query("SELECT id, name, slug, is_active FROM services ORDER BY is_active DESC, display_order ASC, id ASC")->fetchAll();
+        $owner  = [];                                  // slug => row id (current state)
+        $active = [];
+        foreach ($rows as $r) { $owner[(string)$r['slug']] = (int)$r['id']; $active[(int)$r['id']] = (int)$r['is_active'] === 1; }
+        $setSlug = $db->prepare("UPDATE services SET slug = ? WHERE id = ?");
+        $redir   = $db->prepare("INSERT INTO service_slug_redirects (old_slug, service_id) VALUES (?, ?)
+                                 ON DUPLICATE KEY UPDATE service_id = VALUES(service_id)");
+        $changes = [];
+        $db->beginTransaction();
+        try {
+            foreach ($rows as $r) {
+                if ((int)$r['is_active'] !== 1) continue;  // only live services; old hidden ones only move aside if in the way
+                $id = (int)$r['id']; $cur = (string)$r['slug'];
+                $want = $mk((string)$r['name']);
+                if ($want === $cur) continue;
+                $slug = $want; $n = 2;
+                while (isset($owner[$slug]) && $owner[$slug] !== $id) {
+                    $other = $owner[$slug];
+                    if (!$active[$other]) {                // a hidden old service holds it: move that one aside
+                        $aside = $slug . '-old-' . $other;
+                        $setSlug->execute([$aside, $other]);
+                        unset($owner[$slug]); $owner[$aside] = $other;
+                        break;
+                    }
+                    $slug = $want . '-' . $n++;
+                }
+                $setSlug->execute([$slug, $id]);
+                if ($cur !== '') $redir->execute([$cur, $id]);
+                unset($owner[$cur]); $owner[$slug] = $id;
+                $changes[] = "$cur>$slug";
+            }
+            // Old footer addresses (never real live services) -> the closest live style.
+            $byName = $db->prepare("SELECT id FROM services WHERE is_active = 1 AND LOWER(name) = ? LIMIT 1");
+            foreach (['cornrows-simple' => 'cornrows (for women)', 'twists' => 'kinky twists',
+                      'kids-styles' => 'knotless braids (kids, age 5-12)', 'starter-locs' => 'full head starter locs',
+                      'loc-retwists' => 'traditional loc retwists'] as $old => $nm) {
+                if (isset($owner[$old]) && $active[$owner[$old]]) continue;     // a live service really uses it
+                $byName->execute([$nm]);
+                if ($sid = (int)$byName->fetchColumn()) $redir->execute([$old, $sid]);
+            }
+            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('service_slugs_fixed_2026_11', ?)")
+               ->execute([json_encode(['changed' => count($changes), 'at' => date('c')])]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
