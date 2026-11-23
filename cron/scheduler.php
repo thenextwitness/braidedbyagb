@@ -63,6 +63,29 @@ try {
             cronLog("[24hr] Reminder → {$b['c_email']} ({$b['booking_ref']})");
         }
     }
+    // Day 2 of a two-day appointment (long styles): its own "see you tomorrow".
+    try {
+        $d2 = $db->prepare("
+            SELECT b.*, c.name as c_name, c.email as c_email, s.name as s_name,
+                   COALESCE(NULLIF(b.custom_style_name,''), s.name) AS display_name
+            FROM bookings b
+            JOIN customers c ON c.id = b.customer_id
+            JOIN services  s ON s.id = b.service_id
+            WHERE b.day2_date = ? AND b.status = 'confirmed' AND b.reminder_day2_sent = 0
+        ");
+        $d2->execute([$tomorrow]);
+        foreach ($d2->fetchAll() as $b) {
+            $b2 = $b;
+            $b2['booked_date'] = $b['day2_date'];
+            $b2['booked_time'] = $b['day2_time'];
+            $b2['day2_date']   = null;
+            $b2['_is_day2']    = 1;
+            if (emailReminder24hr($b2, ['name' => $b['c_name'], 'email' => $b['c_email']], ['name' => $b['display_name'] ?? $b['s_name']])) {
+                $db->prepare("UPDATE bookings SET reminder_day2_sent = 1 WHERE id = ?")->execute([$b['id']]);
+                cronLog("[24hr] Day-2 reminder → {$b['c_email']} ({$b['booking_ref']})");
+            }
+        }
+    } catch (Throwable $e) { cronLog('[ERROR] day-2 reminders: ' . $e->getMessage()); }
     } // end hour window check
 } catch (Exception $e) {
     cronLog('[ERROR] 24hr reminders: ' . $e->getMessage());
@@ -328,17 +351,17 @@ try {
             $lastSent = getSetting('admin_morning_brief_last_sent', '');
             if ($lastSent !== $today) {
                 $stmt = $db->prepare("
-                    SELECT b.id, b.booking_ref, b.booked_time, b.deposit_paid,
+                    SELECT b.id, b.booking_ref, IF(b.day2_date <=> ?, b.day2_time, b.booked_time) AS booked_time, b.deposit_paid,
                            b.remaining_balance, b.client_notes,
                            c.name as c_name, c.phone as c_phone, c.email as c_email,
-                           s.name as s_name
+                           CONCAT(s.name, IF(b.day2_date <=> ?, ' (day 2 of 2)', IF(b.day2_date IS NOT NULL, ' (day 1 of 2)', ''))) as s_name
                     FROM bookings b
                     JOIN customers c ON c.id = b.customer_id
                     JOIN services  s ON s.id = b.service_id
-                    WHERE b.booked_date = ? AND b.status = 'confirmed'
-                    ORDER BY b.booked_time ASC
+                    WHERE (b.booked_date = ? OR b.day2_date = ?) AND b.status = 'confirmed'
+                    ORDER BY booked_time ASC
                 ");
-                $stmt->execute([$today]);
+                $stmt->execute([$today, $today, $today, $today]);
                 $todayBookings = $stmt->fetchAll();
 
                 if (emailAdminDailyBrief($todayBookings, $today)) {
@@ -366,10 +389,10 @@ try {
             $lastSent = getSetting('admin_evening_preview_last_sent', '');
             if ($lastSent !== $today) {
                 $stmt = $db->prepare("
-                    SELECT b.id, b.booking_ref, b.booked_time, b.deposit_paid,
+                    SELECT b.id, b.booking_ref, IF(b.day2_date <=> ?, b.day2_time, b.booked_time) AS booked_time, b.deposit_paid,
                            b.remaining_balance, b.client_notes, b.variant_id,
                            c.name as c_name, c.phone as c_phone, c.email as c_email,
-                           s.name as s_name, sv.variant_name,
+                           CONCAT(s.name, IF(b.day2_date <=> ?, ' (day 2 of 2)', IF(b.day2_date IS NOT NULL, ' (day 1 of 2)', ''))) as s_name, sv.variant_name,
                            GROUP_CONCAT(sa.name ORDER BY sa.id SEPARATOR ', ') as addon_names
                     FROM bookings b
                     JOIN customers c ON c.id = b.customer_id
@@ -377,11 +400,11 @@ try {
                     LEFT JOIN service_variants sv ON sv.id = b.variant_id
                     LEFT JOIN booking_addons ba ON ba.booking_id = b.id
                     LEFT JOIN service_addons sa ON sa.id = ba.addon_id
-                    WHERE b.booked_date = ? AND b.status = 'confirmed'
+                    WHERE (b.booked_date = ? OR b.day2_date = ?) AND b.status = 'confirmed'
                     GROUP BY b.id
-                    ORDER BY b.booked_time ASC
+                    ORDER BY booked_time ASC
                 ");
-                $stmt->execute([$tomorrow]);
+                $stmt->execute([$tomorrow, $tomorrow, $tomorrow, $tomorrow]);
                 $tomorrowBookings = $stmt->fetchAll();
 
                 if (emailAdminEveningPreview($tomorrowBookings, $tomorrow)) {

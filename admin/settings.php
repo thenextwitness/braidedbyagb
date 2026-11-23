@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_settings') {
         $fields = [
             'site_name', 'site_email', 'whatsapp_number', 'site_address',
-            'deposit_percent', 'booking_buffer_hours', 'day_start_time', 'day_end_time',
+            'deposit_percent', 'booking_buffer_hours', 'day_start_time', 'day_end_time', 'long_day_start', 'long_day_end', 'two_day_fee',
             'bank_account_name', 'bank_sort_code', 'bank_account_number',
             'bank_transfer_hold_hours', 'instagram_url', 'tiktok_url', 'facebook_url', 'meta_pixel_id',
             'smtp_host', 'smtp_user', 'smtp_port', 'smtp_from_name',
@@ -277,6 +277,25 @@ $isError = str_starts_with($msg, 'ERROR:');
           </div>
         </div>
         <small style="color:var(--admin-muted);display:block;margin:-6px 0 12px">Used everywhere: the website's booking times, New Booking, calendar blocks and the app.</small>
+        <?php $lw = longDayWindow(); ?>
+        <div style="background:#faf7fb;border:1px solid var(--admin-border);border-radius:10px;padding:12px 14px;margin:0 0 14px">
+          <strong style="font-size:0.85rem">Long styles (longer than your normal day, e.g. 12–15 hours)</strong>
+          <div class="admin-form-row" style="margin-top:8px">
+            <div class="admin-form-group">
+              <label class="admin-label">One long day: earliest start</label>
+              <input class="admin-input" type="time" name="long_day_start" step="1800" value="<?= htmlspecialchars($lw['start']) ?>">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-label">One long day: must finish by</label>
+              <input class="admin-input" type="time" name="long_day_end" step="1800" value="<?= htmlspecialchars($lw['end']) ?>">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-label">Two days in a row: extra fee (£)</label>
+              <input class="admin-input" type="number" name="two_day_fee" min="0" max="500" step="1" value="<?= htmlspecialchars($g('two_day_fee','30')) ?>">
+            </div>
+          </div>
+          <small style="color:var(--admin-muted)">Clients booking a long style choose one long day (it has your whole day) or two days in a row (half the time each day, same start, within your normal hours) for the extra fee.</small>
+        </div>
         <div class="admin-form-group">
           <label class="admin-label">Auto-cancel unpaid bank transfer bookings after (hours)</label>
           <input class="admin-input" type="number" name="auto_cancel_bank_transfer_hours" value="<?= htmlspecialchars($g('auto_cancel_bank_transfer_hours','24')) ?>" min="1" max="72" style="max-width:120px">

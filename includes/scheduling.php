@@ -98,11 +98,39 @@ function loadDayBookings(string $date, ?int $excludeBookingId = null, array $sta
     $stmt->execute($params);
 
     $out = [];
+    $normal = normalDayMins();
     foreach ($stmt->fetchAll() as $row) {
         $bs = strtotime($date . ' ' . $row['booked_time']);
-        $out[] = ['start' => $bs, 'end' => $bs + ((int) $row['dur']) * 60];
+        $d  = (int) $row['dur'];
+        // A one-day long appointment (longer than the normal day) has the whole day.
+        $out[] = ['start' => $bs, 'end' => $bs + $d * 60, 'whole_day' => $d > $normal];
     }
+
+    // Day 2 of a two-day appointment (owner-approved 23 Nov 2026): same start
+    // time, duration_mins is the length of EACH day. Columns may not exist on a
+    // database that hasn't run the migration yet, so this never hard-fails.
+    try {
+        $sql2 = "SELECT b.day2_time, {$dur} AS dur
+                 FROM bookings b
+                 JOIN services s ON s.id = b.service_id
+                 LEFT JOIN service_variants sv ON sv.id = b.variant_id
+                 WHERE b.day2_date = ? AND b.day2_time IS NOT NULL AND b.status IN ({$in})";
+        $p2 = [$date];
+        if ($excludeBookingId !== null) { $sql2 .= " AND b.id != ?"; $p2[] = $excludeBookingId; }
+        $st2 = $db->prepare($sql2);
+        $st2->execute($p2);
+        foreach ($st2->fetchAll() as $row) {
+            $bs = strtotime($date . ' ' . $row['day2_time']);
+            $out[] = ['start' => $bs, 'end' => $bs + ((int) $row['dur']) * 60, 'whole_day' => false];
+        }
+    } catch (Throwable $e) { /* pre-migration: no two-day bookings yet */ }
     return $out;
+}
+
+/** True when any booking in the list has the whole day (a one-day long appointment). */
+function dayHasWholeDayBooking(array $bookings): bool {
+    foreach ($bookings as $b) { if (!empty($b['whole_day'])) return true; }
+    return false;
 }
 
 /** Whole day blocked (availability row with time_slot IS NULL). */
@@ -168,6 +196,9 @@ function isSlotAvailable(string $date, string $time, int $newDurMins = 60, ?int 
 
     $startTs  = strtotime($date . ' ' . $time);
     $bookings = loadDayBookings($date, $excludeBookingId);
+    // Long appointments take the whole day: nothing else that day, either way round.
+    if (dayHasWholeDayBooking($bookings)) return false;
+    if (isLongDuration($newDurMins)) return count($bookings) === 0 && count(loadBlockedSlots($date)) === 0;
     return peakConcurrency($bookings, $startTs, $newDurMins) < slotCapacity($date);
 }
 
@@ -229,11 +260,49 @@ function businessHours(): array {
 
 /** Does an appointment at $time ('HH:MM[:SS]') lasting $durMins fit inside opening hours? */
 function withinBusinessHours(string $time, int $durMins): bool {
-    $h = businessHours();
+    $h = isLongDuration($durMins) ? longDayWindow() : businessHours();
     $t = strtotime('2000-01-01 ' . $time);
     if ($t === false) return false;
     return $t >= strtotime('2000-01-01 ' . $h['start'])
         && $t + max(1, $durMins) * 60 <= strtotime('2000-01-01 ' . $h['end']);
+}
+
+/** Length of the normal day in minutes (opening to closing). */
+function normalDayMins(): int {
+    $h = businessHours();
+    return (int) ((strtotime('2000-01-01 ' . $h['end']) - strtotime('2000-01-01 ' . $h['start'])) / 60);
+}
+
+/** A "long appointment": longer than the normal day (e.g. 12–15 hour styles). */
+function isLongDuration(int $durMins): bool {
+    return $durMins > normalDayMins();
+}
+
+/**
+ * Hours for a ONE-DAY long appointment (owner-approved 23 Nov 2026): earliest
+ * start / latest finish from Settings `long_day_start` / `long_day_end`
+ * (defaults 07:00 / 22:00), never narrower than the normal day.
+ */
+function longDayWindow(): array {
+    $norm = function (string $v, string $def): string {
+        return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v) ? $v : $def;
+    };
+    $h     = businessHours();
+    $start = $norm(trim((string) getSetting('long_day_start', '07:00')), '07:00');
+    $end   = $norm(trim((string) getSetting('long_day_end',   '22:00')), '22:00');
+    if (strcmp($start, $h['start']) > 0) $start = $h['start'];
+    if (strcmp($end,   $h['end'])   < 0) $end   = $h['end'];
+    return ['start' => $start, 'end' => $end];
+}
+
+/** Two-day option: each day is half the time (rounded up), same start both days. */
+function twoDayPartMins(int $totalMins): int {
+    return (int) ceil(max(1, $totalMins) / 2);
+}
+
+/** Extra charge for spreading a long style over two days (Settings `two_day_fee`, default £30). */
+function twoDayFee(): float {
+    return max(0.0, round((float) getSetting('two_day_fee', '30'), 2));
 }
 
 /** The reason a time is refused for being outside opening hours (shown in admin + app). */
@@ -244,8 +313,8 @@ function outsideHoursMessage(): string {
 }
 
 /** Start times ('HH:MM') from opening to the last start that still fits a step before closing. */
-function dayTimeGrid(int $stepMins = 30): array {
-    $h = businessHours();
+function dayTimeGrid(int $stepMins = 30, bool $includeLongDay = false): array {
+    $h = $includeLongDay ? longDayWindow() : businessHours();
     $out = [];
     for ($t = strtotime('2000-01-01 ' . $h['start']); $t < strtotime('2000-01-01 ' . $h['end']); $t += $stepMins * 60) {
         $out[] = date('H:i', $t);
@@ -263,7 +332,8 @@ function dayTimeGrid(int $stepMins = 30): array {
  */
 function availableSlotsForDay(string $date, int $newDurMins, array $opts = []): array {
     if ($newDurMins < 1) $newDurMins = 60;
-    $hours    = businessHours();
+    $isLong   = isLongDuration($newDurMins);
+    $hours    = $isLong ? longDayWindow() : businessHours();
     $dayStart = strtotime($date . ' ' . ($opts['day_start'] ?? $hours['start']) . ':00');
     $dayEnd   = strtotime($date . ' ' . ($opts['day_end']   ?? $hours['end'])   . ':00');
     $step     = (int) ($opts['step_mins'] ?? 30) * 60;
@@ -279,6 +349,11 @@ function availableSlotsForDay(string $date, int $newDurMins, array $opts = []): 
     $dayBlocked   = isDayBlocked($date);
     $blockedSlots = loadBlockedSlots($date);   // loaded once, matching the old endpoint
     $bookings     = loadDayBookings($date);
+    // Whole-day rules: a day with a long appointment takes nothing else, and a
+    // long appointment needs an empty day (no bookings, no blocked times).
+    if (dayHasWholeDayBooking($bookings) || ($isLong && (count($bookings) > 0 || count($blockedSlots) > 0))) {
+        $dayBlocked = true;
+    }
 
     $slots = [];
     for ($t = $dayStart; $t < $dayEnd; $t += $step) {
@@ -296,4 +371,37 @@ function availableSlotsForDay(string $date, int $newDurMins, array $opts = []): 
         $slots[] = ['time' => $ts, 'label' => $label, 'available' => $available];
     }
     return $slots;
+}
+
+/**
+ * Start times for a TWO-DAY long appointment: day 1 = $date, day 2 = the next
+ * day, same start, each day twoDayPartMins($totalMins) long, within normal
+ * hours. A time is available only when it is free on BOTH days.
+ * Returns the same shape as availableSlotsForDay() plus 'day2' => 'Y-m-d'.
+ */
+function availableTwoDaySlots(string $date, int $totalMins, array $opts = []): array {
+    $part  = twoDayPartMins($totalMins);
+    $next  = date('Y-m-d', strtotime($date . ' +1 day'));
+    $day1  = availableSlotsForDay($date, $part, $opts);
+    $day2  = [];
+    foreach (availableSlotsForDay($next, $part, $opts) as $sl) $day2[$sl['time']] = $sl['available'];
+    foreach ($day1 as &$sl) {
+        $sl['available'] = $sl['available'] && !empty($day2[$sl['time']]);
+        $sl['day2']      = $next;
+    }
+    unset($sl);
+    return $day1;
+}
+
+/**
+ * Admin/app reschedule check for one day of a booking (excluding the booking
+ * itself): overlap/capacity plus the long-appointment whole-day rules.
+ * Returns null when the time is free, else a short reason.
+ */
+function rescheduleClash(string $date, string $time, int $durMins, int $excludeBookingId): ?string {
+    $others = loadDayBookings($date, $excludeBookingId);
+    if (dayHasWholeDayBooking($others)) return 'That day already has a long (whole-day) appointment.';
+    if (isLongDuration($durMins) && count($others) > 0) return 'A long appointment needs the whole day, and that day already has a booking.';
+    if (peakConcurrency($others, strtotime($date . ' ' . $time), $durMins) >= slotCapacity($date)) return 'That time overlaps another booking.';
+    return null;
 }

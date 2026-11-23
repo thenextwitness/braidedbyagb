@@ -571,3 +571,17 @@
 .cat-chip.on { background: var(--color-primary); color: #fff; }
 .service-cat-group .service-category-title { margin-top: var(--space-4, 16px); }
 .service-cat-group:first-of-type .service-category-title { margin-top: 0; }
+
+/* ── Long styles: one long day / two days in a row (owner-approved 23 Nov 2026) ── */
+.long-choice { margin: var(--space-4, 16px) 0; }
+.long-opt {
+  display: block; width: 100%; text-align: left; position: relative; cursor: pointer;
+  border: 2px solid var(--color-border); border-radius: 12px; background: #fff;
+  padding: 12px 14px; margin-top: 8px; font-size: var(--text-sm); line-height: 1.45; color: var(--color-text, #3a2540);
+}
+.long-opt strong { display: block; font-family: var(--font-primary); color: var(--color-deep-purple); }
+.long-opt.on { border-color: var(--color-primary); background: var(--color-bg-light, #F9EEF9); box-shadow: 0 0 0 3px rgba(128,0,128,0.08); }
+.long-fee {
+  position: absolute; right: 10px; top: 10px; background: var(--color-gold, #D4AF37); color: var(--color-deep-purple, #4B0082);
+  font-weight: 800; font-size: 11px; border-radius: 10px; padding: 2px 8px;
+}

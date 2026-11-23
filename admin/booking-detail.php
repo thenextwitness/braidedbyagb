@@ -136,13 +136,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: /admin/bookings/$bookingId?msg=" . urlencode('Not rescheduled: ' . outsideHoursMessage()));
                 exit;
             }
-            $others  = loadDayBookings($newDate, (int)$bookingId);
-            if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
-                header("Location: /admin/bookings/$bookingId?msg=That+slot+clashes+with+another+booking.+Choose+another+time.");
-                exit;
+            // Two-day appointment: day 2 moves with it (next day, same start) and must be free too.
+            $newDay2 = !empty($bk['day2_date']) ? date('Y-m-d', strtotime($newDate . ' +1 day')) : null;
+            foreach (array_filter([$newDate, $newDay2]) as $chkDate) {
+                if ($why = rescheduleClash($chkDate, $newTime, $thisDur, (int)$bookingId)) {
+                    header("Location: /admin/bookings/$bookingId?msg=" . urlencode('Not rescheduled (' . date('j M', strtotime($chkDate)) . '): ' . $why));
+                    exit;
+                }
             }
-            $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, status=IF(status='cancelled','confirmed',status) WHERE id=?")
-               ->execute([$newDate, $newTime, $bookingId]);
+            $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, day2_date=?, day2_time=?, status=IF(status='cancelled','confirmed',status) WHERE id=?")
+               ->execute([$newDate, $newTime, $newDay2, $newDay2 ? $newTime : null, $bookingId]);
             try {
                 require_once __DIR__ . '/../includes/mailer.php';
                 $freshBk = $db->query("SELECT b.*, s.name as s_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.id=$bookingId")->fetch();
@@ -573,6 +576,13 @@ function rebookWeeks(w) {
     <?php endif; ?>
     <div class="detail-row"><span class="dl">Date</span><span class="dv"><?= formatDate($bk['booked_date'], 'l, j F Y') ?></span></div>
     <div class="detail-row"><span class="dl">Time</span><span class="dv"><?= formatTime($bk['booked_time']) ?></span></div>
+    <?php if (!empty($bk['day2_date'])): ?>
+    <div class="detail-row"><span class="dl">Day 2</span><span class="dv"><strong><?= formatDate($bk['day2_date'], 'l, j F Y') ?>, <?= formatTime($bk['day2_time']) ?></strong>
+      <span class="td-muted">(two-day appointment<?= (int)($bk['duration_mins'] ?? 0) > 0 ? ', ' . formatDuration((int)$bk['duration_mins']) . ' each day' : '' ?>)</span></span></div>
+    <?php if ((float)($bk['two_day_fee'] ?? 0) > 0): ?>
+    <div class="detail-row"><span class="dl">Two-day fee</span><span class="dv"><?= formatPrice($bk['two_day_fee']) ?> <span class="td-muted">(included in the total)</span></span></div>
+    <?php endif; ?>
+    <?php endif; ?>
     <?php if (!empty($addons)): ?>
     <div class="detail-row">
       <span class="dl">Add-ons</span>

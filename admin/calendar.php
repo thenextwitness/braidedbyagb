@@ -112,6 +112,32 @@ try {
     foreach ($stmt->fetchAll() as $bk) {
         $bookingsByDate[$bk['booked_date']][] = $bk;
     }
+    // Two-day appointments: mark day 1 and add day 2 (owner-approved 23 Nov 2026).
+    try {
+        $d1 = $db->prepare("SELECT id FROM bookings WHERE day2_date IS NOT NULL AND YEAR(booked_date)=? AND MONTH(booked_date)=?");
+        $d1->execute([$year, $month]);
+        $twoDayIds = array_flip(array_map('intval', $d1->fetchAll(PDO::FETCH_COLUMN)));
+        foreach ($bookingsByDate as $dt => $list) {
+            foreach ($list as $k => $bk) if (isset($twoDayIds[(int)$bk['id']])) $bookingsByDate[$dt][$k]['day_label'] = 'Day 1/2';
+        }
+        $d2 = $db->prepare("
+            SELECT b.day2_date AS booked_date, b.day2_time AS booked_time, b.status, b.id,
+                   COALESCE(NULLIF(b.duration_mins,0), NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60) AS duration_mins,
+                   c.name as c_name, s.name as s_name, 'Day 2/2' AS day_label
+            FROM bookings b
+            JOIN customers c ON c.id = b.customer_id
+            JOIN services  s ON s.id = b.service_id
+            LEFT JOIN service_variants sv ON sv.id = b.variant_id
+            WHERE b.day2_date IS NOT NULL AND YEAR(b.day2_date)=? AND MONTH(b.day2_date)=?
+              AND b.status != 'cancelled'
+        ");
+        $d2->execute([$year, $month]);
+        foreach ($d2->fetchAll() as $bk) $bookingsByDate[$bk['booked_date']][] = $bk;
+        foreach ($bookingsByDate as $dt => $list) {
+            usort($list, fn($x, $y) => strcmp((string)$x['booked_time'], (string)$y['booked_time']));
+            $bookingsByDate[$dt] = $list;
+        }
+    } catch (Throwable $e) { /* pre-migration */ }
 } catch (Exception $e) {
     // duration_mins column may not be migrated yet — fall back without it
     $stmt = $db->prepare("
@@ -254,7 +280,7 @@ $msg = sanitize($_GET['msg'] ?? '');
            class="cal-booking-pill <?= $bk['status'] ?>"
            onclick="event.stopPropagation()"
            title="<?= htmlspecialchars($bk['c_name']) ?> — <?= formatTime($bk['booked_time']) ?>–<?= $bkEnd ?> (<?= formatDuration($bkDur) ?>)">
-          <?= formatTime($bk['booked_time']) ?>–<?= $bkEnd ?> <?= htmlspecialchars(explode(' ', $bk['c_name'])[0]) ?>
+          <?= formatTime($bk['booked_time']) ?>–<?= $bkEnd ?> <?= htmlspecialchars(explode(' ', $bk['c_name'])[0]) ?><?php if (!empty($bk['day_label'])): ?> <strong>· <?= $bk['day_label'] ?></strong><?php endif; ?>
         </a>
       <?php endforeach; ?>
     </div>

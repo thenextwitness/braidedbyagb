@@ -46,12 +46,22 @@ switch ($endpoint) {
         if (!$date || !$serviceId) jsonResponse(['error' => 'Missing parameters'], 400);
         $db   = getDB();
 
-        $stmt = $db->prepare("SELECT duration_mins FROM services WHERE id=?");
-        $stmt->execute([$serviceId]);
-        $svc        = $stmt->fetch();
-        $newDurMins = ($svc && (int)$svc['duration_mins'] > 0) ? (int)$svc['duration_mins'] : 60;
+        // Duration of the chosen OPTION when given (options can be much longer
+        // than the service's own time), else the service's.
+        $variantId = (int)($_GET['variant_id'] ?? 0);
+        $stmt = $db->prepare("SELECT COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60)
+                              FROM services s LEFT JOIN service_variants sv ON sv.id = ? AND sv.service_id = s.id
+                              WHERE s.id = ?");
+        $stmt->execute([$variantId ?: null, $serviceId]);
+        $newDurMins = (int)($stmt->fetchColumn() ?: 60);
 
-        jsonResponse(['slots' => availableSlotsForDay($date, $newDurMins)]);
+        // Long styles (longer than the normal day): one long day, or two days in a row.
+        if (!empty($_GET['two_day']) && isLongDuration($newDurMins)) {
+            jsonResponse(['slots' => availableTwoDaySlots($date, $newDurMins), 'mode' => 'two_day',
+                          'part_mins' => twoDayPartMins($newDurMins), 'day2' => date('Y-m-d', strtotime($date . ' +1 day'))]);
+        }
+        jsonResponse(['slots' => availableSlotsForDay($date, $newDurMins),
+                      'mode' => isLongDuration($newDurMins) ? 'long_day' : 'normal', 'duration_mins' => $newDurMins]);
         break;
 
     // ── AVAILABILITY ──────────────────────────────────────
@@ -182,7 +192,8 @@ switch ($endpoint) {
                 error_log('cart-intent price mismatch on item ' . $idx . ': client ' . json_encode([$it['total'] ?? null, $it['deposit'] ?? null]) . ' server ' . json_encode($sp));
                 jsonResponse(['error' => 'Prices have changed since you opened this page. Please refresh and try again.'], 409);
             }
-            $items[$idx]['server_products'] = $sp['products'];
+            $items[$idx]['server_products']    = $sp['products'];
+            $items[$idx]['server_two_day_fee'] = (float)($sp['two_day_fee'] ?? 0);
         }
         if ($method === 'stripe' && !stripeConfigured()) {
             jsonResponse(['error' => 'Card payment is not configured. Please use bank transfer.'], 500);
@@ -286,8 +297,9 @@ switch ($endpoint) {
                     (booking_ref, cart_group_ref, customer_id, guest_name, service_id, variant_id,
                      booked_date, booked_time, payment_method, deposit_amount, deposit_paid,
                      total_price, remaining_balance, client_notes, policy_accepted, status,
-                     service_location, travel_area, travel_fee, service_address, media_consent)
-                VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,1,'pending', ?,?,?,?,?)
+                     service_location, travel_area, travel_fee, service_address, media_consent,
+                     duration_mins, day2_date, day2_time, two_day_fee)
+                VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,1,'pending', ?,?,?,?,?, ?,?,?,?)
             ");
             $insAddon   = $db->prepare("INSERT INTO booking_addons (booking_id, addon_id, price_charged) SELECT ?, id, price FROM service_addons WHERE id=?");
             $insPayment = $db->prepare("
@@ -295,7 +307,7 @@ switch ($endpoint) {
                 VALUES (?,?,?,'deposit',?, 'pending', NULL, NULL)
             ");
 
-            $accepted = []; $createdRefs = []; $createdIds = [];
+            $accepted = []; $createdRefs = []; $createdIds = []; $wholeDay = [];
             foreach ($items as $idx => $it) {
                 $serviceId = (int)$it['service_id'];
                 $variantId = !empty($it['variant_id']) ? (int)$it['variant_id'] : null;
@@ -306,20 +318,42 @@ switch ($endpoint) {
                 $durRow = $durStmt->fetch();
                 $dur    = ($durRow && (int)$durRow['dur'] > 0) ? (int)$durRow['dur'] : 60;
 
-                if (!withinBusinessHours($time, $dur)) {
+                // Long styles (owner-approved 23 Nov 2026): one long day (whole day,
+                // early start) or two days in a row (half each day, same start, fee).
+                $twoDay  = !empty($it['two_day']);
+                $isLong  = isLongDuration($dur);
+                if ($twoDay && !$isLong) {
+                    $db->rollBack();
+                    jsonResponse(['error' => 'Two-day appointments are only for long styles. Please refresh and try again.'], 400);
+                }
+                $dayDur  = $twoDay ? twoDayPartMins($dur) : $dur;
+                $date2   = $twoDay ? date('Y-m-d', strtotime($date . ' +1 day')) : null;
+                $daysToCheck = $twoDay ? [$date, $date2] : [$date];
+
+                if (!withinBusinessHours($time, $dayDur)) {
                     $db->rollBack();
                     jsonResponse(['error' => "The {$time} slot on {$date} is outside opening hours. Please pick another time."], 409);
                 }
-                if (!isSlotAvailable($date, $time, $dur)) {
-                    $db->rollBack();
-                    jsonResponse(['error' => "The {$time} slot on {$date} was just taken. Please review your cart and pick another time."], 409);
+                foreach ($daysToCheck as $dChk) {
+                    if (!isSlotAvailable($dChk, $time, $dayDur)) {
+                        $db->rollBack();
+                        jsonResponse(['error' => "The {$time} slot on {$dChk} was just taken. Please review your cart and pick another time."], 409);
+                    }
                 }
                 $start = strtotime($date . ' ' . $time);
-                $end   = $start + $dur * 60;
-                foreach (($accepted[$date] ?? []) as $win) {
-                    if ($start < $win[1] && $end > $win[0]) {
+                $end   = $start + $dayDur * 60;
+                foreach ($daysToCheck as $dChk) {
+                    $s0 = strtotime($dChk . ' ' . $time); $e0 = $s0 + $dayDur * 60;
+                    // A one-day long appointment needs the whole day to itself, even within one cart.
+                    if (!empty($wholeDay[$dChk]) || (!$twoDay && $isLong && !empty($accepted[$dChk]))) {
                         $db->rollBack();
-                        jsonResponse(['error' => "Two appointments in your cart overlap at {$time} on {$date}. Please adjust the times."], 409);
+                        jsonResponse(['error' => "A long appointment needs the whole of {$dChk} to itself. Please choose another day for one of the appointments in your cart."], 409);
+                    }
+                    foreach (($accepted[$dChk] ?? []) as $win) {
+                        if ($s0 < $win[1] && $e0 > $win[0]) {
+                            $db->rollBack();
+                            jsonResponse(['error' => "Two appointments in your cart overlap at {$time} on {$dChk}. Please adjust the times."], 409);
+                        }
                     }
                 }
 
@@ -348,6 +382,10 @@ switch ($endpoint) {
                     $travelFeeForRow,
                     $svcLocation === 'home' ? $svcAddress : null,
                     $mediaConsent,
+                    $twoDay ? $dayDur : null,
+                    $date2,
+                    $twoDay ? $time : null,
+                    $twoDay ? (float)($it['server_two_day_fee'] ?? 0) : 0.0,
                 ]);
                 $bookingId = (int)$db->lastInsertId();
 
@@ -366,7 +404,11 @@ switch ($endpoint) {
 
                 $insPayment->execute([$bookingId, $piId, $itDeposit, $method]);
 
-                $accepted[$date][] = [$start, $end];
+                foreach ($daysToCheck as $dChk) {
+                    $s0 = strtotime($dChk . ' ' . $time);
+                    $accepted[$dChk][] = [$s0, $s0 + $dayDur * 60];
+                }
+                if (!$twoDay && $isLong) $wholeDay[$date] = true;
                 $createdRefs[]     = $ref;
                 $createdIds[]      = $bookingId;
             }

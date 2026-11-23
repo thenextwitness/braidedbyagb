@@ -98,7 +98,7 @@ $addons   = $addonsByService[$svc['id']] ?? [];
             ?>
             <div class="dur-picker" style="display:flex;gap:6px;align-items:center">
               <select class="admin-input admin-select dur-h" style="width:72px" onchange="durPickerSync(this)">
-                <?php for ($h = 0; $h <= 8; $h++): ?>
+                <?php for ($h = 0, $hMax = max(15, $durH); $h <= $hMax; $h++): /* up to 15h (long styles); never drops a longer saved time */ ?>
                   <option value="<?= $h ?>" <?= $h === $durH ? 'selected' : '' ?>><?= $h ?>h</option>
                 <?php endfor; ?>
               </select>
@@ -189,7 +189,7 @@ $addons   = $addonsByService[$svc['id']] ?? [];
             <input class="admin-input" type="number" name="price"         value="<?= $v['price'] ?>"        step="0.01" min="0" style="width:66px;font-size:0.75rem;padding:5px 7px" title="Price £">
             <?php $vDur = (int)($v['duration_mins'] ?? 0); ?>
             <div class="dur-picker" style="display:flex;gap:3px;align-items:center">
-              <input type="number" class="admin-input dur-h" min="0" max="8" step="1"
+              <input type="number" class="admin-input dur-h" min="0" max="15" step="1"
                      style="width:36px;font-size:0.72rem;padding:4px 5px;text-align:center"
                      value="<?= intdiv($vDur, 60) ?>" title="Hours"
                      oninput="durPickerSync(this)">
@@ -221,7 +221,7 @@ $addons   = $addonsByService[$svc['id']] ?? [];
           <input class="admin-input" type="number" name="price"         placeholder="£"    step="0.01" min="0" style="width:66px;font-size:0.75rem;padding:5px 7px" required>
           <?php $addDur = (int)$svc['duration_mins']; ?>
           <div class="dur-picker" style="display:flex;gap:3px;align-items:center">
-            <input type="number" class="admin-input dur-h" min="0" max="8" step="1"
+            <input type="number" class="admin-input dur-h" min="0" max="15" step="1"
                    style="width:36px;font-size:0.72rem;padding:4px 5px;text-align:center"
                    value="<?= intdiv($addDur, 60) ?>" title="Hours"
                    oninput="durPickerSync(this)">

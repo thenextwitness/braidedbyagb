@@ -62,6 +62,9 @@ require_once __DIR__ . '/../../includes/account-head.php';
         <div class="account-row"><span class="meta">Reference</span><span class="title"><?= htmlspecialchars($bk['booking_ref']) ?></span></div>
         <div class="account-row"><span class="meta">Date</span><span class="title"><?= $date ?></span></div>
         <div class="account-row"><span class="meta">Time</span><span class="title"><?= $time ?></span></div>
+        <?php if (!empty($bk['day2_date'])): ?>
+        <div class="account-row"><span class="meta">Day 2</span><span class="title"><?= date('l j F Y', strtotime($bk['day2_date'])) ?>, <?= substr((string)$bk['day2_time'], 0, 5) ?></span></div>
+        <?php endif; ?>
         <?php if (!empty($bk['service_location']) && $bk['service_location'] === 'home'): ?>
         <div class="account-row"><span class="meta">Location</span><span class="title">Home service</span></div>
         <?php endif; ?>

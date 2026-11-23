@@ -90,7 +90,7 @@ $groupBookings = [];
 if (!empty($booking['cart_group_ref'])) {
     try {
         $gstmt = $db->prepare("
-            SELECT b.booking_ref, b.guest_name, b.booked_date, b.booked_time,
+            SELECT b.booking_ref, b.guest_name, b.booked_date, b.booked_time, b.day2_date, b.day2_time,
                    b.total_price, b.deposit_amount,
                    s.name AS s_name, sv.variant_name
             FROM bookings b
@@ -177,7 +177,7 @@ $isGroup = count($groupBookings) > 1;
             <strong><?= htmlspecialchars($who) ?></strong><br>
             <span style="font-size:var(--text-xs);color:var(--color-text-muted)">
               <?= htmlspecialchars($g['s_name']) ?><?= $g['variant_name'] ? ' — ' . htmlspecialchars($g['variant_name']) : '' ?><br>
-              <?= formatDate($g['booked_date'], 'D j M') ?> · <?= formatTime($g['booked_time']) ?> · Ref <?= htmlspecialchars($g['booking_ref']) ?>
+              <?= formatDate($g['booked_date'], 'D j M') ?> · <?= formatTime($g['booked_time']) ?><?php if (!empty($g['day2_date'])): ?> &amp; <?= formatDate($g['day2_date'], 'D j M') ?> · <?= formatTime($g['day2_time']) ?><?php endif; ?> · Ref <?= htmlspecialchars($g['booking_ref']) ?>
             </span>
           </span>
           <span class="value"><?= formatPrice((float)$g['total_price']) ?></span>
@@ -210,6 +210,12 @@ $isGroup = count($groupBookings) > 1;
           <span class="label">Time</span>
           <span class="value"><?= formatTime($booking['booked_time']) ?></span>
         </div>
+        <?php if (!empty($booking['day2_date'])): ?>
+        <div class="summary-row">
+          <span class="label">Day 2</span>
+          <span class="value"><?= formatDate($booking['day2_date']) ?>, <?= formatTime($booking['day2_time']) ?></span>
+        </div>
+        <?php endif; ?>
         <div class="summary-row total">
           <span class="label">Total Price</span>
           <span class="value"><?= formatPrice((float)$booking['total_price']) ?></span>

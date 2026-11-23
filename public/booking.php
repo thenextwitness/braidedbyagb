@@ -374,6 +374,21 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <div class="variant-grid" id="variant-grid"></div>
           </div>
 
+          <!-- Long styles (longer than the normal day): one long day, or two days in a
+               row for a fee (owner-approved 23 Nov 2026, docs/mockups/2026-11-long-two-day.png) -->
+          <div class="long-choice" id="long-choice" style="display:none">
+            <h4 class="variant-title" id="long-choice-title">This style takes a long time. How would you like it?</h4>
+            <button type="button" class="long-opt" data-two-day="0" onclick="chooseLongMode(false)">
+              <strong>One long day</strong>
+              <span id="long-one-text">Start from 7:00am. We finish the same day and the day is all yours.</span>
+            </button>
+            <button type="button" class="long-opt" data-two-day="1" onclick="chooseLongMode(true)">
+              <span class="long-fee" id="long-fee-badge">+ £30</span>
+              <strong>Two days in a row</strong>
+              <span id="long-two-text">Half the time each day, same start time both days.</span>
+            </button>
+          </div>
+
           <!-- Add-ons -->
           <div class="addons-section" id="addons-section" style="display:none">
             <h4 class="addon-title">Optional Add-ons</h4>
@@ -702,6 +717,14 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
                 <span class="label">Time</span>
                 <span class="value" id="sum-time">—</span>
               </div>
+              <div class="summary-row" id="sum-day2-row" style="display:none">
+                <span class="label">Day 2</span>
+                <span class="value" id="sum-day2">—</span>
+              </div>
+              <div class="summary-row" id="sum-twoday-row" style="display:none">
+                <span class="label">Two-day appointment</span>
+                <span class="value" id="sum-twoday">—</span>
+              </div>
               <div class="summary-row" id="sum-addons-row" style="display:none">
                 <span class="label">Add-ons</span>
                 <span class="value" id="sum-addons">—</span>
@@ -776,6 +799,10 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
 // All services data from PHP
 const SERVICES    = <?= json_encode($servicesJs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const DEPOSIT_PCT = <?= $depositPct ?>;
+// Long styles (owner-approved 23 Nov 2026): longer than the normal day = one long day or two days in a row.
+const NORMAL_DAY_MINS = <?= (int) normalDayMins() ?>;
+const TWO_DAY_FEE     = <?= json_encode(twoDayFee()) ?>;
+const LONG_DAY_START  = <?= json_encode(date('g:ia', strtotime('2000-01-01 ' . longDayWindow()['start']))) ?>;
 // "AGB bring your bestie": a share link (/booking?ref=CODE) is remembered for
 // 30 days and sent with the booking. The SERVER decides if it applies (new
 // clients only) and takes it off the balance on the day; this page only says so.
@@ -818,6 +845,7 @@ function freshDraft() {
   return {
     serviceId: null, variantId: null, serviceName: '', variantName: '',
     servicePrice: 0, durationMins: 0,
+    isLong: false, twoDay: false, twoDayFee: 0, day2Date: '',
     addons: [], date: '', time: '', guestName: '', notes: '',
     mediaConsent: 'none',
     pipelineProducts: [],
@@ -930,6 +958,43 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 <?php endif; ?>
 
+// ── Long styles: one long day or two days in a row ──────
+function fmtHoursText(m) {
+  const h = m / 60;
+  return (Math.round(h * 2) / 2).toString().replace('.5', '½') + ' hours';
+}
+function updateLongChoice() {
+  const box  = document.getElementById('long-choice');
+  const mins = parseInt(draft.durationMins) || 0;
+  draft.isLong = mins > NORMAL_DAY_MINS;
+  draft.twoDay = false; draft.twoDayFee = 0; draft.day2Date = '';
+  if (!box) return;
+  if (!draft.isLong) { box.style.display = 'none'; return; }
+  const half = Math.ceil(mins / 2);
+  document.getElementById('long-choice-title').textContent = 'This style takes about ' + fmtHoursText(mins) + '. How would you like it?';
+  document.getElementById('long-one-text').textContent = 'Start from ' + LONG_DAY_START + '. We finish the same day (about ' + fmtHoursText(mins) + ') and the day is all yours.';
+  document.getElementById('long-two-text').textContent = 'About ' + fmtHoursText(half) + ' each day, same start time both days.';
+  document.getElementById('long-fee-badge').textContent = '+ £' + Number(TWO_DAY_FEE).toFixed(TWO_DAY_FEE % 1 ? 2 : 0);
+  box.style.display = 'block';
+  chooseLongMode(false);
+}
+function chooseLongMode(twoDay) {
+  draft.twoDay    = !!twoDay && draft.isLong;
+  draft.twoDayFee = draft.twoDay ? Number(TWO_DAY_FEE) : 0;
+  draft.day2Date  = '';
+  document.querySelectorAll('.long-opt').forEach(b => b.classList.toggle('on', (b.dataset.twoDay === '1') === draft.twoDay));
+  // A date/time picked for the other choice no longer applies.
+  draft.time = '';
+  const bt = document.getElementById('booking-time'); if (bt) bt.value = '';
+  const n2 = document.getElementById('step2-next');   if (n2) n2.disabled = true;
+  updateSummary();
+}
+// Minutes the chair is taken on EACH day of this appointment.
+function perDayMins(it) {
+  const m = parseInt(it.durationMins) || 60;
+  return it.twoDay ? Math.ceil(m / 2) : m;
+}
+
 function escHtml(t) {
   return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 }
@@ -949,6 +1014,7 @@ function selectService(id) {
   draft.servicePrice = parseFloat(svc.from || svc.price_from) || 0;   // lowest option price, same as the card
   draft.durationMins = parseInt(svc.duration) || 0;
   draft.addons       = [];
+  updateLongChoice();
 
   // Show variants
   const variantSection = document.getElementById('variant-section');
@@ -973,6 +1039,7 @@ function selectService(id) {
         draft.variantName  = v.name;
         draft.servicePrice = parseFloat(v.price);
         draft.durationMins = parseInt(v.duration) || parseInt(svc.duration) || 0;
+        updateLongChoice();
         updateSummary();
         loadAddons(id);
         document.getElementById('step1-next').disabled = false;
@@ -1188,11 +1255,15 @@ function slotStartTs(date, time) {
 // Windows already taken by appointments in the cart on a given date.
 function cartWindowsOn(date) {
   return cart
-    .filter(it => it.date === date)
+    .filter(it => it.date === date || (it.twoDay && it.day2Date === date))
     .map(it => {
       const s = slotStartTs(date, it.time);
-      return [s, s + (parseInt(it.durationMins) || 60) * 60];
+      return [s, s + perDayMins(it) * 60];
     });
+}
+// A one-day long appointment in the cart takes that whole day.
+function cartWholeDayOn(date) {
+  return cart.some(it => it.isLong && !it.twoDay && it.date === date);
 }
 
 async function loadTimeSlots(date) {
@@ -1203,7 +1274,8 @@ async function loadTimeSlots(date) {
   document.getElementById('step2-next').disabled = true;
 
   try {
-    const res  = await fetch(`/api/slots?date=${date}&service_id=${draft.serviceId}`);
+    const q    = `date=${date}&service_id=${draft.serviceId}` + (draft.variantId ? `&variant_id=${draft.variantId}` : '') + (draft.twoDay ? '&two_day=1' : '');
+    const res  = await fetch(`/api/slots?${q}`);
     const data = await res.json();
     grid.innerHTML = '';
 
@@ -1214,15 +1286,22 @@ async function loadTimeSlots(date) {
 
     // Cart-aware greying: a slot is also unavailable if THIS appointment's window
     // [start, start+duration) overlaps any appointment already in the cart that day.
-    const windows = cartWindowsOn(date);
-    const durSec  = (parseInt(draft.durationMins) || 60) * 60;
+    const durSec  = perDayMins(draft) * 60;
+    const days    = draft.twoDay && data.day2 ? [date, data.day2] : [date];
+    if (draft.twoDay && data.day2) {
+      const d2 = new Date(data.day2 + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+      document.getElementById('selected-date-label').textContent += ' & ' + d2 + ' (same start time both days)';
+    }
 
     data.slots.forEach(slot => {
       let available = slot.available;
-      if (available && windows.length) {
-        const start = slotStartTs(date, slot.time);
+      for (const d of days) {
+        if (!available) break;
+        // A long one-day appointment needs an empty day; nothing joins a day that has one.
+        if (cartWholeDayOn(d) || (draft.isLong && !draft.twoDay && cartWindowsOn(d).length)) { available = false; break; }
+        const start = slotStartTs(d, slot.time);
         const end   = start + durSec;
-        for (const w of windows) {
+        for (const w of cartWindowsOn(d)) {
           if (start < w[1] && end > w[0]) { available = false; break; }
         }
       }
@@ -1237,6 +1316,7 @@ async function loadTimeSlots(date) {
           document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
           this.classList.add('selected');
           draft.time = slot.time;
+          draft.day2Date = (draft.twoDay && slot.day2) ? slot.day2 : '';
           document.getElementById('booking-time').value = slot.time;
           document.getElementById('step2-next').disabled = false;
           updateSummary();
@@ -1413,6 +1493,7 @@ function resetDraftUI() {
   document.getElementById('svc-panel-photo').style.display   = 'none';
   document.getElementById('aftercare-box').style.display     = 'none';
   document.getElementById('svc-reviews').innerHTML           = '';
+  document.getElementById('long-choice').style.display       = 'none';
   document.getElementById('addon-list').innerHTML            = '';
   document.getElementById('step1-next').disabled             = true;
   document.getElementById('step2-next').disabled             = true;
@@ -1439,7 +1520,8 @@ function itemTotal(it) {
   const base   = parseFloat(it.servicePrice) || 0;
   const addons = (it.addons || []).reduce((s, a) => s + parseFloat(a.price), 0);
   const prods  = (it.pipelineProducts || []).reduce((s, p) => s + parseFloat(p.price), 0);
-  return base + addons + prods;
+  const twoDay = it.twoDay ? (parseFloat(it.twoDayFee) || 0) : 0;
+  return base + addons + prods + twoDay;
 }
 function getDeposit(total) {
   return Math.round(total * (DEPOSIT_PCT / 100) * 100) / 100;
@@ -1789,6 +1871,7 @@ function buildCartItems() {
     addons:            (it.addons || []).map(a => a.id),
     pipeline_products: (it.pipelineProducts || []).map(p => ({ id: p.id, price: p.price })),
     media_consent:     it.mediaConsent || 'none',
+    two_day:           it.twoDay ? 1 : 0,
     total:             itemTotal(it),
     deposit:           itemDeposit(it)
   }));
@@ -1802,7 +1885,7 @@ function renderCartSidebar() {
     <div class="summary-row" style="align-items:flex-start;border-bottom:1px dashed var(--color-border,#E8D8EE);padding-bottom:6px;margin-bottom:6px">
       <span class="label" style="flex:1">
         <strong>${it.guestName || payer.name}</strong><br>
-        <span style="font-size:var(--text-xs);color:var(--color-text-muted)">${it.serviceName}${it.variantName ? ' — ' + it.variantName : ''}<br>${formatDateDisplay(it.date)} · ${formatTimeDisplay(it.time)}</span>
+        <span style="font-size:var(--text-xs);color:var(--color-text-muted)">${it.serviceName}${it.variantName ? ' — ' + it.variantName : ''}<br>${formatDateDisplay(it.date)} · ${formatTimeDisplay(it.time)}${it.twoDay && it.day2Date ? '<br>Day 2: ' + formatDateDisplay(it.day2Date) + ' · ' + formatTimeDisplay(it.time) + ' (+£' + Number(it.twoDayFee).toFixed(2) + ')' : ''}</span>
       </span>
       <span class="value" style="text-align:right">
         £${itemTotal(it).toFixed(2)}<br>
@@ -1823,6 +1906,10 @@ function updateSummary() {
     document.getElementById('sum-guest').textContent   = draft.guestName || '—';
     document.getElementById('sum-date').textContent    = draft.date ? formatDateDisplay(draft.date) : '—';
     document.getElementById('sum-time').textContent    = draft.time ? formatTimeDisplay(draft.time) : '—';
+    document.getElementById('sum-day2-row').style.display   = draft.twoDay ? '' : 'none';
+    document.getElementById('sum-twoday-row').style.display = draft.twoDay ? '' : 'none';
+    document.getElementById('sum-day2').textContent   = draft.twoDay && draft.day2Date ? formatDateDisplay(draft.day2Date) + (draft.time ? ' · ' + formatTimeDisplay(draft.time) : '') : 'The next day, same time';
+    document.getElementById('sum-twoday').textContent = '£' + Number(draft.twoDayFee || 0).toFixed(2);
     if (draft.addons.length) {
       document.getElementById('sum-addons-row').style.display = '';
       document.getElementById('sum-addons').textContent = draft.addons.map(a => a.name).join(', ');

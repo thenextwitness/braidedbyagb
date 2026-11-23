@@ -436,7 +436,7 @@ require_once __DIR__ . '/includes/layout.php';
         <label class="admin-label">Time *</label>
         <div class="time-grid" id="timeGrid">
           <?php
-          $times = dayTimeGrid();   // opening hours from Settings (default 09:30–19:00)
+          $times = dayTimeGrid(30, true);   // opening hours from Settings, widened to the long-style early start / late finish (the save checks each style)
           $selectedTime = $_POST['booked_time'] ?? '';
           foreach ($times as $t):
             $label = date('g:i A', strtotime($t));

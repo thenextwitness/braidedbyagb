@@ -143,6 +143,13 @@ class MailShim {
     }
 }
 
+/** Extra table row for a two-day appointment (day 2 = next day, same start), or ''. */
+function day2Row(array $b): string {
+    if (empty($b['day2_date']) || empty($b['day2_time'])) return '';
+    return '<tr><td>Day 2:</td><td><strong>' . formatDate($b['day2_date']) . ', ' . formatTime($b['day2_time'])
+         . '</strong> <span style="color:#7A4A70">(two-day appointment)</span></td></tr>';
+}
+
 // ── Base mailer factory (now returns the Resend-backed shim) ──
 function createMailer(): MailShim {
     return new MailShim();
@@ -302,6 +309,7 @@ function emailBookingReceived(array $booking, array $customer, array $service): 
         $svc  = sanitize($service['name']);
         $date = formatDate($booking['booked_date']);
         $time = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $content = <<<HTML
 <h2>We've received your booking request! 💜</h2>
 <p>Hi {$name}, thank you for choosing BraidedbyAGB. Your booking request is now being reviewed and we'll confirm it shortly.</p>
@@ -310,7 +318,7 @@ function emailBookingReceived(array $booking, array $customer, array $service): 
     <tr><td>Reference:</td><td><strong>{$ref}</strong></td></tr>
     <tr><td>Service:</td><td>{$svc}</td></tr>
     <tr><td>Date:</td><td>{$date}</td></tr>
-    <tr><td>Time:</td><td>{$time}</td></tr>
+    <tr><td>Time:</td><td>{$time}</td></tr>{$d2}
   </table>
 </div>
 <div class="policy-box">
@@ -340,6 +348,7 @@ function emailBookingApproved(array $booking, array $customer, array $service, a
         $svc     = sanitize($service['name']);
         $date    = formatDate($booking['booked_date']);
         $time    = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $deposit = formatPrice((float)$booking['deposit_amount']);
         $balance = formatPrice((float)$booking['remaining_balance']);
         $balanceTxt = balanceDueText((float)$booking['remaining_balance'], 'payable on the day');
@@ -358,7 +367,7 @@ function emailBookingApproved(array $booking, array $customer, array $service, a
     <tr><td>Service:</td><td>{$svc}</td></tr>
     {$addonHtml}
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>Deposit Paid:</td><td class="gold-text">{$deposit} ✓</td></tr>
     <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
@@ -419,6 +428,7 @@ function emailBookingRescheduled(array $booking, array $customer, array $service
         $svc  = sanitize($service['name']);
         $date = formatDate($booking['booked_date']);
         $time = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $ref  = sanitize($booking['booking_ref']);
         $content = <<<HTML
 <h2>Your appointment has been rescheduled 📅</h2>
@@ -428,7 +438,7 @@ function emailBookingRescheduled(array $booking, array $customer, array $service
     <tr><td>Reference:</td><td>{$ref}</td></tr>
     <tr><td>Service:</td><td>{$svc}</td></tr>
     <tr><td>New Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>New Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>New Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
   </table>
 </div>
 <div class="policy-box">
@@ -453,16 +463,20 @@ function emailReminder24hr(array $booking, array $customer, array $service): boo
         $svc     = sanitize($service['name']);
         $date    = formatDate($booking['booked_date']);
         $time    = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $balance = formatPrice((float)$booking['remaining_balance']);
         $balanceTxt = balanceDueText((float)$booking['remaining_balance'], 'cash or bank transfer on the day');
+        // Day 2 of a two-day appointment (scheduler passes the day-2 date/time + this flag).
+        $dayNote = !empty($booking['_is_day2'])
+            ? '<p><strong>This is day 2 of your two-day appointment</strong>, same start time as day 1.</p>' : '';
         $content = <<<HTML
 <h2>See you tomorrow! 💕</h2>
-<p>Hi {$name}, just a friendly reminder that your appointment is <strong>tomorrow</strong>.</p>
+<p>Hi {$name}, just a friendly reminder that your appointment is <strong>tomorrow</strong>.</p>{$dayNote}
 <div class="detail-box">
   <table>
     <tr><td>Service:</td><td><strong>{$svc}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Balance Due:</td><td>{$balanceTxt}</td></tr>
   </table>
 </div>
@@ -621,6 +635,7 @@ function emailReminder2hr(array $booking, array $customer, array $service): bool
         $name = sanitize($customer['name']);
         $svc  = sanitize($service['name']);
         $time = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $content = <<<HTML
 <h2>Your appointment is in 2 hours! ✨</h2>
 <p>Hi {$name}, this is your final reminder! Your <strong>{$svc}</strong> appointment is at <strong>{$time}</strong> today.</p>
@@ -824,6 +839,7 @@ function emailAdminNewBooking(array $booking, array $customer, array $service): 
         $svc    = sanitize($service['name']);
         $date   = formatDate($booking['booked_date']);
         $time   = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $method = ucfirst(str_replace('_', ' ', $booking['payment_method']));
         $deposit= formatPrice((float)$booking['deposit_amount']);
         $adminUrl = ADMIN_URL;
@@ -836,7 +852,7 @@ function emailAdminNewBooking(array $booking, array $customer, array $service): 
     <tr><td>Phone:</td><td>{$phone}</td></tr>
     <tr><td>Service:</td><td><strong>{$svc}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Payment:</td><td>{$method}</td></tr>
     <tr><td>Deposit:</td><td>{$deposit}</td></tr>
   </table>
@@ -1010,6 +1026,7 @@ function emailAdminPreAppointment(array $booking): bool {
         $client  = htmlspecialchars($booking['c_name']);
         $service = htmlspecialchars($booking['s_name']);
         $time    = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $mail->Subject = "⏰ 30-min reminder: {$client} at {$time}";
 
         $phone   = $booking['c_phone'] ?? '';
@@ -1031,7 +1048,7 @@ function emailAdminPreAppointment(array $booking): bool {
     <tr><td>Client:</td><td><strong>{$client}</strong></td></tr>
     <tr><td>Phone:</td><td><a href="tel:{$phone}">{$phone}</a></td></tr>
     <tr><td>Service:</td><td>{$service}{$variant}</td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Balance due:</td><td><strong>{$balance}</strong></td></tr>
     <tr><td>Client notes:</td><td>{$notes}</td></tr>
   </table>
@@ -1226,6 +1243,7 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
         $ref     = sanitize($booking['booking_ref']);
         $date    = formatDate($booking['booked_date']);
         $time    = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $deposit = formatPrice((float)$booking['deposit_amount']);
         $balance = formatPrice((float)$booking['remaining_balance']);
         $balanceTxt = balanceDueText((float)$booking['remaining_balance']);
@@ -1254,7 +1272,7 @@ function emailPaymentReceipt(array $booking, array $customer, array $service, st
   <table>
     <tr><td>Service:</td><td><strong>{$svc}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>Deposit Paid:</td><td class="gold-text">{$deposit} ✓</td></tr>
     <tr><td>Balance Due on Day:</td><td>{$balanceTxt}</td></tr>
@@ -1296,6 +1314,7 @@ function emailBankTransferConfirm(array $booking, array $customer): bool {
         $svc     = sanitize($booking['s_name'] ?? '');
         $date    = formatDate($booking['booked_date']);
         $time    = formatTime($booking['booked_time']);
+        $d2      = day2Row($booking);
         $deposit = formatPrice((float)$booking['deposit_amount']);
 
         // Read the current bank details from settings
@@ -1334,7 +1353,7 @@ function emailBankTransferConfirm(array $booking, array $customer): bool {
   <table>
     <tr><td>Service:</td><td><strong>{$svc}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Deposit Due:</td><td>{$deposit}</td></tr>
   </table>
 </div>
@@ -1394,6 +1413,7 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
             $variant = !empty($it['variant_name']) ? ' — ' . sanitize($it['variant_name']) : '';
             $date    = formatDate($it['booked_date']);
             $time    = formatTime($it['booked_time']);
+            $d2      = day2Row($it);
             $deposit = formatPrice((float)$it['deposit_amount']);
             $total   = formatPrice((float)$it['total_price']);
             $balance = formatPrice((float)$it['remaining_balance']);
@@ -1417,7 +1437,7 @@ function emailCartConfirmation(array $payer, array $items, string $groupRef, str
     <tr><td>Reference:</td><td><strong>{$ref}</strong></td></tr>
     <tr><td>Service:</td><td><strong>{$svc}{$variant}</strong></td></tr>
     <tr><td>Date:</td><td><strong>{$date}</strong></td></tr>
-    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>
+    <tr><td>Time:</td><td><strong>{$time}</strong></td></tr>{$d2}
     <tr><td>Total Price:</td><td>{$total}</td></tr>
     <tr><td>{$paidLbl}</td><td class="gold-text">{$deposit} ✓</td></tr>
     {$rewardRow}
@@ -1530,12 +1550,13 @@ function emailAdminNewCartBooking(array $payer, array $items, string $groupRef):
             $variant = !empty($it['variant_name']) ? ' — ' . sanitize($it['variant_name']) : '';
             $date    = formatDate($it['booked_date']);
             $time    = formatTime($it['booked_time']);
+            $d2      = day2Row($it);
             $who     = !empty($it['guest_name']) ? sanitize($it['guest_name']) : $name;
             $mc      = $it['media_consent'] ?? 'none';
             $mcTag   = $mc === 'hair_face' ? "<span style='color:#1d9e75'>📸 photos OK — hair &amp; face</span>"
                      : ($mc === 'hair' ? "<span style='color:#1d9e75'>📸 photos OK — hair only</span>"
                      : "<span style='color:#c0392b'>🚫 no photos/videos</span>");
-            $rows .= "<tr><td style='padding:6px 0'><strong>{$time}</strong> · {$date}</td><td style='padding:6px 0'>{$who}<br><span style='color:#6B5575;font-size:13px'>{$svc}{$variant} · {$ref}</span><br><span style='font-size:12px'>{$mcTag}</span></td></tr>";
+            $rows .= "<tr><td style='padding:6px 0'><strong>{$time}</strong> · {$date}" . ($d2 !== '' ? "<br><span style='font-size:12px;color:#7A0050'>Day 2: " . formatDate($it['day2_date']) . ', ' . formatTime($it['day2_time']) . '</span>' : '') . "</td><td style='padding:6px 0'>{$who}<br><span style='color:#6B5575;font-size:13px'>{$svc}{$variant} · {$ref}</span><br><span style='font-size:12px'>{$mcTag}</span></td></tr>";
         }
 
         // Home service (mobile) — read from the first item; travel fee is on the first row.

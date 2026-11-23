@@ -273,16 +273,23 @@ switch ($endpoint) {
             if (!withinBusinessHours($newTime, $thisDur)) {
                 http_response_code(409); echo json_encode(['error' => outsideHoursMessage()]); exit;
             }
-            $others = loadDayBookings($newDate, (int)$id);
-            if (peakConcurrency($others, $newStart, $thisDur) >= slotCapacity($newDate)) {
-                http_response_code(409);
-                echo json_encode(['error' => 'That time slot overlaps an existing booking. Choose another time.']);
-                exit;
+            // Two-day appointment: day 2 moves with it (next day, same start) and must be free too.
+            $hasDay2 = $db->prepare("SELECT day2_date FROM bookings WHERE id=?");
+            $hasDay2->execute([$id]);
+            $newDay2 = $hasDay2->fetchColumn() ? date('Y-m-d', strtotime($newDate . ' +1 day')) : null;
+            foreach (array_filter([$newDate, $newDay2]) as $chkDate) {
+                if ($why = rescheduleClash($chkDate, $newTime, $thisDur, (int)$id)) {
+                    http_response_code(409);
+                    echo json_encode(['error' => $why . ' (' . $chkDate . ') Choose another time.']);
+                    exit;
+                }
             }
             if ($newDurMins !== null) {
-                $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, duration_mins=? WHERE id=?")->execute([$newDate, $newTime, $newDurMins, $id]);
+                $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, duration_mins=?, day2_date=?, day2_time=? WHERE id=?")
+                   ->execute([$newDate, $newTime, $newDurMins, $newDay2, $newDay2 ? $newTime : null, $id]);
             } else {
-                $db->prepare("UPDATE bookings SET booked_date=?, booked_time=? WHERE id=?")->execute([$newDate, $newTime, $id]);
+                $db->prepare("UPDATE bookings SET booked_date=?, booked_time=?, day2_date=?, day2_time=? WHERE id=?")
+                   ->execute([$newDate, $newTime, $newDay2, $newDay2 ? $newTime : null, $id]);
             }
             try {
                 require_once __DIR__ . '/../includes/mailer.php';

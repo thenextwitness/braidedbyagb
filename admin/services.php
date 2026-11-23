@@ -257,7 +257,7 @@ $categories = serviceCategories();   // ordered list, edited below (Categories)
             <label class="admin-label">Duration *</label>
             <div class="dur-picker" style="display:flex;gap:6px;align-items:center">
               <select class="admin-input admin-select dur-h" style="width:72px" onchange="durPickerSync(this)">
-                <?php for ($h = 0; $h <= 8; $h++): ?>
+                <?php for ($h = 0; $h <= 15; $h++): /* up to 15h: long styles (owner 23 Nov 2026) */ ?>
                   <option value="<?= $h ?>" <?= $h === 3 ? 'selected' : '' ?>><?= $h ?>h</option>
                 <?php endfor; ?>
               </select>

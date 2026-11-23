@@ -325,9 +325,21 @@ function serverBookingItemPrice(PDO $db, array $it): ?array {
         $total += (float)$price;
     }
 
+    // Two days in a row for a long style: a fixed fee, part of the price (so it
+    // is in the deposit too). Only valid for a style longer than the normal day.
+    $twoDayFee = 0.0;
+    if (!empty($it['two_day'])) {
+        $q = $db->prepare("SELECT COALESCE(NULLIF(sv.duration_mins,0), NULLIF(s.duration_mins,0), 60)
+                           FROM services s LEFT JOIN service_variants sv ON sv.id = ? AND sv.service_id = s.id WHERE s.id = ?");
+        $q->execute([!empty($it['variant_id']) ? (int)$it['variant_id'] : null, $sid]);
+        if (!isLongDuration((int)$q->fetchColumn())) return null;   // two days only for long styles
+        $twoDayFee = twoDayFee();
+        $total += $twoDayFee;
+    }
+
     $pct     = (int)getSetting('deposit_percent', '30');
     $deposit = round($total * ($pct / 100) * 100) / 100;
-    return ['total' => round($total, 2), 'deposit' => $deposit, 'products' => $products];
+    return ['total' => round($total, 2), 'deposit' => $deposit, 'products' => $products, 'two_day_fee' => $twoDayFee];
 }
 
 /** Shop unit price (products.price), or null if the product isn't on sale. */
