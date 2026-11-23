@@ -344,11 +344,14 @@ step('settings loyalty rows',
         ('loyalty_min_redeem','500')"),
     $report);
 
-// One-off backfill: complete bookings whose date has already passed.
-// Guard skips once none remain, so re-running is a no-op.
+// One-off backfill from the old migrations.sql: complete bookings whose date had
+// already passed. RETIRED 23 Nov 2026: its guard ("none remain") was false again
+// whenever a recent appointment hadn't been marked yet, so every deploy that ran
+// migrations silently marked yesterday's confirmed/pending bookings "completed"
+// (bypassing the status-change follow-ups). Marking an appointment completed is
+// the owner's decision in the admin, never a migration's.
 step('backfill past bookings to completed',
-    fn() => (int)$db->query("SELECT COUNT(*) FROM bookings
-                             WHERE status IN ('confirmed','pending') AND booked_date < CURDATE()")->fetchColumn() === 0,
+    fn() => true,
     fn() => $db->exec("UPDATE bookings SET status='completed'
                        WHERE status IN ('confirmed','pending') AND booked_date < CURDATE()"),
     $report);
