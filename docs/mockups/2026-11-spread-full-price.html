@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Spread the full price (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1200px;padding:24px 32px 32px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:28px;align-items:flex-start}
+.phone{width:400px;background:#fff;border-radius:28px;border:10px solid #1A0014;padding:16px 14px;flex:none}
+.h{font-family:Montserrat;color:#7A0050;font-size:16px;font-weight:800;margin:0 0 10px;display:flex;gap:8px;align-items:center}
+.num{width:24px;height:24px;border-radius:50%;background:#CC1A8A;color:#fff;display:grid;place-items:center;font-size:12px}
+.t{font-family:Montserrat;font-weight:700;color:#4B0082;font-size:13px;margin:4px 0 8px}
+.ch{border:2px solid #e5dff0;border-radius:12px;padding:11px 12px;margin-bottom:8px;font-size:12.5px;line-height:1.5;position:relative}
+.ch.on{border-color:#CC1A8A;background:#F9EEF9}
+.ch b{font-family:Montserrat;color:#4B0082;font-size:13.5px;display:block;margin-bottom:2px}
+.ch .amt{position:absolute;right:12px;top:11px;font-family:Montserrat;font-weight:800;color:#CC1A8A}
+.chips{display:flex;gap:6px;margin-top:6px}
+.chip{border-radius:6px;padding:3px 8px;font:700 11px Arial}
+.kl{background:#FFB3C7}.cp{background:#B2FCE4}.pp{background:#FFC439;color:#003087}
+.newo{outline:2px dashed #D4AF37;outline-offset:5px;border-radius:12px;padding:2px}
+.stripe{border:1px solid #e0e0e0;border-radius:10px;padding:10px;margin-top:12px;font-size:12px;color:#555}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tab{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 4px;text-align:center;font-weight:700;font-size:11.5px}
+.tab.on{border-color:#CC1A8A;color:#CC1A8A}
+.btn{background:#CC1A8A;color:#fff;border-radius:30px;text-align:center;font-family:Montserrat;font-weight:700;padding:12px;margin-top:12px;font-size:13.5px}
+.sum{background:#F9EEF9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.7;margin-top:10px}
+.sum .r{display:flex;justify-content:space-between}
+.rules{background:#fff;border-radius:12px;padding:16px 20px;font-size:13.5px;line-height:1.6;flex:1}
+.rules h3{font-family:Montserrat;color:#4B0082;font-size:15px;margin:0 0 6px}.rules li{margin-bottom:5px}
+</style></head><body>
+<div class="cap"><b>Payment step, with a clear choice at the top (new).</b> Today, paying the full price in instalments only happens if a client happens to click the Klarna or Clearpay tab inside the card box, so most never see it. Now they choose up front.</div>
+<div class="row">
+  <div class="phone">
+    <div class="h"><span class="num">5</span>Review &amp; Pay</div>
+    <div class="newo">
+      <div class="t">How would you like to pay?</div>
+      <div class="ch"><span class="amt">£78.00</span><b>Pay the deposit now</b>Card, Apple Pay, PayPal or bank transfer. £182.00 left to pay on the day.</div>
+      <div class="ch on"><span class="amt">£260.00</span><b>Spread the full price</b>Interest-free instalments, nothing to pay on the day.
+        <div class="chips"><span class="chip kl">Klarna · 3 × £86.67</span><span class="chip cp">Clearpay · 4 × £65.00</span><span class="chip pp">PayPal Pay in 3</span></div></div>
+    </div>
+    <div class="stripe">
+      <div class="tabs"><span class="tab on">Klarna</span><span class="tab">Clearpay</span><span class="tab">PayPal</span></div>
+      Only Klarna, Clearpay and PayPal show here when "Spread the full price" is chosen.
+    </div>
+    <div class="sum">
+      <div class="r"><span>Services</span><span>£260.00</span></div>
+      <div class="r"><b>Spread now (Klarna/Clearpay)</b><b>£260.00</b></div>
+      <div class="r"><span>Balance on the day</span><span>£0.00</span></div>
+    </div>
+    <div class="btn">Continue to Klarna — £260.00</div>
+  </div>
+  <div class="rules">
+    <h3>How it works</h3>
+    <ul>
+      <li><b>Pay the deposit now</b> works exactly as today (30% now, the rest on the day).</li>
+      <li><b>Spread the full price:</b> Klarna or Clearpay pay you the full amount straight away; the client pays them back in instalments. Your booking is fully paid.</li>
+      <li>The instalment amounts shown are a guide; Klarna/Clearpay confirm the exact plan at their checkout.</li>
+      <li>Klarna and Clearpay each have their own limits and approval checks. If a client isn't approved, they can go back and pay the deposit instead.</li>
+      <li>Home-service travel fees are included in the spread amount.</li>
+      <li><b>PayPal:</b> PayPal decides at its own checkout whether to offer the client "Pay in 3" (it depends on their PayPal account and the amount). If they aren't offered it, they simply pay the full price with PayPal, so the booking is still fully paid.</li>
+    </ul>
+    <h3 style="margin-top:12px">One thing to check (in your Stripe account)</h3>
+    <p style="margin:0">Klarna, Clearpay and PayPal must be switched on in Stripe: <b>Settings → Payment methods</b>. I can't see your Stripe account, so if they're off, the "Spread the full price" option will be hidden automatically until you switch them on.</p>
+  </div>
+</div>
+</body></html>

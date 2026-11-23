@@ -585,3 +585,10 @@
   position: absolute; right: 10px; top: 10px; background: var(--color-gold, #D4AF37); color: var(--color-deep-purple, #4B0082);
   font-weight: 800; font-size: 11px; border-radius: 10px; padding: 2px 8px;
 }
+
+/* ── Pay the deposit now / Spread the full price (owner-approved 23 Nov 2026) ── */
+.pay-mode { margin: 0 0 var(--space-5, 20px); }
+.pay-mode .long-fee { background: transparent; color: var(--color-primary); font-size: 14px; padding: 0; }
+.pm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.pm-chip { border-radius: 6px; padding: 3px 8px; font: 700 11px Arial, Helvetica, sans-serif; color: #0A0A0A; }
+.pm-chip.kl { background: #FFB3C7; } .pm-chip.cp { background: #B2FCE4; } .pm-chip.pp { background: #FFC439; color: #003087; }

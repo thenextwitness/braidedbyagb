@@ -61,12 +61,19 @@ function stripeRequest(string $method, string $path, array $params = [], array $
 // automatic_payment_methods surfaces every method enabled in the Stripe
 // dashboard (card, Klarna, Clearpay, PayPal, …) with no per-brand code.
 // $metadata links the intent back to our DB record for finalization.
-function stripeCreatePaymentIntent(int $amountPence, string $currency, array $metadata = [], ?string $idempotencyKey = null): array {
+function stripeCreatePaymentIntent(int $amountPence, string $currency, array $metadata = [], ?string $idempotencyKey = null, ?array $paymentMethodTypes = null): array {
     $params = [
-        'amount'                              => $amountPence,
-        'currency'                            => strtolower($currency),
-        'automatic_payment_methods[enabled]'  => 'true',
+        'amount'   => $amountPence,
+        'currency' => strtolower($currency),
     ];
+    // Explicit list (e.g. "Spread the full price": klarna / afterpay_clearpay /
+    // paypal) must match the Payment Element's paymentMethodTypes; otherwise
+    // every method enabled in the Stripe dashboard.
+    if ($paymentMethodTypes) {
+        foreach (array_values($paymentMethodTypes) as $i => $t) $params["payment_method_types[$i]"] = (string) $t;
+    } else {
+        $params['automatic_payment_methods[enabled]'] = 'true';
+    }
     foreach ($metadata as $k => $v) {
         $params["metadata[$k]"] = (string) $v;
     }

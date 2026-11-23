@@ -637,6 +637,23 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             </label>
           </div>
 
+          <!-- Deposit now, or spread the full price (owner-approved 23 Nov 2026,
+               docs/mockups/2026-11-spread-full-price.png) -->
+          <div class="long-choice pay-mode" id="pay-mode-choice">
+            <h4 class="variant-title">How would you like to pay?</h4>
+            <button type="button" class="long-opt on" data-mode="deposit" onclick="choosePayMode('deposit')">
+              <span class="long-fee" id="pm-deposit-amt"></span>
+              <strong>Pay the deposit now</strong>
+              <span id="pm-deposit-text">Card, Apple Pay, PayPal or bank transfer.</span>
+            </button>
+            <button type="button" class="long-opt" data-mode="spread" id="pm-spread-btn" onclick="choosePayMode('spread')">
+              <span class="long-fee" id="pm-spread-amt"></span>
+              <strong>Spread the full price</strong>
+              <span>Interest-free instalments, nothing to pay on the day.</span>
+              <span class="pm-chips" id="pm-spread-chips"></span>
+            </button>
+          </div>
+
           <!-- Payment method tabs -->
           <div class="payment-tabs">
             <button class="payment-tab active" data-method="stripe" onclick="selectPaymentMethod('stripe', this)">
@@ -1616,6 +1633,54 @@ let stripe, elements, paymentElement, paymentHandlersBound = false;
 // customer owes nothing on the day. Card/PayPal/bank stay deposit-now.
 let payFull = false;
 const BNPL_TYPES = ['klarna', 'afterpay_clearpay'];
+// "Spread the full price": instalment methods only. If Stripe refuses a set
+// (a method switched off, or the amount outside its limits) the next smaller
+// set is tried; if none load, the option is hidden and the deposit stays.
+const SPREAD_SETS = [
+  ['klarna', 'afterpay_clearpay', 'paypal'], ['klarna', 'afterpay_clearpay'], ['klarna', 'paypal'],
+  ['afterpay_clearpay', 'paypal'], ['klarna'], ['afterpay_clearpay'], ['paypal']
+];
+let spreadSetIdx = 0, spreadUnavailable = false, elementsKey = null;
+function spreadTypes() { return SPREAD_SETS[spreadSetIdx]; }
+
+function choosePayMode(mode) {
+  if (mode === 'spread' && spreadUnavailable) return;
+  payFull = (mode === 'spread');
+  document.querySelectorAll('#pay-mode-choice .long-opt').forEach(b => b.classList.toggle('on', (b.dataset.mode === 'spread') === payFull));
+  // Bank transfer is deposit-only.
+  const bankTab   = document.querySelector('.payment-tab[data-method="bank_transfer"]');
+  const stripeTab = document.querySelector('.payment-tab[data-method="stripe"]');
+  if (bankTab) bankTab.style.display = payFull ? 'none' : '';
+  if (payFull && paymentMethod !== 'stripe' && stripeTab) selectPaymentMethod('stripe', stripeTab);
+  if (stripeTab) stripeTab.textContent = payFull ? '💳 Klarna / Clearpay / PayPal' : '💳 Card / PayPal / Klarna';
+  renderPaymentStep();
+}
+
+// (Re)build the Stripe Payment Element for the current mode; same mode = amount update only.
+function ensurePaymentElement(pence) {
+  if (!stripe) stripe = Stripe(STRIPE_KEY);
+  const key = payFull ? 'spread:' + spreadTypes().join(',') : 'deposit';
+  if (elements && elementsKey === key) { elements.update({ amount: pence }); return; }
+  if (paymentElement) { try { paymentElement.destroy(); } catch (e) {} }
+  const opts = { mode: 'payment', amount: pence, currency: 'gbp', locale: 'en-GB' };
+  if (payFull) opts.paymentMethodTypes = spreadTypes().slice();
+  elements = stripe.elements(opts);
+  paymentElement = elements.create('payment', { layout: 'tabs' });
+  paymentElement.mount('#stripe-payment-element');
+  elementsKey = key;
+  // In deposit mode, picking Klarna/Clearpay means they want to spread the full price.
+  paymentElement.on('change', function (e) {
+    if (!payFull && e && e.value && BNPL_TYPES.indexOf(e.value.type) !== -1 && !spreadUnavailable) choosePayMode('spread');
+  });
+  paymentElement.on('loaderror', function () {
+    if (!payFull) return;
+    if (spreadSetIdx < SPREAD_SETS.length - 1) { spreadSetIdx++; elementsKey = null; renderPaymentStep(); return; }
+    spreadUnavailable = true;
+    const sb = document.getElementById('pm-spread-btn'); if (sb) sb.style.display = 'none';
+    showToast('Spreading the full price isn\u2019t available right now, so you can pay the deposit instead.', 'default');
+    choosePayMode('deposit');
+  });
+}
 
 // One place that sets the Stripe button text (rebuilt each time, so a failed
 // payment can never strip out the amount and break later re-renders).
@@ -1623,7 +1688,7 @@ function setPayBtnLabel() {
   const btn = document.getElementById('stripe-pay-btn');
   if (!btn) return;
   const amt = '£' + amountDueNow().toFixed(2);
-  btn.textContent = payFull ? ('Pay ' + amt + ' in 3 — full price') : ('Pay Deposit — ' + amt);
+  btn.textContent = payFull ? ('Continue — spread ' + amt) : ('Pay Deposit — ' + amt);
 }
 
 function renderPaymentStep() {
@@ -1695,7 +1760,7 @@ function renderPaymentStep() {
         <div class="summary-row"><span class="label">Services</span><span class="value">£${total.toFixed(2)}</span></div>
         ${travelRow}
         ${payFull
-          ? `<div class="summary-row deposit"><span class="label">Paying in 3 (Klarna/Clearpay) — full price</span><span class="value">£${total.toFixed(2)}</span></div>`
+          ? `<div class="summary-row deposit"><span class="label">Spreading the full price (instalments)</span><span class="value">£${total.toFixed(2)}</span></div>`
           : `<div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>`}
         <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? (payFull ? ' (full price + travel)' : ' (deposit + travel)') : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
         <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}${payFull ? ' — nothing to pay' : ''}</span></div>
@@ -1713,7 +1778,7 @@ function renderPaymentStep() {
   if (bnplNote) {
     bnplNote.style.display = payFull ? 'block' : 'none';
     bnplNote.textContent = payFull
-      ? '✓ Pay in 3 covers your full appointment price (£' + amountNow.toFixed(2) + ') in interest-free instalments — your deposit is the first instalment and there\'s nothing to pay on the day.'
+      ? '✓ Your full appointment price (£' + amountNow.toFixed(2) + ') is spread in interest-free instalments, and there\'s nothing to pay on the day. The exact plan is confirmed at the Klarna, Clearpay or PayPal checkout. (If PayPal doesn\'t offer you Pay in 3, PayPal takes the full amount.)'
       : '';
   }
 
@@ -1736,19 +1801,18 @@ function renderPaymentStep() {
   // when the customer clicks Pay. Cards confirm inline; Klarna/Clearpay/PayPal
   // redirect out and return to the confirmation page.
   const depositPence = Math.max(30, Math.round(amountNow * 100));
-  if (!stripe) {
-    stripe = Stripe(STRIPE_KEY);
-    elements = stripe.elements({ mode: 'payment', amount: depositPence, currency: 'gbp', locale: 'en-GB' });
-    paymentElement = elements.create('payment', { layout: 'tabs' });
-    paymentElement.mount('#stripe-payment-element');
-    // Switching to/from Klarna or Clearpay flips between full-price and deposit.
-    paymentElement.on('change', function (e) {
-      const isBnpl = !!(e && e.value && BNPL_TYPES.indexOf(e.value.type) !== -1);
-      if (isBnpl !== payFull) { payFull = isBnpl; renderPaymentStep(); }
-    });
-  } else {
-    elements.update({ amount: depositPence });
+  // The two choices at the top: amounts + instalment guide.
+  const fullNow = total + travelFee;
+  const pmDep = document.getElementById('pm-deposit-amt');
+  if (pmDep) {
+    pmDep.textContent = '£' + depositNow.toFixed(2);
+    document.getElementById('pm-spread-amt').textContent = '£' + fullNow.toFixed(2);
+    document.getElementById('pm-deposit-text').textContent = 'Card, Apple Pay, PayPal or bank transfer. £' + (total - deposit).toFixed(2) + ' left to pay on the day.';
+    const labels = { klarna: 'Klarna · 3 × £' + (fullNow / 3).toFixed(2), afterpay_clearpay: 'Clearpay · 4 × £' + (fullNow / 4).toFixed(2), paypal: 'PayPal Pay in 3' };
+    const cls    = { klarna: 'kl', afterpay_clearpay: 'cp', paypal: 'pp' };
+    document.getElementById('pm-spread-chips').innerHTML = spreadTypes().map(t => `<span class="pm-chip ${cls[t]}">${labels[t]}</span>`).join('');
   }
+  ensurePaymentElement(depositPence);
   updatePayButtonState();
 
   // Bind policy/bank checkbox handlers once
@@ -1789,7 +1853,8 @@ async function submitStripePayment() {
       body: JSON.stringify({
         payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
         payment_method: 'stripe',
-        pay_mode: payFull ? 'full' : 'deposit',   // pay-in-3 charges the full price
+        pay_mode: payFull ? 'full' : 'deposit',   // "Spread the full price" charges the full price
+        spread_types: payFull ? spreadTypes() : undefined,
         referral_code: getReferralCode(),
         items: buildCartItems(),
         ...homePayload()

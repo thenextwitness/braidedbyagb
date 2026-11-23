@@ -242,6 +242,14 @@ switch ($endpoint) {
             $itemsTotal   += (float)($it['total'] ?? 0);
         }
         $chargeTotal  = ($payFull ? $itemsTotal : $depositTotal) + $travelFee;
+        // "Spread the full price" (owner-approved 23 Nov 2026): only instalment
+        // methods, matching the Payment Element the client saw.
+        $spreadTypes = null;
+        if ($payFull) {
+            $allowed     = ['klarna', 'afterpay_clearpay', 'paypal'];
+            $spreadTypes = array_values(array_intersect($allowed, array_map('strval', (array)($data['spread_types'] ?? $allowed))));
+            if (!$spreadTypes) $spreadTypes = $allowed;
+        }
         $depositPence = (int) round($chargeTotal * 100);
         if ($method === 'stripe' && $depositPence < 30) {
             jsonResponse(['error' => 'Amount is too small to charge by card.'], 400);
@@ -261,7 +269,7 @@ switch ($endpoint) {
                     'group_ref' => $groupRef,
                     'pay_mode'  => $payFull ? 'full' : 'deposit',   // read by finalizeCartPayment
                     'source'    => 'braidedbyagb_booking',
-                ], 'cart_' . $groupRef);
+                ], 'cart_' . $groupRef, $spreadTypes);
                 $clientSecret = $intent['client_secret'] ?? null;
                 $piId         = $intent['id'] ?? null;
             } catch (Throwable $e) {
