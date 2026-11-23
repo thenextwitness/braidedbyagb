@@ -1649,6 +1649,18 @@ step('add-on prices: Wash £15, Wash and blow-dry £20 (all styles)',
     },
     $report);
 
+// Owner 23 Nov 2026 (docs/mockups/2026-11-french-curls-crop.png, option A):
+// French curls gets a close crop of its Gallery photo as its own photo (the
+// Gallery original stays). Only if it has no photo of its own.
+step('French curls: close-up service photo',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='french_curls_photo_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $db->prepare("UPDATE services SET image_url = '/assets/images/services/french-curls.jpg'
+                      WHERE slug = 'french-curls' AND (image_url IS NULL OR image_url = '')")->execute();
+        $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('french_curls_photo_2026_11', ?)")->execute([date('c')]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
