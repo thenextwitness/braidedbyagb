@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><base href="https://braidedbyagb.co.uk/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <title>Book an Appointment — BraidedbyAGB</title>
+  <meta name="description" content="Book your African hair braiding appointment with BraidedbyAGB in Farnborough, UK.">
+  <link rel="canonical" href="https://braidedbyagb.co.uk/booking">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://braidedbyagb.co.uk/booking">
+  <meta property="og:title" content="Book an Appointment — BraidedbyAGB">
+  <meta property="og:description" content="Book your African hair braiding appointment with BraidedbyAGB in Farnborough, UK.">
+  <meta property="og:image" content="https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Lato:ital,wght@0,300;0,400;0,700;1,300&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/brand.css">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#CC1A8A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BraidedbyAGB">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/assets/js/pwa.js" defer></script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <link rel="stylesheet" href="/assets/css/pages.css">
+  <link rel="stylesheet" href="/assets/css/booking.css?v=1795429480">
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    /* ── Custom Request Nudge (Step 1 bottom) ── */
+    .custom-request-nudge {
+      margin-top: var(--space-5);
+      border: 1.5px dashed rgba(204,26,138,0.35);
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fdf6ff 0%, #fff5fb 100%);
+      overflow: hidden;
+    }
+    .crn-inner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      flex-wrap: wrap;
+    }
+    .crn-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .crn-text {
+      flex: 1;
+      min-width: 180px;
+    }
+    .crn-text strong {
+      display: block;
+      font-family: var(--font-primary);
+      font-weight: 800;
+      font-size: 0.88rem;
+      color: var(--color-primary-dark);
+      margin-bottom: 3px;
+    }
+    .crn-text span {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+    .crn-btn {
+      flex-shrink: 0;
+      padding: 9px 18px;
+      background: var(--color-primary);
+      color: #fff;
+      font-family: var(--font-primary);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .crn-btn:hover {
+      background: var(--color-primary-dark);
+      transform: translateY(-1px);
+    }
+    @media (max-width: 500px) {
+      .crn-inner { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+      .crn-btn   { width: 100%; text-align: center; }
+    }
+
+    /* ── Sidebar Custom Request Card ── */
+    .booking-custom-cta {
+      margin-top: var(--space-5);
+      background: linear-gradient(135deg, #fdf6ff, #fff5fb);
+      border: 1px solid rgba(204,26,138,0.2);
+      border-radius: 12px;
+      padding: var(--space-4) var(--space-5);
+    }
+    .bcc-eyebrow {
+      font-family: var(--font-primary);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: var(--color-primary);
+      margin: 0 0 var(--space-2);
+    }
+    .bcc-body {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.55;
+      margin: 0 0 var(--space-3);
+    }
+  </style>
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', "3245414455646636");
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=3245414455646636&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TT318QC078"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TT318QC078');
+</script>
+<style>
+.cat-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;outline:2px dashed #D4AF37;outline-offset:6px;border-radius:8px}
+.cat-chip{border:2px solid var(--color-primary,#CC1A8A);background:#fff;color:var(--color-primary,#CC1A8A);border-radius:22px;padding:8px 16px;font-family:var(--font-primary,Montserrat);font-weight:700;font-size:13px;cursor:pointer}
+.cat-chip.on{background:var(--color-primary,#CC1A8A);color:#fff}
+</style>
+<script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('.service-category-title').forEach(function(t){if(t.textContent.trim()!=='Braids'){t.style.display='none';var g=t.nextElementSibling;if(g)g.style.display='none';}});});</script></head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="header-inner">
+
+    <!-- Logo -->
+    <a href="/" class="header-logo" aria-label="BraidedbyAGB Home">
+      <div class="logo-icon">
+        <!-- Stylized woman with orbital ring — SVG representation of brand logo -->
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="24" cy="24" rx="22" ry="10" stroke="#D4AF37" stroke-width="1.5" fill="none" transform="rotate(-20 24 24)" opacity="0.9"/>
+          <circle cx="24" cy="13" r="6" fill="#800080"/>
+          <path d="M16 22 Q14 34 18 38 Q24 42 30 38 Q34 34 32 22" fill="#800080"/>
+          <path d="M20 38 Q18 44 16 46" stroke="#800080" stroke-width="3" stroke-linecap="round"/>
+          <path d="M28 38 Q28 43 26 46" stroke="#800080" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M26 46 Q28 47 32 46" stroke="#800080" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="6" cy="28" r="2" fill="#D4AF37" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-brand">BraidedbyAGB</span>
+        <span class="logo-tagline">African Hair Braiding Specialist</span>
+      </div>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <nav class="main-nav" aria-label="Main navigation">
+      <ul class="nav-list">
+        <li><a href="/booking" class="nav-link ">Services &amp; Prices</a></li>
+        <li><a href="/gallery" class="nav-link ">Gallery</a></li>
+        <li><a href="/academy" class="nav-link ">Academy</a></li>
+        <li><a href="/shop" class="nav-link ">Shop</a></li>
+        <li><a href="/about" class="nav-link ">About</a></li>
+        <li><a href="/contact" class="nav-link ">Contact</a></li>
+        <li><a href="/app" class="nav-link">Account</a></li>
+      </ul>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <a href="https://instagram.com/BraidedbyAGB" target="_blank" rel="noopener" class="header-social" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://wa.me/447312017135" target="_blank" rel="noopener" class="header-social" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
+      </a>
+      <a href="/booking" class="btn btn-primary btn-nav">Book Now</a>
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <nav class="mobile-nav" id="mobileNav" aria-hidden="true">
+    <ul class="mobile-nav-list">
+      <li><a href="/booking" class="mobile-nav-link">Services &amp; Prices</a></li>
+      <li><a href="/gallery" class="mobile-nav-link">Gallery</a></li>
+      <li><a href="/academy" class="mobile-nav-link">Academy</a></li>
+      <li><a href="/shop" class="mobile-nav-link">Shop Extensions</a></li>
+      <li><a href="/about" class="mobile-nav-link">About</a></li>
+      <li><a href="/contact" class="mobile-nav-link">Contact</a></li>
+      <li><a href="/app" class="mobile-nav-link">My Account</a></li>
+      <li><a href="/booking" class="mobile-nav-link mobile-cta">Book Your Appointment</a></li>
+    </ul>
+    <div class="mobile-socials">
+      <a href="https://instagram.com/BraidedbyAGB" target="_blank" rel="noopener">Instagram</a>
+      <span>·</span>
+      <a href="https://wa.me/447312017135" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </nav>
+</header>
+
+<main class="page-content" style="background:var(--color-bg-light)">
+
+  <section class="page-hero" style="padding:140px 0 60px">
+    <div class="page-hero-bg"></div>
+    <div class="container">
+      <div class="page-hero-content">
+        <p class="section-label" style="justify-content:center;color:var(--color-gold)"><span>Farnborough, UK</span></p>
+        <h1 class="page-hero-title">Book Your Appointment</h1>
+        <p class="page-hero-subtitle">Secure your spot with a 30% deposit. Simple, fast, confirmed.</p>
+      </div>
+    </div>
+  </section>
+
+    <!-- Returning-client sign-in nudge (skippable; guests just book) -->
+  <div class="container" style="margin-bottom:var(--space-4)">
+    <div style="max-width:760px;margin:0 auto;background:#F9EEF9;border:1px solid #E8D8EE;border-radius:10px;padding:12px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:center;text-align:center;font-size:var(--text-sm)">
+      <span style="color:var(--color-text-muted)">Booked with us before?</span>
+      <a href="/login" style="color:var(--color-primary);font-weight:700;text-decoration:none">Sign in to autofill your details →</a>
+    </div>
+  </div>
+  
+  <!-- Install-app link (hidden by pwa.js once installed) -->
+  <div class="container" style="margin-bottom:var(--space-4);text-align:center">
+    <a href="#" data-agb-install style="display:inline-flex;align-items:center;gap:6px;color:var(--color-primary);font-weight:700;text-decoration:none;font-size:var(--text-sm)">
+      📲 Install our app for faster booking next time
+    </a>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="booking-progress-bar">
+    <div class="container">
+      <div class="booking-steps-nav">
+        <div class="step-nav-item active" data-step="1">
+          <span class="step-nav-num">1</span>
+          <span class="step-nav-label">Service</span>
+        </div>
+        <div class="step-nav-divider"></div>
+        <div class="step-nav-item" data-step="2">
+          <span class="step-nav-num">2</span>
+          <span class="step-nav-label">Date & Time</span>
+        </div>
+        <div class="step-nav-divider"></div>
+        <div class="step-nav-item" data-step="3">
+          <span class="step-nav-num">3</span>
+          <span class="step-nav-label">Your Details</span>
+        </div>
+        <div class="step-nav-divider"></div>
+        <div class="step-nav-item" data-step="4">
+          <span class="step-nav-num">4</span>
+          <span class="step-nav-label">Extras</span>
+        </div>
+        <div class="step-nav-divider"></div>
+        <div class="step-nav-item" data-step="5">
+          <span class="step-nav-num">5</span>
+          <span class="step-nav-label">Payment</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="booking-layout">
+
+      <!-- ════════════════════════════════════════════ -->
+      <!-- MAIN BOOKING STEPS                          -->
+      <!-- ════════════════════════════════════════════ -->
+      <div class="booking-main">
+
+        <!-- STEP 1: Choose Service -->
+        <div class="booking-step active" id="step-1">
+          <div class="booking-step-header">
+            <span class="step-number">1</span>
+            <h2 class="step-title">Choose Your Service</h2>
+          </div>
+          <p class="service-pick-hint">Choose a group, then tap a style to see photos, prices and details.</p><div class="cat-chips"><button class="cat-chip">All styles</button><button class="cat-chip">Locs</button><button class="cat-chip on">Braids</button><button class="cat-chip">Cornrows</button><button class="cat-chip">Twists</button><button class="cat-chip">Other</button><button class="cat-chip">Wash Day & Hair Treatments</button></div>
+
+                    <h3 class="service-category-title">Locs</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="52">
+                              <span class="service-select-photo"><img src="/assets/images/services/traditional-loc-retwists.jpg" alt="Traditional Loc Retwists" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Traditional Loc Retwists</span>
+                <span class="service-select-price">From £70 <span class="service-select-time">· 3 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="30">
+                              <span class="service-select-photo"><img src="/uploads/services/5cf5fdc554d7c6a4.png" alt="Full Head Starter locs" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Full Head Starter locs</span>
+                <span class="service-select-price">From £150 <span class="service-select-time">· 6–8.5 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="32">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Half-head starter locs</span>
+                <span class="service-select-price">From £90 <span class="service-select-time">· 4 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="41">
+                              <span class="service-select-photo"><img src="/uploads/gallery/1bba77d7e3d521fb.jpeg" alt="Microlocs Retwists" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Microlocs Retwists</span>
+                <span class="service-select-price">From £70 <span class="service-select-time">· 3–6 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="53">
+                              <span class="service-select-photo"><img src="/uploads/services/89c4f2571292dae0.jpeg" alt="Faux Locs" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Faux Locs</span>
+                <span class="service-select-price">From £80 <span class="service-select-time">· 3–6 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="54">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Sisterlocs Retightening</span>
+                <span class="service-select-price">From £90 <span class="service-select-time">· 3–6 hrs</span></span>
+              </span>
+            </button>
+                      </div>
+                    <h3 class="service-category-title">Braids</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="27">
+                              <span class="service-select-photo"><img src="/assets/images/services/french-curls.jpg" alt="French curls" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">French curls</span>
+                <span class="service-select-price">From £100 <span class="service-select-time">· 6–7 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="37">
+                              <span class="service-select-photo"><img src="/uploads/services/4eeb7db8b9936320.jpg" alt="Box braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Box braids</span>
+                <span class="service-select-price">From £70 <span class="service-select-time">· 3–8 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="39">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Knotless Braids</span>
+                <span class="service-select-price">From £80 <span class="service-select-time">· 3–8.5 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="40">
+                              <span class="service-select-photo"><img src="/uploads/services/e754e34ed10b85fb.jpg" alt="Boho braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Boho braids</span>
+                <span class="service-select-price">From £95 <span class="service-select-time">· 5–8 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="43">
+                              <span class="service-select-photo"><img src="/uploads/services/7c3b665d2e2b9b33.png" alt="Feed-in Braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Feed-in Braids</span>
+                <span class="service-select-price">From £65 <span class="service-select-time">· 3–4 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="44">
+                              <span class="service-select-photo"><img src="/uploads/services/3f8000441b56da0f.jpg" alt="Knotless braids (kids, Age 5-12)" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Knotless braids (kids, Age 5-12)</span>
+                <span class="service-select-price">From £70 <span class="service-select-time">· 4–6 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="45">
+                              <span class="service-select-photo"><img src="/uploads/gallery/84c74ffdaa2048b3.jpeg" alt="Box braids (Kids, Age 5-12)" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Box braids (Kids, Age 5-12)</span>
+                <span class="service-select-price">From £60 <span class="service-select-time">· 2–4 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="46">
+                              <span class="service-select-photo"><img src="/uploads/services/38f55c58fdb24560.jpg" alt="Half-cornrows/half-knotless braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Half-cornrows/half-knotless braids</span>
+                <span class="service-select-price">From £80 <span class="service-select-time">· 3–5 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="56">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Microbraids</span>
+                <span class="service-select-price">From £200 <span class="service-select-time">· 6–8 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="57">
+                              <span class="service-select-photo"><img src="/uploads/services/5d9fe9ba511e2197.jpg" alt="Mini twists/mini braids (Natural hair only)" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Mini twists/mini braids (Natural hair only)</span>
+                <span class="service-select-price">From £60 <span class="service-select-time">· 3 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="58">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Half cornrows/ half traditional box braids</span>
+                <span class="service-select-price">From £70 <span class="service-select-time">· 3–5 hrs</span></span>
+              </span>
+            </button>
+                      </div>
+                    <h3 class="service-category-title">Cornrows</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="35">
+                              <span class="service-select-photo"><img src="/uploads/services/eefc984f7ba6bc8e.jpg" alt="Men’s braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Men’s braids</span>
+                <span class="service-select-price">From £40 <span class="service-select-time">· 1–3 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="38">
+                              <span class="service-select-photo"><img src="/uploads/services/c731b67b9fd2db7a.jpeg" alt="Cornrows (For Women)" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Cornrows (For Women)</span>
+                <span class="service-select-price">From £35 <span class="service-select-time">· 1–2.5 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="42">
+                              <span class="service-select-photo"><img src="/uploads/services/f21f2e40f3e2d4e2.jpeg" alt="Two Braids" loading="lazy"></span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Two Braids</span>
+                <span class="service-select-price">From £35 <span class="service-select-time">· 1–2 hrs</span></span>
+              </span>
+            </button>
+                      </div>
+                    <h3 class="service-category-title">Twists</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="25">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Island twists</span>
+                <span class="service-select-price">From £100 <span class="service-select-time">· 4–8 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="48">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Kinky Twists</span>
+                <span class="service-select-price">From £100 <span class="service-select-time">· 4–8.5 hrs</span></span>
+              </span>
+            </button>
+                      </div>
+                    <h3 class="service-category-title">Other</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="47">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Takedown Service</span>
+                <span class="service-select-price">From £40 <span class="service-select-time">· 2–3 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="60">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Blow-Dry / Hair Stretching</span>
+                <span class="service-select-price">From £20 <span class="service-select-time">· 1 hr</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="65">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Crochet Services</span>
+                <span class="service-select-price">From £80 <span class="service-select-time">· 3–4 hrs</span></span>
+              </span>
+            </button>
+                      </div>
+                    <h3 class="service-category-title">Wash Day &amp; Hair Treatments</h3>
+          <div class="service-select-grid">
+                                    <button class="service-select-card "
+                    data-service-id="62">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Wash and Condition</span>
+                <span class="service-select-price">From £30 <span class="service-select-time">· 45 mins</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="63">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Wash, Condition and Blow-Dry</span>
+                <span class="service-select-price">From £40 <span class="service-select-time">· 1.5 hrs</span></span>
+              </span>
+            </button>
+                                    <button class="service-select-card "
+                    data-service-id="66">
+                              <span class="service-select-photo is-empty" aria-hidden="true">BRAIDEDBYAGB</span>
+                                          <span class="service-select-text">
+                <span class="service-select-name">Deep Hair treatment</span>
+                <span class="service-select-price">From £50 <span class="service-select-time">· 1 hr</span></span>
+              </span>
+            </button>
+                      </div>
+          
+          <!-- The chosen service's details, options, add-ons and Continue. Kept here
+               until a service is tapped, then moved to sit right under that
+               service's row (placeServiceOptions), so nobody scrolls past the list. -->
+          <div id="service-options-home"></div>
+          <div id="service-options">
+          <div class="svc-panel">
+          <div class="svc-panel-photo" id="svc-panel-photo" style="display:none"><img id="svc-panel-img" alt=""></div>
+          <div class="svc-panel-body">
+          <div id="svc-panel-head" style="display:none">
+            <h3 class="svc-panel-name" id="svc-panel-name"></h3>
+            <div class="svc-panel-chips" id="svc-panel-chips"></div>
+          </div>
+          <!-- Service description (shown once a service is chosen) -->
+          <div id="service-desc-box" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-left:4px solid var(--color-primary);border-radius:0 var(--border-radius-lg,8px) var(--border-radius-lg,8px) 0">
+            <p id="service-desc-text" style="margin:0;font-size:var(--text-sm);color:var(--color-text,#3a2540);line-height:1.6"></p>
+          </div>
+
+          <!-- Variant selector (shown once a service is chosen) -->
+          <div class="variant-section" id="variant-section" style="display:none">
+            <h4 class="variant-title">Select Your Option</h4>
+            <div class="variant-grid" id="variant-grid"></div>
+          </div>
+
+          <!-- Add-ons -->
+          <div class="addons-section" id="addons-section" style="display:none">
+            <h4 class="addon-title">Optional Add-ons</h4>
+            <div id="addon-list"></div>
+          </div>
+
+          <!-- Prep notes / aftercare (tap to open) and client reviews -->
+          <details class="svc-more" id="prep-note-box" style="display:none">
+            <summary>📋 Before your appointment</summary>
+            <p id="prep-note-text"></p>
+          </details>
+          <details class="svc-more" id="aftercare-box" style="display:none">
+            <summary>💜 Aftercare</summary>
+            <p id="aftercare-text"></p>
+          </details>
+          <div id="svc-reviews"></div>
+
+          <button class="btn btn-primary btn-lg w-full" id="step1-next" disabled onclick="goToStep(2)">
+            Continue to Date & Time →
+          </button>
+          </div><!-- /.svc-panel-body -->
+          </div><!-- /.svc-panel -->
+          </div><!-- /#service-options -->
+
+          <!-- Custom request nudge -->
+          <div class="custom-request-nudge">
+            <div class="crn-inner">
+              <span class="crn-icon">✨</span>
+              <div class="crn-text">
+                <strong>Can't find your style?</strong>
+                <span>Describe your dream look and we'll create a personalised quote just for you.</span>
+              </div>
+              <a href="/custom-request" class="crn-btn">Request Custom Style →</a>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- STEP 2: Choose Date & Time -->
+        <div class="booking-step" id="step-2">
+          <div class="booking-step-header">
+            <span class="step-number">2</span>
+            <h2 class="step-title">Choose Date & Time</h2>
+          </div>
+
+          <!-- Mini calendar -->
+          <div class="calendar-nav">
+            <button class="cal-nav-btn" id="cal-prev">←</button>
+            <h3 class="cal-month-title" id="cal-month-label"></h3>
+            <button class="cal-nav-btn" id="cal-next">→</button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+
+          <!-- Time slots -->
+          <div id="time-slots-section" style="display:none">
+            <h4 class="time-slots-title">Available Times — <span id="selected-date-label"></span></h4>
+            <div class="time-slots-grid" id="time-slots-grid">
+              <p style="color:var(--color-text-muted);font-size:var(--text-sm)">Loading available times...</p>
+            </div>
+          </div>
+          <input type="hidden" id="booking-date" name="date">
+          <input type="hidden" id="booking-time" name="time">
+
+          <div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
+            <button class="btn btn-outline-primary" onclick="goToStep(1)">← Back</button>
+            <button class="btn btn-primary btn-lg flex-1" id="step2-next" disabled onclick="goToStep(3)">
+              Continue to Your Details →
+            </button>
+          </div>
+        </div>
+
+
+        <!-- STEP 3: Your Details -->
+        <div class="booking-step" id="step-3">
+          <div class="booking-step-header">
+            <span class="step-number">3</span>
+            <h2 class="step-title">Your Details</h2>
+          </div>
+
+          <!-- Who is this appointment for? (per appointment) -->
+          <div class="form-group">
+            <label class="form-label" for="guest-name">Who is this appointment for? *</label>
+            <input class="form-control" type="text" id="guest-name" placeholder="e.g. Myself, or Sarah (my daughter)" required>
+            <span class="field-error">Please tell us who this appointment is for.</span>
+            <span style="font-size:var(--text-xs);color:var(--color-text-muted);display:block;margin-top:4px">
+              Booking for the family? Add each person — you'll pay one combined deposit at the end.
+            </span>
+          </div>
+
+          <!-- Payer contact details — collected once for the whole booking -->
+          <div id="payer-contact-block">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="client-name">Full Name *</label>
+                <input class="form-control" type="text" id="client-name" placeholder="Your full name" required
+                       value="">
+                <span class="field-error">Please enter your name.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="client-phone">Phone Number *</label>
+                <input class="form-control" type="tel" id="client-phone" placeholder="07700 000000" required
+                       value="">
+                <span class="field-error">Please enter your phone number.</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-email">Email Address *</label>
+              <input class="form-control" type="email" id="client-email" placeholder="your@email.com" required
+                     value="">
+              <span class="field-error">Please enter a valid email.</span>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer">
+                <input type="checkbox" id="email-optin" checked style="accent-color:var(--color-primary);width:16px;height:16px">
+                <span style="font-size:var(--text-sm);color:var(--color-text-muted)">
+                  Send me offers, rebooking reminders and news by email. (You'll always get emails about your bookings, whatever you choose.)
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Shown for 2nd+ appointments instead of the contact block -->
+          <div id="payer-locked-note" style="display:none;font-size:var(--text-sm);color:var(--color-text-muted);background:var(--color-bg-light);border-radius:8px;padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4)">
+            Booking under <strong id="payer-locked-name"></strong>. All appointments share one confirmation and one combined deposit.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-notes">Additional Notes for this appointment (Optional)</label>
+            <textarea class="form-control" id="client-notes" rows="3"
+                      placeholder="Hair length, specific style preferences, any allergies..."></textarea>
+          </div>
+
+          <!-- Media consent (per appointment) -->
+          <div class="form-group">
+            <label class="form-label">📸 Photos &amp; videos</label>
+            <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin:0 0 var(--space-3)">
+              We love sharing our work on social media. Are you happy for us to take photos/videos during or after this appointment?
+            </p>
+            <div class="media-consent-options" style="display:flex;flex-direction:column;gap:var(--space-2)">
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="hair_face" style="accent-color:var(--color-primary);width:16px;height:16px"> Yes — hair &amp; me (my face may be shown)
+              </label>
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="hair" style="accent-color:var(--color-primary);width:16px;height:16px"> Yes — hair only (no face)
+              </label>
+              <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;font-size:var(--text-sm)">
+                <input type="radio" name="media-consent" value="none" checked style="accent-color:var(--color-primary);width:16px;height:16px"> No, please don't
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
+            <button class="btn btn-outline-primary" onclick="goToStep(2)">← Back</button>
+            <button class="btn btn-primary btn-lg flex-1" onclick="validateStep3()">
+              Continue to Extras →
+            </button>
+          </div>
+        </div>
+
+
+        <!-- STEP 4: Pipeline — Product Recommendation -->
+        <div class="booking-step" id="step-4">
+          <div class="booking-step-header">
+            <span class="step-number">4</span>
+            <h2 class="step-title">Complete Your Look</h2>
+          </div>
+
+          <div id="pipeline-loading" style="text-align:center;padding:var(--space-10)">
+            <div class="spinner"></div>
+            <p style="color:var(--color-text-muted);margin-top:var(--space-4)">Finding the perfect products for your style...</p>
+          </div>
+
+          <div id="pipeline-recommendations" style="display:none"></div>
+
+          <div id="pipeline-none" style="display:none;text-align:center;padding:var(--space-8)">
+            <p style="color:var(--color-text-muted)">No product recommendations for this service.</p>
+          </div>
+
+          <div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
+            <button class="btn btn-outline-primary" onclick="goToStep(3)">← Back</button>
+            <button class="btn btn-primary btn-lg flex-1" onclick="addToCart()">
+              Add to Cart →
+            </button>
+          </div>
+        </div>
+
+
+        <!-- STEP 5: Review & Pay -->
+        <div class="booking-step" id="step-5">
+          <div class="booking-step-header">
+            <span class="step-number">5</span>
+            <h2 class="step-title">Review & Pay Deposit</h2>
+          </div>
+
+          <!-- Add another appointment -->
+          <button class="btn btn-outline-primary w-full" style="margin-bottom:var(--space-5)" onclick="addAnotherPerson()">
+            ＋ Add another person / appointment
+          </button>
+
+          <!-- Where? Salon vs Home service -->
+          <div class="location-section" style="margin-bottom:var(--space-5)">
+            <h4 style="margin:0 0 var(--space-3);color:var(--color-deep-purple);font-size:var(--text-md)">Where would you like your appointment?</h4>
+            <div class="location-tabs" style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+              <button type="button" class="location-tab active" id="loc-salon" onclick="selectLocationType('salon')"
+                      style="flex:1;min-width:140px;padding:var(--space-4);border:2px solid var(--color-primary);border-radius:var(--border-radius-lg,8px);background:var(--color-primary);color:#fff;cursor:pointer;font-weight:600">
+                🏠 At the salon<br><span style="font-weight:400;font-size:var(--text-xs)">Farnborough — free</span>
+              </button>
+              <button type="button" class="location-tab" id="loc-home" onclick="selectLocationType('home')"
+                      style="flex:1;min-width:140px;padding:var(--space-4);border:2px solid var(--color-border,#E8D8EE);border-radius:var(--border-radius-lg,8px);background:#fff;color:var(--color-text);cursor:pointer;font-weight:600">
+                🚗 Home service<br><span id="home-tab-note" style="font-weight:400;font-size:var(--text-xs);color:var(--color-text-muted)">Bookings £<span id="home-min-label"></span>+</span>
+              </button>
+            </div>
+
+            <!-- Home service details (shown when Home is chosen) -->
+            <div id="home-service-details" style="display:none;margin-top:var(--space-4);padding:var(--space-4);background:var(--color-bg-light,#faf7fb);border-radius:var(--border-radius-lg,8px)">
+              <div class="form-group">
+                <label class="form-label" for="travel-area">Your area *</label>
+                <select class="form-control" id="travel-area" onchange="onTravelAreaChange()">
+                  <option value="">Select your area…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="service-address">Full address (incl. postcode) *</label>
+                <textarea class="form-control" id="service-address" rows="3" placeholder="House number and street, town, postcode" oninput="updatePayButtonState()"></textarea>
+                <span style="font-size:var(--text-xs);color:var(--color-text-muted);display:block;margin-top:4px">
+                  The travel fee is paid in full now, on top of your deposit.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking summary review (cart) -->
+          <div class="booking-review-table" id="booking-review-table"></div>
+
+          <!-- Policy checkbox — MUST tick before paying -->
+          <div class="policy-checkbox" style="margin:var(--space-6) 0">
+            <input type="checkbox" id="policy-checkbox">
+            <label for="policy-checkbox">
+              I have read and agree to the <a href="/policies" target="_blank">BraidedbyAGB policies</a>.
+              I understand that: my <strong>deposit is non-refundable</strong>,
+              cancellations must be made at least <strong>48 hours</strong> before my appointment,
+              and I must arrive within <strong>20 minutes</strong> of my appointment time or my
+              appointment may be cancelled and deposit forfeited.
+            </label>
+          </div>
+
+          <!-- Payment method tabs -->
+          <div class="payment-tabs">
+            <button class="payment-tab active" data-method="stripe" onclick="selectPaymentMethod('stripe', this)">
+              💳 Card / PayPal / Klarna
+            </button>
+            <button class="payment-tab" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer', this)">
+              🏦 Bank Transfer
+            </button>
+          </div>
+
+          <!-- Stripe payment section (Card, PayPal, Klarna, Clearpay via Payment Element) -->
+          <div id="stripe-section">
+            <div class="stripe-card-wrap">
+              <label class="form-label">Payment Details</label>
+              <div id="stripe-payment-element"></div>
+              <div id="stripe-card-errors" class="stripe-error" role="alert"></div>
+              <!-- Shown when Klarna/Clearpay is chosen: pay-in-3 covers the full price -->
+              <div id="bnpl-note" style="display:none;margin-top:var(--space-3);padding:var(--space-3) var(--space-4);background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius-md,8px);font-size:var(--text-sm);color:#166534"></div>
+            </div>
+            <button class="btn btn-gold btn-lg w-full" id="stripe-pay-btn" disabled onclick="submitStripePayment()">Pay Deposit</button>
+          </div>
+
+          <!-- Bank transfer section -->
+          <div id="bank-transfer-section" style="display:none">
+            <div class="bank-transfer-box" id="bank-details-box">
+              <!-- Populated by PHP via JS -->
+            </div>
+            <div class="policy-checkbox" style="margin:var(--space-4) 0">
+              <input type="checkbox" id="bank-confirm-checkbox">
+              <label for="bank-confirm-checkbox">
+                I will transfer the deposit amount of <strong id="bank-deposit-label"></strong> within <strong>24 hours</strong>.
+                I understand my booking will be automatically cancelled if payment is not received.
+              </label>
+            </div>
+            <button class="btn btn-primary btn-lg w-full" id="bank-submit-btn" disabled onclick="submitBankTransfer()">
+              Confirm Bank Transfer Booking
+            </button>
+          </div>
+
+          <div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
+            <button class="btn btn-outline-primary" onclick="goToStep(4)">← Back</button>
+          </div>
+        </div>
+
+      </div><!-- /booking-main -->
+
+
+      <!-- ════════════════════════════════════════════ -->
+      <!-- BOOKING SUMMARY SIDEBAR                     -->
+      <!-- ════════════════════════════════════════════ -->
+      <aside class="booking-sidebar">
+        <div class="booking-summary">
+          <div class="booking-summary-header">Your Booking Summary</div>
+          <div class="booking-summary-body">
+
+            <!-- Cart items (appointments already added) -->
+            <div id="cart-items"></div>
+
+            <!-- Current appointment being configured (draft) -->
+            <div id="draft-summary">
+              <div class="summary-row">
+                <span class="label">Service</span>
+                <span class="value" id="sum-service">—</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Option</span>
+                <span class="value" id="sum-variant">—</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">For</span>
+                <span class="value" id="sum-guest">—</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Date</span>
+                <span class="value" id="sum-date">—</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Time</span>
+                <span class="value" id="sum-time">—</span>
+              </div>
+              <div class="summary-row" id="sum-addons-row" style="display:none">
+                <span class="label">Add-ons</span>
+                <span class="value" id="sum-addons">—</span>
+              </div>
+            </div>
+
+            <div class="summary-row total">
+              <span class="label" id="sum-total-label">Total Price</span>
+              <span class="value" id="sum-total">—</span>
+            </div>
+            <div class="summary-row deposit">
+              <span class="label">Deposit Due (30%)</span>
+              <span class="value" id="sum-deposit">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Balance on Day</span>
+              <span class="value" id="sum-balance">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trust signals -->
+        <div class="booking-trust">
+          <div class="trust-item">
+            <span>🔒</span>
+            <span>Secure payment via Stripe</span>
+          </div>
+          <div class="trust-item">
+            <span>✓</span>
+            <span>Instant email confirmation</span>
+          </div>
+          <div class="trust-item">
+            <span>⏰</span>
+            <span>24hr & 2hr reminders sent</span>
+          </div>
+          <div class="trust-item">
+            <span>💬</span>
+            <span>WhatsApp support always available</span>
+          </div>
+        </div>
+
+        <!-- Custom request CTA -->
+        <div class="booking-custom-cta">
+          <p class="bcc-eyebrow">✨ Don't see your style?</p>
+          <p class="bcc-body">Looking for something bespoke? Describe your dream look and we'll quote you personally.</p>
+          <a href="/custom-request" class="btn btn-outline-primary w-full" style="margin-bottom:var(--space-3)">
+            Request a Custom Style
+          </a>
+        </div>
+
+        <!-- Need help -->
+        <div style="margin-top:var(--space-5);text-align:center">
+          <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-3)">Questions? Get in touch:</p>
+          <a href="https://wa.me/447312017135" class="btn btn-outline-primary w-full" target="_blank" rel="noopener">
+            💬 WhatsApp Us
+          </a>
+        </div>
+      </aside>
+
+    </div><!-- /booking-layout -->
+  </div>
+
+</main>
+
+<footer class="site-footer">
+
+  <!-- Top footer bar -->
+  <div class="footer-cta-bar">
+    <div class="container">
+      <div class="footer-cta-inner">
+        <div class="footer-cta-text">
+          <span class="font-accent">"Get the Look You Deserve!"</span>
+        </div>
+        <div class="footer-cta-action">
+          <a href="tel:07312017135" class="footer-phone">07312 017135</a>
+          <a href="/booking" class="btn btn-gold">Book Your Appointment!</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main footer -->
+  <div class="footer-main">
+    <div class="container">
+      <div class="footer-grid">
+
+        <!-- Brand column -->
+        <div class="footer-brand">
+          <a href="/" class="footer-logo">BraidedbyAGB</a>
+          <p class="footer-tagline">African Hair Braiding Specialist</p>
+          <p class="footer-desc">Specializing in flawless, long-lasting braids — authentic African hair braiding designs just for you. Farnborough, Hampshire, UK.</p>
+          <div class="footer-socials">
+            <a href="https://instagram.com/BraidedbyAGB" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
+                        <a href="https://www.tiktok.com/@braidedbyagb?_r=1&amp;amp;amp;_t=ZN-9BZJxzoDV9K" target="_blank" rel="noopener" class="social-link" aria-label="TikTok">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.73a8.2 8.2 0 004.79 1.52V6.81a4.85 4.85 0 01-1.02-.12z"/></svg>
+            </a>
+                                    <a href="https://www.facebook.com/share/1CeUAC1KLc/?mibextid=wwXIfr" target="_blank" rel="noopener" class="social-link" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+                        <a href="https://wa.me/447312017135" target="_blank" rel="noopener" class="social-link" aria-label="WhatsApp">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Services column -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Our Services</h4>
+          <ul class="footer-links">
+            <li><a href="/services/box-braids">Box Braids</a></li>
+            <li><a href="/services/knotless-braids">Knotless Braids</a></li>
+            <li><a href="/services/feed-in-braids">Feed-In Braids</a></li>
+            <li><a href="/services/cornrows-for-women">Cornrows</a></li>
+            <li><a href="/services/kinky-twists">Twists</a></li>
+            <li><a href="/services/knotless-braids-kids-age-5-12">Kids Styles</a></li>
+            <li><a href="/services/full-head-starter-locs">Starter Locs <span class="badge-new-sm">New</span></a></li>
+            <li><a href="/services/traditional-loc-retwists">Loc Retwists <span class="badge-new-sm">New</span></a></li>
+          </ul>
+        </div>
+
+        <!-- Quick links column -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="/booking">Book an Appointment</a></li>
+            <li><a href="/shop">Shop Extensions</a></li>
+            <li><a href="/app">My Account</a></li>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/contact">Contact</a></li>
+            <li><a href="/policies">Policies</a></li>
+            <li><a href="#" data-agb-install>📲 Install the app</a></li>
+          </ul>
+          <h4 class="footer-col-title" style="margin-top:1.5rem;">Contact</h4>
+          <ul class="footer-links">
+            <li><a href="tel:07312017135">07312 017135</a></li>
+            <li><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a></li>
+            <li><a href="https://www.google.com/maps/search/?api=1&query=Unit+4+%28First+floor%29++%0D%0ASelnews+Business+Centre%2C%0D%0APeabody+Road%2C+North+Camp%2C+Farnborough%0D%0AGU14+6GX." target="_blank" rel="noopener">Unit 4 (First floor)  
+Selnews Business Centre,
+Peabody Road, North Camp, Farnborough
+GU14 6GX.</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Accepted payment methods -->
+  <style>
+    .footer-payments{border-top:1px solid rgba(255,255,255,.08);padding:20px 0}
+    .footer-payments .container{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+    .footer-payments-label{color:rgba(255,255,255,.6);font-size:.78rem;letter-spacing:.05em;text-transform:uppercase}
+    .payment-logos{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+    .pay-chip{height:32px;min-width:52px;padding:0 10px;border-radius:6px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap}
+    .pay-visa{color:#1434CB;font:italic 800 16px/1 Arial,Helvetica,sans-serif;letter-spacing:.5px}
+    .pay-paypal{font:italic 800 15px/1 Arial,Helvetica,sans-serif}
+    .pay-paypal .p1{color:#003087}.pay-paypal .p2{color:#009cde}
+    .pay-klarna{background:#FFB3C7;color:#0A0A0A;font:700 15px/1 Arial,Helvetica,sans-serif}
+    .pay-clearpay{background:#B2FCE4;color:#0A0A0A;font:700 14px/1 Arial,Helvetica,sans-serif}
+    .pay-mc{padding:0 8px}
+  </style>
+  <div class="footer-payments">
+    <div class="container">
+      <span class="footer-payments-label">Secure payments accepted</span>
+      <div class="payment-logos">
+        <span class="pay-chip pay-visa" role="img" aria-label="Visa">VISA</span>
+        <span class="pay-chip pay-mc" role="img" aria-label="Mastercard">
+          <svg width="36" height="22" viewBox="0 0 40 24" aria-hidden="true">
+            <circle cx="15" cy="12" r="9" fill="#EB001B"/>
+            <circle cx="25" cy="12" r="9" fill="#F79E1B"/>
+            <path d="M20 5.4a9 9 0 0 0 0 13.2 9 9 0 0 0 0-13.2z" fill="#FF5F00"/>
+          </svg>
+        </span>
+        <span class="pay-chip pay-paypal" role="img" aria-label="PayPal"><span class="p1">Pay</span><span class="p2">Pal</span></span>
+        <span class="pay-chip pay-klarna" role="img" aria-label="Klarna">Klarna</span>
+        <span class="pay-chip pay-clearpay" role="img" aria-label="Clearpay">Clearpay</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="footer-bottom">
+    <div class="container">
+      <div class="footer-bottom-inner">
+        <p>© 2026 BraidedbyAGB. All rights reserved.</p>
+        <p><a href="/policies">Privacy Policy</a> · <a href="/policies#cancellation">Cancellation Policy</a> · <a href="/policies#refund">Refund Policy</a></p>
+      </div>
+    </div>
+  </div>
+
+</footer>
+
+<!-- Floating WhatsApp Button -->
+<a href="https://wa.me/447312017135?text=Hi%2C%20I%27d%20like%20to%20book%20an%20appointment%20at%20BraidedbyAGB"
+   class="whatsapp-float"
+   target="_blank"
+   rel="noopener"
+   aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.135 1.532 5.875L0 24l6.318-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.368l-.36-.213-3.731.89.933-3.618-.234-.372A9.818 9.818 0 1112 21.818z"/></svg>
+</a>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// BOOKING JAVASCRIPT
+// ═══════════════════════════════════════════════════════════
+
+// All services data from PHP
+const SERVICES    = {"52":{"id":"52","name":"Traditional Loc Retwists","slug":"traditional-loc-retwists","duration":"180","price_from":"70.00","prep_notes":null,"description":"Professional maintenance for traditional locs to keep them clean and neat while promoting healthy growth","image":"\/assets\/images\/services\/traditional-loc-retwists.jpg","aftercare":"","category":"Locs","from":70,"time":"3 hrs","reviews":[],"variants":[]},"25":{"id":"25","name":"Island twists","slug":"island-twists","duration":"180","price_from":"100.00","prep_notes":"","description":"Protective hairstyle made with two-strand twists and curly strands added throughout for a soft, full, and textured finish.","image":"","aftercare":"","category":"Twists","from":100,"time":"4\u20138 hrs","reviews":[],"variants":[{"id":42,"name":"Small","price":150,"duration":420},{"id":43,"name":"Medium","price":120,"duration":360},{"id":44,"name":"Large","price":100,"duration":240},{"id":79,"name":"Extra small","price":250,"duration":480}]},"27":{"id":"27","name":"French curls","slug":"french-curls","duration":"360","price_from":"100.00","prep_notes":"","description":"Elegant braids finished with soft, bouncy curls at the ends for a glamorous and flowing look. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/assets\/images\/services\/french-curls.jpg","aftercare":"","category":"Braids","from":100,"time":"6\u20137 hrs","reviews":[],"variants":[{"id":51,"name":"Medium","price":100,"duration":360},{"id":117,"name":"Small","price":130,"duration":420}]},"30":{"id":"30","name":"Full Head Starter locs","slug":"full-head-starter-locs","duration":"420","price_from":"150.00","prep_notes":"","description":"complete set of neat twists or interlocks applied to the entire head, creating the foundation for long-lasting, mature locs.","image":"\/uploads\/services\/5cf5fdc554d7c6a4.png","aftercare":"","category":"Locs","from":150,"time":"6\u20138.5 hrs","reviews":[],"variants":[{"id":58,"name":"Microlocs","price":300,"duration":480},{"id":59,"name":"Precision microlocs  (Extra Small\/High Density)","price":500,"duration":510},{"id":60,"name":"Traditional locs","price":150,"duration":360}]},"32":{"id":"32","name":"Half-head starter locs","slug":"half-head-starter-locs","duration":"240","price_from":"90.00","prep_notes":"","description":"Twists  or interlocks applied to part of the head, offering a stylish, protective look while leaving the rest of the hair shaved.","image":"","aftercare":"","category":"Locs","from":90,"time":"4 hrs","reviews":[],"variants":[]},"35":{"id":"35","name":"Men\u2019s braids","slug":"mens-braids","duration":"60","price_from":"40.00","prep_notes":"","description":"Neat, stylish braiding patterns designed to suit different hair lengths and head shapes. All prices are starting prices. Final cost depends on the size and thickness of the style chosen and will be displayed at checkout.","image":"\/uploads\/services\/eefc984f7ba6bc8e.jpg","aftercare":"","category":"Cornrows","from":40,"time":"1\u20133 hrs","reviews":[],"variants":[{"id":68,"name":"Basic\/straight cornrows","price":40,"duration":60},{"id":69,"name":"Basic Stitch cornrows","price":50,"duration":120},{"id":70,"name":"Twists","price":60,"duration":180},{"id":101,"name":"With extensions added for thickness\/length","price":50,"duration":120},{"id":131,"name":"Single plaits","price":60,"duration":180},{"id":139,"name":"Barrel twists","price":60,"duration":120},{"id":152,"name":"Stitch braids + added design","price":60,"duration":150},{"id":153,"name":"Cornrows with design\/pattern","price":50,"duration":120}]},"37":{"id":"37","name":"Box braids","slug":"box-braids","duration":"300","price_from":"70.00","prep_notes":"","description":"Traditional box braids. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/4eeb7db8b9936320.jpg","aftercare":"","category":"Braids","from":70,"time":"3\u20138 hrs","reviews":[],"variants":[{"id":71,"name":"Small","price":120,"duration":360},{"id":72,"name":"Medium","price":90,"duration":240},{"id":73,"name":"Large","price":70,"duration":180},{"id":134,"name":"Extra small","price":190,"duration":480}]},"38":{"id":"38","name":"Cornrows (For Women)","slug":"cornrows-for-women","duration":"90","price_from":"30.00","prep_notes":"","description":"Straight back or curved lines with natural hair only.\nPlease note: Additional charges may apply for extra-long or extra-thick hair due to extra time required. Final price will be confirmed before the appointment.","image":"\/uploads\/services\/c731b67b9fd2db7a.jpeg","aftercare":"","category":"Cornrows","from":35,"time":"1\u20132.5 hrs","reviews":[],"variants":[{"id":80,"name":"Underwig straight-lines (Up to 12)","price":35,"duration":60},{"id":81,"name":"Curved or zig-zag","price":45,"duration":120},{"id":162,"name":"Cornrows into a bun (Shuku)","price":45,"duration":150}]},"39":{"id":"39","name":"Knotless Braids","slug":"knotless-braids","duration":"300","price_from":"80.00","prep_notes":"","description":"A gentler, natural-looking braid starting with your own hair. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"","aftercare":"","category":"Braids","from":80,"time":"3\u20138.5 hrs","reviews":[],"variants":[{"id":82,"name":"Small","price":130,"duration":480},{"id":83,"name":"Medium","price":100,"duration":240},{"id":84,"name":"Large","price":80,"duration":180},{"id":85,"name":"Extra small","price":200,"duration":510}]},"40":{"id":"40","name":"Boho braids","slug":"boho-braids","duration":"420","price_from":"90.00","prep_notes":"","description":"Stylish braided look with loose curly strands added throughout for a soft, textured, and effortless finish. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/e754e34ed10b85fb.jpg","aftercare":"","category":"Braids","from":95,"time":"5\u20138 hrs","reviews":[],"variants":[{"id":86,"name":"Small","price":140,"duration":420},{"id":87,"name":"Medium","price":110,"duration":360},{"id":88,"name":"Extra small","price":230,"duration":480},{"id":89,"name":"Large","price":95,"duration":300}]},"41":{"id":"41","name":"Microlocs Retwists","slug":"microlocs-retwists","duration":"240","price_from":"70.00","prep_notes":"","description":"Precision root maintenance for microlocs to keep them neat, fresh and well-defined. Pricing is based on the amount of new growth and loc density. Clients with over 14weeks of new growth should contact us for custom quote.","image":"\/uploads\/gallery\/1bba77d7e3d521fb.jpeg","aftercare":"","category":"Locs","from":70,"time":"3\u20136 hrs","reviews":[],"variants":[{"id":90,"name":"up to 6 weeks of growth","price":70,"duration":180},{"id":91,"name":"7\u201310 weeks of growth","price":80,"duration":270},{"id":92,"name":"11-14 weeks of growth","price":100,"duration":360}]},"42":{"id":"42","name":"Two Braids","slug":"two-braids","duration":"60","price_from":"40.00","prep_notes":"","description":"A sleek and stylish protective hairstyle featuring two neatly done braids. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/f21f2e40f3e2d4e2.jpeg","aftercare":"","category":"Cornrows","from":35,"time":"1\u20132 hrs","reviews":[],"variants":[{"id":94,"name":"With extensions added for thickness\/length (Extension not included in price)","price":50,"duration":120},{"id":122,"name":"Natural hair only","price":35,"duration":60}]},"43":{"id":"43","name":"Feed-in Braids","slug":"feed-in-braids","duration":"240","price_from":"40.00","prep_notes":"","description":"Feed-in braids are neat, natural-looking cornrows created by gradually adding hair extensions for a smooth and seamless finish. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/7c3b665d2e2b9b33.png","aftercare":"","category":"Braids","from":65,"time":"3\u20134 hrs","reviews":[],"variants":[{"id":96,"name":"Straight back","price":100,"duration":180},{"id":97,"name":"Stitch","price":80,"duration":180},{"id":98,"name":"Ponytail (small size)","price":120,"duration":240},{"id":99,"name":"Ponytail (medium size)","price":70,"duration":210},{"id":100,"name":"Alicia keys braids","price":65,"duration":210}]},"44":{"id":"44","name":"Knotless braids (kids, Age 5-12)","slug":"knotless-braids-kids-age-5-12","duration":"240","price_from":"60.00","prep_notes":"Hair must be clean and fully detangled","description":"Knotless braids for kids from age 5-12. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/3f8000441b56da0f.jpg","aftercare":"","category":"Braids","from":70,"time":"4\u20136 hrs","reviews":[],"variants":[{"id":102,"name":"Small","price":90,"duration":360},{"id":103,"name":"Medium","price":80,"duration":300},{"id":104,"name":"Large","price":70,"duration":240}]},"45":{"id":"45","name":"Box braids (Kids, Age 5-12)","slug":"box-braids-kids-age-5-12","duration":"240","price_from":"50.00","prep_notes":"","description":"Box braids for kids from age 5-12. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/gallery\/84c74ffdaa2048b3.jpeg","aftercare":"","category":"Braids","from":60,"time":"2\u20134 hrs","reviews":[],"variants":[{"id":105,"name":"Small","price":80,"duration":240},{"id":106,"name":"Medium","price":70,"duration":180},{"id":107,"name":"Large","price":60,"duration":120}]},"46":{"id":"46","name":"Half-cornrows\/half-knotless braids","slug":"half-cornrows-half-knotless-braids","duration":"240","price_from":"60.00","prep_notes":"","description":"A stylish combination of neat front cornrows with single braids at the back.  All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/38f55c58fdb24560.jpg","aftercare":"","category":"Braids","from":80,"time":"3\u20135 hrs","reviews":[],"variants":[{"id":109,"name":"Small","price":120,"duration":300},{"id":110,"name":"Medium","price":95,"duration":240},{"id":111,"name":"Large","price":80,"duration":180}]},"47":{"id":"47","name":"Takedown Service","slug":"takedown-service","duration":"180","price_from":"40.00","prep_notes":"","description":"Safely removing your braids, locs or crotchet style while protecting your natural hair.","image":"","aftercare":"","category":"Other","from":40,"time":"2\u20133 hrs","reviews":[],"variants":[{"id":112,"name":"Crotchet","price":40,"duration":120},{"id":113,"name":"Braids","price":50,"duration":180}]},"48":{"id":"48","name":"Kinky Twists","slug":"kinky-twists","duration":"300","price_from":"75.00","prep_notes":"","description":"Soft, natural-looking twists created using afro kinky hair. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"","aftercare":"","category":"Twists","from":100,"time":"4\u20138.5 hrs","reviews":[],"variants":[{"id":114,"name":"Medium","price":100,"duration":240},{"id":115,"name":"Small","price":120,"duration":360},{"id":116,"name":"Extra small","price":230,"duration":510}]},"53":{"id":"53","name":"Faux Locs","slug":"faux-locs","duration":"240","price_from":"100.00","prep_notes":"","description":"A protective and stylish hairstyle that mimics the look of natural dreadlocks without long-term commitment. Perfect for clients who want locs temporarily, this style involves wrapping synthetic or natural hair around strands to create neat and uniform locs. All braid prices are starting prices. Final cost depends on the size, thickness and length of the style chosen and will be displayed at checkout. Hair extensions are not included.","image":"\/uploads\/services\/89c4f2571292dae0.jpeg","aftercare":"","category":"Locs","from":80,"time":"3\u20136 hrs","reviews":[],"variants":[{"id":127,"name":"Soft Faux Locs","price":100,"duration":240},{"id":128,"name":"Butterfly Faux Locs","price":130,"duration":300},{"id":129,"name":"Boho Faux Locs","price":150,"duration":360},{"id":130,"name":"Crochet Faux Locs","price":80,"duration":180}]},"54":{"id":"54","name":"Sisterlocs Retightening","slug":"sisterlocs-retightening","duration":"180","price_from":"90.00","prep_notes":"Please arrive with your hair free from heavy product build-up. If you are unsure which retie option to book, send photos via WhatsApp before scheduling your appointment.","description":"Maintain the health and appearance of your Sisterlocks with a professional retie service. Pricing is based on the amount of new growth since your last appointment. Please book according to the number of weeks since your most recent retie. Clients with more than 14 weeks of growth should contact us before booking.","image":"","aftercare":"","category":"Locs","from":90,"time":"3\u20136 hrs","reviews":[],"variants":[{"id":135,"name":"Sisterlocks Retie (up to 6 weeks growth)","price":90,"duration":180},{"id":136,"name":"Sisterlocks Retie (7\u201310 weeks growth)","price":120,"duration":270},{"id":137,"name":"Sisterlocks Retie (11\u201314 weeks growth","price":150,"duration":360}]},"56":{"id":"56","name":"Microbraids","slug":"microbraids","duration":"360","price_from":"200.00","prep_notes":"","description":"Small, neat and lightweight individual braids for a beautiful, versatile look. Micro braids are perfect for anyone who loves a detailed, long-lasting protective style that can be worn in different ways.","image":"","aftercare":"","category":"Braids","from":200,"time":"6\u20138 hrs","reviews":[],"variants":[{"id":149,"name":"Shoulder-length","price":200,"duration":360},{"id":150,"name":"Mid-back","price":250,"duration":420},{"id":151,"name":"Waist-length","price":300,"duration":480}]},"57":{"id":"57","name":"Mini twists\/mini braids (Natural hair only)","slug":"mini-twists-mini-braids-natural-hair-only","duration":"180","price_from":"60.00","prep_notes":"","description":"Neat mini twists or mini braids created using your natural hair, with no extensions. Price may vary depending on hair length and density.","image":"\/uploads\/services\/5d9fe9ba511e2197.jpg","aftercare":"","category":"Braids","from":60,"time":"3 hrs","reviews":[],"variants":[]},"58":{"id":"58","name":"Half cornrows\/ half traditional box braids","slug":"half-cornrows-half-traditional-box-braids","duration":"180","price_from":"60.00","prep_notes":"","description":"The best of both styles! This look combines neat, sleek cornrows at the front with classic traditional box braids at the back for a stylish and versatile finish.\r\nPlease note: Hair extensions are not included unless stated otherwise.","image":"","aftercare":"","category":"Braids","from":70,"time":"3\u20135 hrs","reviews":[],"variants":[{"id":155,"name":"Small","price":100,"duration":300},{"id":156,"name":"Medium","price":85,"duration":240},{"id":157,"name":"Large","price":70,"duration":180}]},"60":{"id":"60","name":"Blow-Dry \/ Hair Stretching","slug":"blow-dry-hair-stretching","duration":"60","price_from":"20.00","prep_notes":"","description":"Have your freshly washed and detangled hair gently blow-dried and stretched, ready for your next hairstyle.","image":"","aftercare":"","category":"Other","from":20,"time":"1 hr","reviews":[],"variants":[]},"62":{"id":"62","name":"Wash and Condition","slug":"wash-and-condition","duration":"45","price_from":"30.00","prep_notes":"","description":"A gentle cleanse and conditioning service to leave your natural hair clean and refreshed.","image":"","aftercare":"","category":"Wash Day \u0026 Hair Treatments","from":30,"time":"45 mins","reviews":[],"variants":[]},"63":{"id":"63","name":"Wash, Condition and Blow-Dry","slug":"wash-condition-and-blow-dry","duration":"90","price_from":"40.00","prep_notes":"","description":"A complete hair preparation service combining cleansing, conditioning and blow-drying to leave your hair clean, stretched and ready to style.","image":"","aftercare":"","category":"Wash Day \u0026 Hair Treatments","from":40,"time":"1.5 hrs","reviews":[],"variants":[]},"65":{"id":"65","name":"Crochet Services","slug":"crochet-services","duration":"180","price_from":"80.00","prep_notes":"","description":"Get a beautiful, natural-looking protective hairstyle with our crochet braiding service at BraidedbyAGB.\r\n\r\nCrochet braids are created by attaching pre-made extensions to your natural hair using a crochet needle.","image":"","aftercare":"","category":"Other","from":80,"time":"3\u20134 hrs","reviews":[],"variants":[{"id":159,"name":"Crochet on Cornrows (Traditional crochet)","price":80,"duration":180},{"id":160,"name":"Individual crochet","price":110,"duration":240},{"id":161,"name":"Invisible Crochet","price":120,"duration":240}]},"66":{"id":"66","name":"Deep Hair treatment","slug":"deep-hair-treatment","duration":"60","price_from":"50.00","prep_notes":"","description":"An intensive treatment tailored to your hair\u0026#039;s needs. Choose from moisture, deep conditioning, protein strengthening or clarifying treatments following a hair assessment.","image":"","aftercare":"","category":"Wash Day \u0026 Hair Treatments","from":50,"time":"1 hr","reviews":[],"variants":[]}};
+const DEPOSIT_PCT = 30;
+// "AGB bring your bestie": a share link (/booking?ref=CODE) is remembered for
+// 30 days and sent with the booking. The SERVER decides if it applies (new
+// clients only) and takes it off the balance on the day; this page only says so.
+const REFERRAL_ON     = true;
+const REFERRAL_FRIEND = 10;
+function getReferralCode() {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('ref');
+    if (fromUrl && /^[A-Za-z0-9]{4,20}$/.test(fromUrl)) {
+      localStorage.setItem('agb_ref', JSON.stringify({ code: fromUrl.toUpperCase(), exp: Date.now() + 30 * 864e5 }));
+    }
+    const saved = JSON.parse(localStorage.getItem('agb_ref') || 'null');
+    if (saved && saved.exp > Date.now()) return saved.code;
+    localStorage.removeItem('agb_ref');
+  } catch (e) { /* storage blocked: the URL code still works for this visit */
+    const c = new URLSearchParams(window.location.search).get('ref');
+    if (c && /^[A-Za-z0-9]{4,20}$/.test(c)) return c.toUpperCase();
+  }
+  return '';
+}
+function clearReferralCode() { try { localStorage.removeItem('agb_ref'); } catch (e) {} }
+const STRIPE_KEY  = 'pk_live_51T5laqPRIZjOv17lFxymulIF5ejnsCu0Qu61sap6Lw18VllksYNQAK4XIRqUn4OPtIkCCH5Kbr4ircZxJkJlLV2800a8mKYxr1';
+const BANK_NAME   = 'BRAIDED BY AGB';
+const BANK_SORT   = '51-81-22';
+const BANK_ACC    = '93594801';
+
+// Home-service (mobile) config — editable via settings
+const HOME_SERVICE_MIN = 70;
+const TRAVEL_FEES = [{"key":"farnborough","label":"Farnborough","fee":25},{"key":"camberley_aldershot","label":"Camberley \/ Aldershot","fee":30},{"key":"further","label":"Further locations","fee":45}];
+
+// ═══ State: payer + cart + draft (current appointment) ═══
+// The draft is the appointment currently being configured. When the customer
+// taps "Add to Cart" it is pushed into `cart`. Contact details belong to the
+// `payer` and are collected once. One combined deposit is paid for the whole cart.
+function freshDraft() {
+  return {
+    serviceId: null, variantId: null, serviceName: '', variantName: '',
+    servicePrice: 0, durationMins: 0,
+    addons: [], date: '', time: '', guestName: '', notes: '',
+    mediaConsent: 'none',
+    pipelineProducts: [],
+  };
+}
+let draft = freshDraft();
+let cart  = [];     // committed appointments (array of draft snapshots)
+let payer = { name: '', email: '', phone: '', emailOptin: true, set: false };
+let paymentMethod = 'stripe';
+
+
+// ── Step navigation ─────────────────────────────────────
+function goToStep(n) {
+  document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  document.querySelectorAll('.step-nav-item').forEach((item, i) => {
+    item.classList.toggle('active',   i < n);
+    item.classList.toggle('complete', i < n - 1);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 2) initCalendar();
+  if (n === 3) showStep3PayerState();
+  if (n === 4) loadPipelineRecommendations();
+  if (n === 5) renderPaymentStep();
+}
+
+// ── Service selection ────────────────────────────────────
+document.querySelectorAll('.service-select-card').forEach(card => {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.service-select-card').forEach(c => c.classList.remove('selected'));
+    this.classList.add('selected');
+    selectService(parseInt(this.dataset.serviceId));
+    placeServiceOptions(this, true);
+  });
+});
+
+// Open the chosen service's options right under its row (after the last card on
+// the same line), instead of under the whole list. Re-placed if the screen is
+// resized/rotated (rows change), and sent back home when the draft is reset.
+function placeServiceOptions(card, scroll) {
+  const panel = document.getElementById('service-options');
+  if (!panel || !card) return;
+  let last = card;
+  for (let n = card.nextElementSibling; n && n.classList.contains('service-select-card'); n = n.nextElementSibling) {
+    if (n.offsetTop !== card.offsetTop) break;
+    last = n;
+  }
+  if (last.nextElementSibling !== panel) last.after(panel);
+  panel.classList.add('in-grid');
+  if (scroll) {
+    const top = card.getBoundingClientRect().top + window.scrollY - 90;   // keep the chosen service in view above it
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+}
+function unplaceServiceOptions() {
+  const panel = document.getElementById('service-options');
+  const home  = document.getElementById('service-options-home');
+  if (panel && home && home.nextElementSibling !== panel) home.after(panel);
+  if (panel) panel.classList.remove('in-grid');
+}
+let placeOptionsTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(placeOptionsTimer);
+  placeOptionsTimer = setTimeout(() => {
+    const sel = document.querySelector('.service-select-card.selected');
+    if (sel) placeServiceOptions(sel, false);
+  }, 150);
+});
+
+// "Book again": add-ons to tick once the chosen service's add-ons load (used once).
+let pendingRebookAddons = [];
+
+function escHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+function fmtMins(m) {
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60), r = m % 60;
+  return h + 'h' + (r ? ' ' + r + 'm' : '');
+}
+
+function selectService(id) {
+  const svc = SERVICES[id];
+  if (!svc) return;
+  draft.serviceId    = id;
+  draft.serviceName  = svc.name;
+  draft.variantId    = null;
+  draft.variantName  = '';
+  draft.servicePrice = parseFloat(svc.from || svc.price_from) || 0;   // lowest option price, same as the card
+  draft.durationMins = parseInt(svc.duration) || 0;
+  draft.addons       = [];
+
+  // Show variants
+  const variantSection = document.getElementById('variant-section');
+  const variantGrid    = document.getElementById('variant-grid');
+  variantGrid.innerHTML = '';
+
+  if (svc.variants && svc.variants.length > 0) {
+    variantSection.style.display = 'block';
+    svc.variants.forEach(v => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'variant-btn';
+      btn.dataset.variantId    = v.id;
+      btn.dataset.variantName  = v.name;
+      btn.dataset.variantPrice = v.price;
+      btn.innerHTML = `<span class="variant-btn-name">${escHtml(v.name)}</span><span class="variant-btn-price">£${parseFloat(v.price).toFixed(0)}</span>`
+        + (parseInt(v.duration) > 0 ? `<span class="variant-btn-time">⏱ ${fmtMins(parseInt(v.duration))}</span>` : '');
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        draft.variantId    = v.id;
+        draft.variantName  = v.name;
+        draft.servicePrice = parseFloat(v.price);
+        draft.durationMins = parseInt(v.duration) || parseInt(svc.duration) || 0;
+        updateSummary();
+        loadAddons(id);
+        document.getElementById('step1-next').disabled = false;
+      });
+      variantGrid.appendChild(btn);
+    });
+  } else {
+    // No variants — service has single price
+    variantSection.style.display = 'none';
+    loadAddons(id);
+    document.getElementById('step1-next').disabled = false;
+  }
+
+  // Service description
+  const descBox  = document.getElementById('service-desc-box');
+  const descText = document.getElementById('service-desc-text');
+  if (svc.description && svc.description.trim()) {
+    descText.textContent = svc.description;
+    descBox.style.display = 'block';
+  } else {
+    descBox.style.display = 'none';
+  }
+
+  // Prep notes
+  const prepBox  = document.getElementById('prep-note-box');
+  const prepText = document.getElementById('prep-note-text');
+  if (svc.prep_notes && svc.prep_notes.trim()) {
+    prepText.textContent = svc.prep_notes;
+    prepBox.style.display = 'block';
+    prepBox.open = false;
+  } else {
+    prepBox.style.display = 'none';
+  }
+
+  // Photo, name, chips, aftercare and reviews (the old Services page, merged in)
+  const photo = document.getElementById('svc-panel-photo');
+  const img   = document.getElementById('svc-panel-img');
+  if (svc.image) { img.src = svc.image; img.alt = svc.name; photo.style.display = ''; }
+  else { img.removeAttribute('src'); photo.style.display = 'none'; }
+  document.getElementById('svc-panel-head').style.display = '';
+  document.getElementById('svc-panel-name').textContent = svc.name;
+  const chips = [];
+  if (svc.category) chips.push(svc.category);
+  if (svc.time) chips.push('⏱ ' + svc.time);
+  chips.push('From £' + parseFloat(svc.from || svc.price_from || 0).toFixed(0));
+  document.getElementById('svc-panel-chips').innerHTML = chips.map(c => `<span class="svc-chip">${escHtml(c)}</span>`).join('');
+  const afterBox = document.getElementById('aftercare-box');
+  if (svc.aftercare && svc.aftercare.trim()) {
+    document.getElementById('aftercare-text').textContent = svc.aftercare;
+    afterBox.style.display = 'block';
+    afterBox.open = false;
+  } else {
+    afterBox.style.display = 'none';
+  }
+  document.getElementById('svc-reviews').innerHTML = (svc.reviews || []).map(r =>
+    `<div class="svc-review"><span class="svc-review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> “${escHtml(r.text)}” <strong>${escHtml(r.name)}</strong></div>`).join('');
+
+  updateSummary();
+}
+
+// ── Add-ons ──────────────────────────────────────────────
+async function loadAddons(serviceId) {
+  const addonSection = document.getElementById('addons-section');
+  const addonList    = document.getElementById('addon-list');
+  addonList.innerHTML = '';
+  draft.addons = [];
+
+  try {
+    const res  = await fetch(`/api/addons?service_id=${serviceId}`);
+    const data = await res.json();
+    if (data.addons && data.addons.length > 0) {
+      addonSection.style.display = 'block';
+      data.addons.forEach(addon => {
+        const div = document.createElement('div');
+        div.className = 'addon-item';
+        div.innerHTML = `
+          <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;padding:var(--space-3) 0">
+            <input type="checkbox" class="addon-checkbox"
+                   data-addon-id="${addon.id}"
+                   data-addon-name="${addon.name}"
+                   data-addon-price="${addon.price}"
+                   style="accent-color:var(--color-primary);width:16px;height:16px">
+            <span style="flex:1;font-size:var(--text-sm)">${addon.name}</span>
+            <span style="font-weight:700;color:var(--color-primary)">+£${parseFloat(addon.price).toFixed(2)}</span>
+          </label>`;
+        div.querySelector('input').addEventListener('change', function() {
+          if (this.checked) {
+            draft.addons.push({ id: addon.id, name: addon.name, price: parseFloat(addon.price) });
+          } else {
+            draft.addons = draft.addons.filter(a => a.id !== addon.id);
+          }
+          updateSummary();
+        });
+        addonList.appendChild(div);
+        // "Book again": re-tick the add-ons from the past booking.
+        if (pendingRebookAddons.indexOf(Number(addon.id)) !== -1) {
+          const cb = div.querySelector('input');
+          cb.checked = true;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+    } else {
+      addonSection.style.display = 'none';
+    }
+    pendingRebookAddons = [];
+  } catch(e) {
+    addonSection.style.display = 'none';
+  }
+}
+
+// ── Calendar ─────────────────────────────────────────────
+let calYear, calMonth;
+
+function initCalendar() {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = monthNames[calMonth] + ' ' + calYear;
+
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+
+  // Day headers
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-day-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysIn   = new Date(calYear, calMonth + 1, 0).getDate();
+  const today    = new Date(); today.setHours(0,0,0,0);
+
+  // Blank cells
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'cal-day empty';
+    grid.appendChild(blank);
+  }
+
+  for (let d = 1; d <= daysIn; d++) {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    const date = new Date(calYear, calMonth, d);
+    // Build date string from components — never use toISOString() which converts to UTC
+    // and can shift the date by 1 day for UK BST users (UTC+1).
+    const mm = String(calMonth + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    const dateStr = `${calYear}-${mm}-${dd}`;
+    cell.className = 'cal-day';
+    cell.textContent = d;
+    cell.dataset.date = dateStr;
+
+    if (date < today) {
+      cell.classList.add('cal-past');
+      cell.disabled = true;
+    } else if (date.getTime() === today.getTime()) {
+      cell.classList.add('cal-today');
+    }
+
+    cell.addEventListener('click', function() {
+      if (this.disabled || this.classList.contains('cal-blocked')) return;
+      document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+      draft.date = dateStr;
+      document.getElementById('booking-date').value = dateStr;
+      document.getElementById('selected-date-label').textContent =
+        date.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+      loadTimeSlots(dateStr);
+      document.getElementById('time-slots-section').style.display = 'block';
+      updateSummary();
+    });
+    grid.appendChild(cell);
+  }
+
+  // Fetch blocked dates and mark them
+  fetch(`/api/availability?year=${calYear}&month=${calMonth + 1}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.blocked) {
+        data.blocked.forEach(dateStr => {
+          const cell = grid.querySelector(`[data-date="${dateStr}"]`);
+          if (cell) { cell.classList.add('cal-blocked'); cell.disabled = true; }
+        });
+      }
+    }).catch(() => {});
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+// ── Time slots (cart-aware) ──────────────────────────────
+// Converts an "HH:MM[:SS]" time on a given date into a unix timestamp (seconds).
+function slotStartTs(date, time) {
+  const [h, m] = time.split(':');
+  return new Date(date + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00').getTime() / 1000;
+}
+// Windows already taken by appointments in the cart on a given date.
+function cartWindowsOn(date) {
+  return cart
+    .filter(it => it.date === date)
+    .map(it => {
+      const s = slotStartTs(date, it.time);
+      return [s, s + (parseInt(it.durationMins) || 60) * 60];
+    });
+}
+
+async function loadTimeSlots(date) {
+  const grid = document.getElementById('time-slots-grid');
+  grid.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">Loading...</p>';
+  draft.time = '';
+  document.getElementById('booking-time').value = '';
+  document.getElementById('step2-next').disabled = true;
+
+  try {
+    const res  = await fetch(`/api/slots?date=${date}&service_id=${draft.serviceId}`);
+    const data = await res.json();
+    grid.innerHTML = '';
+
+    if (!data.slots || data.slots.length === 0) {
+      grid.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--text-sm);grid-column:1/-1">No available times on this date. Please choose another day.</p>';
+      return;
+    }
+
+    // Cart-aware greying: a slot is also unavailable if THIS appointment's window
+    // [start, start+duration) overlaps any appointment already in the cart that day.
+    const windows = cartWindowsOn(date);
+    const durSec  = (parseInt(draft.durationMins) || 60) * 60;
+
+    data.slots.forEach(slot => {
+      let available = slot.available;
+      if (available && windows.length) {
+        const start = slotStartTs(date, slot.time);
+        const end   = start + durSec;
+        for (const w of windows) {
+          if (start < w[1] && end > w[0]) { available = false; break; }
+        }
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button'; // prevent accidental form submission
+      btn.className = 'time-slot' + (available ? '' : ' slot-blocked');
+      btn.textContent = slot.label;
+      btn.dataset.time = slot.time;
+      btn.disabled = !available;
+      if (available) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+          this.classList.add('selected');
+          draft.time = slot.time;
+          document.getElementById('booking-time').value = slot.time;
+          document.getElementById('step2-next').disabled = false;
+          updateSummary();
+        });
+      }
+      grid.appendChild(btn);
+    });
+  } catch(e) {
+    grid.innerHTML = '<p style="color:var(--color-error);font-size:var(--text-sm)">Could not load times. Please try again.</p>';
+  }
+}
+
+// ── Step 3: show/hide payer contact depending on whether it's already set ──
+function showStep3PayerState() {
+  const block = document.getElementById('payer-contact-block');
+  const note  = document.getElementById('payer-locked-note');
+  if (payer.set) {
+    block.style.display = 'none';
+    note.style.display  = 'block';
+    document.getElementById('payer-locked-name').textContent = payer.name;
+  } else {
+    block.style.display = 'block';
+    note.style.display  = 'none';
+  }
+  // Pre-fill the guest field (first appointment defaults to "Myself")
+  const guestInput = document.getElementById('guest-name');
+  if (!guestInput.value) guestInput.value = (cart.length === 0 && !payer.set) ? 'Myself' : '';
+}
+
+// ── Step 3 validation ────────────────────────────────────
+function validateStep3() {
+  const guest = document.getElementById('guest-name').value.trim();
+  if (!guest) {
+    showToast('Please tell us who this appointment is for.', 'error');
+    return;
+  }
+
+  // Collect payer contact details the first time only
+  if (!payer.set) {
+    const name  = document.getElementById('client-name').value.trim();
+    const email = document.getElementById('client-email').value.trim();
+    const phone = document.getElementById('client-phone').value.trim();
+    if (!name || !email || !phone) {
+      showToast('Please fill in all required fields.', 'error');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+    payer.name       = name;
+    payer.email      = email;
+    payer.phone      = phone;
+    payer.emailOptin = document.getElementById('email-optin').checked;
+    payer.set        = true;
+  }
+
+  draft.guestName    = guest;
+  draft.notes        = document.getElementById('client-notes').value.trim();
+  draft.mediaConsent = document.querySelector('input[name="media-consent"]:checked')?.value || 'none';
+  goToStep(4);
+}
+
+// ── Pipeline recommendations ─────────────────────────────
+async function loadPipelineRecommendations() {
+  if (!draft.serviceId) return;
+  document.getElementById('pipeline-loading').style.display       = 'block';
+  document.getElementById('pipeline-recommendations').style.display = 'none';
+  document.getElementById('pipeline-none').style.display           = 'none';
+
+  try {
+    const res  = await fetch(`/api/pipeline?service_id=${draft.serviceId}`);
+    const data = await res.json();
+
+    document.getElementById('pipeline-loading').style.display = 'none';
+
+    if (!data.products || data.products.length === 0) {
+      document.getElementById('pipeline-none').style.display = 'block';
+      return;
+    }
+
+    const container = document.getElementById('pipeline-recommendations');
+    container.innerHTML = '';
+
+    data.products.forEach(product => {
+      const isAdded = draft.pipelineProducts.some(p => p.id === product.id);
+      const div = document.createElement('div');
+      div.className = 'pipeline-recommendation';
+      div.innerHTML = `
+        <div class="pipeline-rec-inner">
+          ${product.image_url
+            ? `<img src="${product.image_url}" alt="${product.name}" class="pipeline-rec-img">`
+            : `<div class="pipeline-rec-img-placeholder">🛍️</div>`
+          }
+          <div class="pipeline-rec-info">
+            <p class="pipeline-rec-label">${product.display_label || 'Recommended for your style'}</p>
+            <h4 class="rec-product-name">${product.name}</h4>
+            ${product.description ? `<p class="pipeline-rec-desc">${product.description}</p>` : ''}
+            ${product.free_gift ? `<span class="badge badge-gold">🎁 Free Gift Included</span>` : ''}
+            <p class="rec-product-price">£${parseFloat(product.price).toFixed(2)}</p>
+          </div>
+          <div class="pipeline-rec-action">
+            <button class="btn ${isAdded ? 'btn-outline-primary' : 'btn-primary'} pipeline-add-btn"
+                    data-product-id="${product.id}"
+                    data-product-name="${product.name}"
+                    data-product-price="${product.price}"
+                    onclick="togglePipelineProduct(this, ${JSON.stringify(product).replace(/"/g, '&quot;')})">
+              ${isAdded ? '✓ Added' : 'Add to Order'}
+            </button>
+            <a href="/shop/${product.slug}" target="_blank"
+               style="font-size:var(--text-xs);color:var(--color-text-muted);text-decoration:underline;display:block;margin-top:var(--space-2)">
+              View details
+            </a>
+          </div>
+        </div>`;
+      container.appendChild(div);
+    });
+
+    container.style.display = 'block';
+  } catch(e) {
+    document.getElementById('pipeline-loading').style.display = 'none';
+    document.getElementById('pipeline-none').style.display    = 'block';
+  }
+}
+
+function togglePipelineProduct(btn, product) {
+  const idx = draft.pipelineProducts.findIndex(p => p.id === product.id);
+  if (idx > -1) {
+    draft.pipelineProducts.splice(idx, 1);
+    btn.textContent = 'Add to Order';
+    btn.className   = btn.className.replace('btn-outline-primary', 'btn-primary');
+    showToast(`"${product.name}" removed`, 'default');
+  } else {
+    draft.pipelineProducts.push(product);
+    btn.textContent = '✓ Added';
+    btn.className   = btn.className.replace('btn-primary', 'btn-outline-primary');
+    showToast(`"${product.name}" added to your order! 🛍️`, 'success');
+  }
+  updateSummary();
+}
+
+// ── Cart management ──────────────────────────────────────
+function addToCart() {
+  if (!draft.serviceId || !draft.date || !draft.time) {
+    showToast('Please complete the appointment details first.', 'error');
+    return;
+  }
+  if (!draft.guestName) { showToast('Please tell us who this appointment is for.', 'error'); goToStep(3); return; }
+  // Deep snapshot of the draft into the cart
+  cart.push(JSON.parse(JSON.stringify(draft)));
+  draft = freshDraft();
+  resetDraftUI();
+  updateSummary();
+  showToast('Appointment added to your cart 🛍️', 'success');
+  goToStep(5);
+}
+
+function addAnotherPerson() {
+  // draft is already fresh after addToCart — return to step 1 to configure the next person
+  resetDraftUI();
+  goToStep(1);
+  updateSummary();
+}
+
+function resetDraftUI() {
+  document.querySelectorAll('.service-select-card').forEach(c => c.classList.remove('selected'));
+  unplaceServiceOptions();
+  document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('variant-section').style.display   = 'none';
+  document.getElementById('addons-section').style.display    = 'none';
+  document.getElementById('prep-note-box').style.display     = 'none';
+  document.getElementById('service-desc-box').style.display  = 'none';
+  document.getElementById('svc-panel-head').style.display    = 'none';
+  document.getElementById('svc-panel-photo').style.display   = 'none';
+  document.getElementById('aftercare-box').style.display     = 'none';
+  document.getElementById('svc-reviews').innerHTML           = '';
+  document.getElementById('addon-list').innerHTML            = '';
+  document.getElementById('step1-next').disabled             = true;
+  document.getElementById('step2-next').disabled             = true;
+  document.getElementById('time-slots-section').style.display = 'none';
+  document.getElementById('booking-date').value = '';
+  document.getElementById('booking-time').value = '';
+  document.getElementById('guest-name').value   = '';
+  document.getElementById('client-notes').value = '';
+  const mcNone = document.querySelector('input[name="media-consent"][value="none"]');
+  if (mcNone) mcNone.checked = true;
+  document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
+}
+
+function removeCartItem(idx) {
+  cart.splice(idx, 1);
+  showToast('Appointment removed', 'default');
+  if (cart.length === 0) { goToStep(1); }
+  else { renderPaymentStep(); }
+  updateSummary();
+}
+
+// ── Money helpers ────────────────────────────────────────
+function itemTotal(it) {
+  const base   = parseFloat(it.servicePrice) || 0;
+  const addons = (it.addons || []).reduce((s, a) => s + parseFloat(a.price), 0);
+  const prods  = (it.pipelineProducts || []).reduce((s, p) => s + parseFloat(p.price), 0);
+  return base + addons + prods;
+}
+function getDeposit(total) {
+  return Math.round(total * (DEPOSIT_PCT / 100) * 100) / 100;
+}
+function itemDeposit(it) { return getDeposit(itemTotal(it)); }
+function draftTotal()    { return draft.serviceId ? itemTotal(draft) : 0; }
+function cartTotal()     { return cart.reduce((s, it) => s + itemTotal(it), 0); }
+function cartDeposit()   { return cart.reduce((s, it) => s + itemDeposit(it), 0); }
+
+// ── Home service (mobile) location ───────────────────────
+// Home service is a whole-booking choice (one visit, one travel fee), available
+// only when the combined booking total is >= HOME_SERVICE_MIN. The travel fee is
+// paid in full now, on top of the deposit.
+let locationType  = 'salon';   // 'salon' | 'home'
+let travelAreaKey = '';
+
+function homeEligible()      { return cartTotal() >= HOME_SERVICE_MIN; }
+function currentTravelFee()  {
+  if (locationType !== 'home' || !travelAreaKey) return 0;
+  const a = TRAVEL_FEES.find(f => f.key === travelAreaKey);
+  return a ? a.fee : 0;
+}
+// Charged now: deposit + travel — or, for pay-in-3 (Klarna/Clearpay), the full
+// services price + travel (the deposit becomes their first instalment).
+function amountDueNow()      { return (payFull ? cartTotal() : cartDeposit()) + currentTravelFee(); }
+function homeReady() {
+  if (locationType !== 'home') return true;
+  return !!travelAreaKey && document.getElementById('service-address').value.trim().length > 5;
+}
+function homePayload() {
+  return {
+    service_location: locationType,
+    travel_area:      locationType === 'home' ? travelAreaKey : null,
+    travel_fee:       currentTravelFee(),
+    service_address:  locationType === 'home' ? document.getElementById('service-address').value.trim() : null,
+  };
+}
+
+function populateTravelAreas() {
+  const sel = document.getElementById('travel-area');
+  if (!sel || sel.options.length > 1) return;
+  TRAVEL_FEES.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.key;
+    o.textContent = `${f.label} — £${f.fee.toFixed(0)}`;
+    sel.appendChild(o);
+  });
+}
+
+function selectLocationType(type) {
+  if (type === 'home' && !homeEligible()) {
+    showToast(`Home service is available on bookings £${HOME_SERVICE_MIN.toFixed(0)} and above.`, 'error');
+    return;
+  }
+  locationType = type;
+  const salonBtn = document.getElementById('loc-salon');
+  const homeBtn  = document.getElementById('loc-home');
+  const on  = b => { b.style.background='var(--color-primary)'; b.style.color='#fff';               b.style.borderColor='var(--color-primary)';       b.classList.add('active'); };
+  const off = b => { b.style.background='#fff';                 b.style.color='var(--color-text)';   b.style.borderColor='var(--color-border,#E8D8EE)'; b.classList.remove('active'); };
+  if (type === 'home') { on(homeBtn); off(salonBtn); }
+  else {
+    on(salonBtn); off(homeBtn);
+    travelAreaKey = '';
+    const s = document.getElementById('travel-area'); if (s) s.value = '';
+  }
+  document.getElementById('home-service-details').style.display = type === 'home' ? 'block' : 'none';
+  refreshPaymentAmount();
+}
+
+function onTravelAreaChange() {
+  travelAreaKey = document.getElementById('travel-area').value;
+  refreshPaymentAmount();
+}
+
+// Re-render the review + payment amount when the location/fee changes.
+function refreshPaymentAmount() { renderPaymentStep(); }
+
+function updatePayButtonState() {
+  const policy = document.getElementById('policy-checkbox');
+  const ready  = policy && policy.checked && homeReady();
+  const payBtn = document.getElementById('stripe-pay-btn');
+  if (payBtn) payBtn.disabled = !ready;
+  const bankChk = document.getElementById('bank-confirm-checkbox');
+  const bankBtn = document.getElementById('bank-submit-btn');
+  if (bankBtn) bankBtn.disabled = !(ready && bankChk && bankChk.checked);
+}
+
+// ── Payment step ─────────────────────────────────────────
+let stripe, elements, paymentElement, paymentHandlersBound = false;
+// True while Klarna/Clearpay (pay in 3) is selected in the Payment Element.
+// Those methods finance the FULL price, so we charge it all now and the
+// customer owes nothing on the day. Card/PayPal/bank stay deposit-now.
+let payFull = false;
+const BNPL_TYPES = ['klarna', 'afterpay_clearpay'];
+
+// One place that sets the Stripe button text (rebuilt each time, so a failed
+// payment can never strip out the amount and break later re-renders).
+function setPayBtnLabel() {
+  const btn = document.getElementById('stripe-pay-btn');
+  if (!btn) return;
+  const amt = '£' + amountDueNow().toFixed(2);
+  btn.textContent = payFull ? ('Pay ' + amt + ' in 3 — full price') : ('Pay Deposit — ' + amt);
+}
+
+function renderPaymentStep() {
+  const deposit = cartDeposit();
+  const total   = cartTotal();
+  const balance = total - deposit;
+
+  // Build the cart review
+  let rows = '';
+  cart.forEach((it, idx) => {
+    const t = itemTotal(it);
+    const d = itemDeposit(it);
+    const extras = []
+      .concat((it.addons || []).map(a => a.name))
+      .concat((it.pipelineProducts || []).map(p => p.name));
+    const extrasHtml = extras.length
+      ? `<div class="summary-row"><span class="label" style="font-size:var(--text-xs)">+ ${extras.join(', ')}</span><span class="value"></span></div>` : '';
+    rows += `
+      <div class="booking-summary" style="margin-bottom:var(--space-4)">
+        <div class="booking-summary-header" style="display:flex;justify-content:space-between;align-items:center">
+          <span>${it.guestName || payer.name}</span>
+          <button type="button" onclick="removeCartItem(${idx})"
+                  style="background:none;border:none;color:#fff;font-size:0.75rem;cursor:pointer;text-decoration:underline">Remove</button>
+        </div>
+        <div class="booking-summary-body">
+          <div class="summary-row"><span class="label">Service</span><span class="value">${it.serviceName}${it.variantName ? ' — ' + it.variantName : ''}</span></div>
+          <div class="summary-row"><span class="label">Date</span><span class="value">${formatDateDisplay(it.date)}</span></div>
+          <div class="summary-row"><span class="label">Time</span><span class="value">${formatTimeDisplay(it.time)}</span></div>
+          ${extrasHtml}
+          <div class="summary-row"><span class="label">Price</span><span class="value">£${t.toFixed(2)}</span></div>
+          <div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}%)</span><span class="value">£${d.toFixed(2)}</span></div>
+        </div>
+      </div>`;
+  });
+
+  // ── Home service gate + travel fee ──────────────────────
+  const travelFee  = currentTravelFee();
+  const depositNow = deposit + travelFee;              // deposit + full travel (card/PayPal/bank)
+  const amountNow  = payFull ? total + travelFee : depositNow;   // what the Stripe button charges
+  const dueLater   = payFull ? 0 : total - deposit;    // services balance (travel prepaid)
+
+  const homeMinLabel = document.getElementById('home-min-label');
+  if (homeMinLabel) homeMinLabel.textContent = HOME_SERVICE_MIN.toFixed(0);
+  populateTravelAreas();
+  const homeBtnEl = document.getElementById('loc-home');
+  if (homeBtnEl) {
+    const eligible = homeEligible();
+    homeBtnEl.disabled     = !eligible;
+    homeBtnEl.style.opacity = eligible ? '1' : '0.5';
+    homeBtnEl.style.cursor  = eligible ? 'pointer' : 'not-allowed';
+    // If the cart dropped below the threshold after a home selection, revert to salon.
+    if (!eligible && locationType === 'home') {
+      locationType = 'salon'; travelAreaKey = '';
+      document.getElementById('home-service-details').style.display = 'none';
+      const salonBtnEl = document.getElementById('loc-salon');
+      salonBtnEl.style.background = 'var(--color-primary)'; salonBtnEl.style.color = '#fff'; salonBtnEl.classList.add('active');
+      homeBtnEl.style.background = '#fff'; homeBtnEl.style.color = 'var(--color-text)'; homeBtnEl.classList.remove('active');
+    }
+  }
+
+  const travelRow = travelFee > 0
+    ? `<div class="summary-row"><span class="label">Home service travel (paid now)</span><span class="value">£${travelFee.toFixed(2)}</span></div>` : '';
+
+  document.getElementById('booking-review-table').innerHTML = `
+    ${rows}
+    <div class="booking-summary" style="margin-bottom:var(--space-6);border:2px solid var(--color-primary)">
+      <div class="booking-summary-header">Combined Total — ${cart.length} appointment${cart.length !== 1 ? 's' : ''}${travelFee > 0 ? ' + home service' : ''}</div>
+      <div class="booking-summary-body">
+        <div class="summary-row"><span class="label">Services</span><span class="value">£${total.toFixed(2)}</span></div>
+        ${travelRow}
+        ${payFull
+          ? `<div class="summary-row deposit"><span class="label">Paying in 3 (Klarna/Clearpay) — full price</span><span class="value">£${total.toFixed(2)}</span></div>`
+          : `<div class="summary-row deposit"><span class="label">Deposit (${DEPOSIT_PCT}% of services)</span><span class="value">£${deposit.toFixed(2)}</span></div>`}
+        <div class="summary-row total"><span class="label">Pay now${travelFee > 0 ? (payFull ? ' (full price + travel)' : ' (deposit + travel)') : ''}</span><span class="value">£${amountNow.toFixed(2)}</span></div>
+        <div class="summary-row"><span class="label">Balance on the day</span><span class="value">£${dueLater.toFixed(2)}${payFull ? ' — nothing to pay' : ''}</span></div>
+        ${(REFERRAL_ON && REFERRAL_FRIEND > 0 && getReferralCode()) ? `<div class="summary-row" style="color:var(--color-primary);font-weight:600"><span class="label">🎁 Bestie reward</span><span class="value">${payFull
+            ? '£' + REFERRAL_FRIEND.toFixed(2) + ' credit for your next visit'
+            : '£' + REFERRAL_FRIEND.toFixed(2) + ' off your balance on the day'}</span></div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);padding:0 0 4px">For first-time clients booking through a friend's link. It shows on your confirmation email.</div>` : ''}
+      </div>
+    </div>`;
+
+  setPayBtnLabel();
+  // Bank transfer is never pay-in-3 — it always shows the deposit amount.
+  document.getElementById('bank-deposit-label').textContent    = '£' + depositNow.toFixed(2);
+  const bnplNote = document.getElementById('bnpl-note');
+  if (bnplNote) {
+    bnplNote.style.display = payFull ? 'block' : 'none';
+    bnplNote.textContent = payFull
+      ? '✓ Pay in 3 covers your full appointment price (£' + amountNow.toFixed(2) + ') in interest-free instalments — your deposit is the first instalment and there\'s nothing to pay on the day.'
+      : '';
+  }
+
+  // Bank details — reference uses the payer's first name + first appointment date
+  const firstDate = cart.length ? cart[0].date : '';
+  const payerFirst = (payer.name || '').split(' ')[0].toUpperCase() || 'BOOKING';
+  document.getElementById('bank-details-box').innerHTML = `
+    <h4 style="color:var(--color-deep-purple);margin-bottom:var(--space-4)">🏦 Bank Transfer Details</h4>
+    <div class="bank-detail-row"><span>Account Name:</span><strong>${BANK_NAME}</strong></div>
+    <div class="bank-detail-row"><span>Sort Code:</span><strong>${BANK_SORT}</strong></div>
+    <div class="bank-detail-row"><span>Account Number:</span><strong>${BANK_ACC}</strong></div>
+    <div class="bank-detail-row"><span>Reference:</span><strong>${payerFirst}-${firstDate.replace(/-/g,'')}</strong></div>
+    <div class="bank-detail-row total"><span>Amount to Transfer:</span><strong style="color:var(--color-primary)">£${depositNow.toFixed(2)}</strong></div>
+    <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-4)">
+      ⚠️ Please use your name as the payment reference. Your booking will be held for 24 hours pending confirmation of payment.
+    </p>`;
+
+  // Init the Stripe Payment Element (once). Deferred-intent flow: the element is
+  // mounted now with the deposit amount, and the PaymentIntent is created only
+  // when the customer clicks Pay. Cards confirm inline; Klarna/Clearpay/PayPal
+  // redirect out and return to the confirmation page.
+  const depositPence = Math.max(30, Math.round(amountNow * 100));
+  if (!stripe) {
+    stripe = Stripe(STRIPE_KEY);
+    elements = stripe.elements({ mode: 'payment', amount: depositPence, currency: 'gbp', locale: 'en-GB' });
+    paymentElement = elements.create('payment', { layout: 'tabs' });
+    paymentElement.mount('#stripe-payment-element');
+    // Switching to/from Klarna or Clearpay flips between full-price and deposit.
+    paymentElement.on('change', function (e) {
+      const isBnpl = !!(e && e.value && BNPL_TYPES.indexOf(e.value.type) !== -1);
+      if (isBnpl !== payFull) { payFull = isBnpl; renderPaymentStep(); }
+    });
+  } else {
+    elements.update({ amount: depositPence });
+  }
+  updatePayButtonState();
+
+  // Bind policy/bank checkbox handlers once
+  if (!paymentHandlersBound) {
+    document.getElementById('policy-checkbox').addEventListener('change', updatePayButtonState);
+    document.getElementById('bank-confirm-checkbox').addEventListener('change', updatePayButtonState);
+    paymentHandlersBound = true;
+  }
+}
+
+function selectPaymentMethod(method, btn) {
+  paymentMethod = method;
+  document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('stripe-section').style.display        = method === 'stripe'        ? 'block' : 'none';
+  document.getElementById('bank-transfer-section').style.display = method === 'bank_transfer' ? 'block' : 'none';
+}
+
+// ── Stripe payment submission (Payment Element, deferred intent) ──
+async function submitStripePayment() {
+  const btn   = document.getElementById('stripe-pay-btn');
+  const errEl = document.getElementById('stripe-card-errors');
+  const payLabel = '£' + amountDueNow().toFixed(2);
+  if (!homeReady()) { showToast('Please select your area and enter your full address for home service.', 'error'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+  errEl.textContent = '';
+
+  try {
+    // 1. Validate the details entered in the Payment Element
+    const { error: submitError } = await elements.submit();
+    if (submitError) { errEl.textContent = submitError.message || 'Please check your payment details.'; resetStripeBtn(payLabel); return; }
+
+    // 2. Create the pending booking(s) + PaymentIntent server-side
+    const res = await fetch('/api/cart-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
+        payment_method: 'stripe',
+        pay_mode: payFull ? 'full' : 'deposit',   // pay-in-3 charges the full price
+        referral_code: getReferralCode(),
+        items: buildCartItems(),
+        ...homePayload()
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // 3. Confirm — cards resolve inline; Klarna/Clearpay/PayPal redirect out.
+    const returnUrl = window.location.origin + '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret: data.client_secret,
+      confirmParams: { return_url: returnUrl },
+      redirect: 'if_required'
+    });
+    if (error) { errEl.textContent = error.message || 'Payment failed. Please try again.'; resetStripeBtn(payLabel); return; }
+    clearReferralCode();   // paid: the reward is on the booking (redirect methods clear on the confirmation page)
+
+    // No redirect required (e.g. card) — go to the confirmation page, which finalizes.
+    let url = '/booking/confirmation?ref=' + encodeURIComponent(data.ref);
+    if (paymentIntent && paymentIntent.id) url += '&payment_intent=' + encodeURIComponent(paymentIntent.id);
+    window.location.href = url;
+  } catch(e) {
+    showToast(e.message || 'Payment failed. Please try again.', 'error');
+    resetStripeBtn(payLabel);
+  }
+}
+
+function resetStripeBtn() {
+  const btn = document.getElementById('stripe-pay-btn');
+  btn.disabled = false;
+  setPayBtnLabel();
+}
+
+// ── Bank transfer submission ─────────────────────────────
+async function submitBankTransfer() {
+  const btn = document.getElementById('bank-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Confirming...';
+  try {
+    await confirmCart('bank_transfer');
+  } catch(e) {
+    showToast(e.message || 'Error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Confirm Bank Transfer Booking';
+  }
+}
+
+async function confirmCart(method) {
+  if (!homeReady()) { throw new Error('Please select your area and enter your full address for home service.'); }
+  const res = await fetch('/api/cart-intent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payer: { name: payer.name, email: payer.email, phone: payer.phone, email_optin: payer.emailOptin ? 1 : 0 },
+      payment_method: method,
+      referral_code: getReferralCode(),
+      items: buildCartItems(),
+      ...homePayload()
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  clearReferralCode();
+  if (data.refs && data.refs.length) {
+    window.location.href = '/booking/confirmation?ref=' + encodeURIComponent(data.refs[0]);
+  }
+}
+
+function buildCartItems() {
+  return cart.map(it => ({
+    service_id:        it.serviceId,
+    variant_id:        it.variantId,
+    date:              it.date,
+    time:              it.time,
+    guest_name:        it.guestName,
+    notes:             it.notes,
+    addons:            (it.addons || []).map(a => a.id),
+    pipeline_products: (it.pipelineProducts || []).map(p => ({ id: p.id, price: p.price })),
+    media_consent:     it.mediaConsent || 'none',
+    total:             itemTotal(it),
+    deposit:           itemDeposit(it)
+  }));
+}
+
+// ── Sidebar summary (cart + current draft) ───────────────
+function renderCartSidebar() {
+  const wrap = document.getElementById('cart-items');
+  if (!cart.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = cart.map((it, idx) => `
+    <div class="summary-row" style="align-items:flex-start;border-bottom:1px dashed var(--color-border,#E8D8EE);padding-bottom:6px;margin-bottom:6px">
+      <span class="label" style="flex:1">
+        <strong>${it.guestName || payer.name}</strong><br>
+        <span style="font-size:var(--text-xs);color:var(--color-text-muted)">${it.serviceName}${it.variantName ? ' — ' + it.variantName : ''}<br>${formatDateDisplay(it.date)} · ${formatTimeDisplay(it.time)}</span>
+      </span>
+      <span class="value" style="text-align:right">
+        £${itemTotal(it).toFixed(2)}<br>
+        <button type="button" onclick="removeCartItem(${idx})" style="background:none;border:none;color:var(--color-error,#c0392b);font-size:var(--text-xs);cursor:pointer;text-decoration:underline">Remove</button>
+      </span>
+    </div>`).join('');
+}
+
+function updateSummary() {
+  renderCartSidebar();
+
+  // Draft (current appointment) summary block
+  const hasDraft = !!draft.serviceId;
+  document.getElementById('draft-summary').style.display = hasDraft ? '' : 'none';
+  if (hasDraft) {
+    document.getElementById('sum-service').textContent = draft.serviceName || '—';
+    document.getElementById('sum-variant').textContent = draft.variantName || (draft.servicePrice ? '£' + draft.servicePrice.toFixed(0) : '—');
+    document.getElementById('sum-guest').textContent   = draft.guestName || '—';
+    document.getElementById('sum-date').textContent    = draft.date ? formatDateDisplay(draft.date) : '—';
+    document.getElementById('sum-time').textContent    = draft.time ? formatTimeDisplay(draft.time) : '—';
+    if (draft.addons.length) {
+      document.getElementById('sum-addons-row').style.display = '';
+      document.getElementById('sum-addons').textContent = draft.addons.map(a => a.name).join(', ');
+    } else {
+      document.getElementById('sum-addons-row').style.display = 'none';
+    }
+  }
+
+  // Combined totals = everything in the cart + the in-progress draft
+  const total   = cartTotal() + draftTotal();
+  const deposit = cartDeposit() + (hasDraft ? draftDeposit() : 0);
+  const balance = total - deposit;
+  document.getElementById('sum-total-label').textContent = cart.length ? 'Combined Total' : 'Total Price';
+  document.getElementById('sum-total').textContent   = total   ? '£' + total.toFixed(2)   : '—';
+  document.getElementById('sum-deposit').textContent = deposit ? '£' + deposit.toFixed(2) : '—';
+  document.getElementById('sum-balance').textContent = balance ? '£' + balance.toFixed(2) : '—';
+}
+function draftDeposit() { return getDeposit(draftTotal()); }
+
+function formatDateDisplay(d) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function formatTimeDisplay(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':');
+  const hr = parseInt(h);
+  return `${hr > 12 ? hr - 12 : (hr === 0 ? 12 : hr)}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+}
+
+// Init
+updateSummary();
+if (draft.serviceId) {
+  document.querySelector(`[data-service-id="${draft.serviceId}"]`)?.classList.add('selected');
+}
+</script>
+
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

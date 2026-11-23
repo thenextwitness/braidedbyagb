@@ -313,9 +313,20 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             <span class="step-number">1</span>
             <h2 class="step-title">Choose Your Service</h2>
           </div>
-          <p class="service-pick-hint">Tap a style to see photos, prices and details.</p>
+          <?php $svcGroups = groupServicesByCategory($services); $catKey = fn($n) => 'c' . substr(md5(strtolower((string)$n)), 0, 8); ?>
+          <p class="service-pick-hint">Choose a group, then tap a style to see photos, prices and details.</p>
+          <!-- Category buttons (owner-approved 23 Nov 2026, docs/mockups/2026-11-booking-categories.png) -->
+          <?php if (count($svcGroups) > 1): ?>
+          <div class="cat-chips" role="tablist" aria-label="Service groups">
+            <button type="button" class="cat-chip on" data-cat="all" role="tab" aria-selected="true">All styles</button>
+            <?php foreach (array_keys($svcGroups) as $catName): ?>
+            <button type="button" class="cat-chip" data-cat="<?= $catKey($catName) ?>" role="tab" aria-selected="false"><?= htmlspecialchars($catName) ?></button>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
 
-          <?php foreach (groupServicesByCategory($services) as $catName => $catServices): ?>
+          <?php foreach ($svcGroups as $catName => $catServices): ?>
+          <div class="service-cat-group" data-cat="<?= $catKey($catName) ?>">
           <h3 class="service-category-title"><?= htmlspecialchars($catName) ?></h3>
           <div class="service-select-grid">
             <?php foreach ($catServices as $svc):
@@ -337,6 +348,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
             </button>
             <?php endforeach; ?>
           </div>
+          </div><!-- /.service-cat-group -->
           <?php endforeach; ?>
 
           <!-- The chosen service's details, options, add-ons and Continue. Kept here
@@ -845,6 +857,27 @@ document.querySelectorAll('.service-select-card').forEach(card => {
   });
 });
 
+// ── Category buttons: show one group of styles at a time ("All styles" = every group).
+function showServiceGroup(cat) {
+  document.querySelectorAll('.cat-chip').forEach(b => {
+    const on = b.dataset.cat === cat;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('.service-cat-group').forEach(g => {
+    g.style.display = (cat === 'all' || g.dataset.cat === cat) ? '' : 'none';
+  });
+  // The open details box follows its service; if that service is now hidden, close it.
+  const sel = document.querySelector('.service-select-card.selected');
+  if (sel && sel.offsetParent === null) unplaceServiceOptions();
+  else if (sel) placeServiceOptions(sel, false);
+}
+document.querySelectorAll('.cat-chip').forEach(b => b.addEventListener('click', () => {
+  showServiceGroup(b.dataset.cat);
+  const chips = document.querySelector('.cat-chips');
+  if (chips) window.scrollTo({ top: chips.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+}));
+
 // Open the chosen service's options right under its row (after the last card on
 // the same line), instead of under the whole list. Re-placed if the screen is
 // resized/rotated (rows change), and sent back home when the draft is reset.
@@ -884,6 +917,9 @@ let pendingRebookAddons = <?= json_encode($rebookAddons) ?>;
 // Pre-select service from URL (and, for "Book again", the same option)
 window.addEventListener('DOMContentLoaded', () => {
   getReferralCode();   // remember a share link's code even if they browse away first
+  const preCard = document.querySelector('.service-select-card.selected');
+  const preGroup = preCard ? preCard.closest('.service-cat-group') : null;
+  if (preGroup) showServiceGroup(preGroup.dataset.cat);   // open the style's own group
   selectService(<?= (int)$preselected['id'] ?>);
   placeServiceOptions(document.querySelector('.service-select-card.selected'), false);
   const rebookVariant = <?= (int)$rebookVariant ?>;
