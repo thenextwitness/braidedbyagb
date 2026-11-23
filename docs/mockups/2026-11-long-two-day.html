@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Long styles: one day or two days (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 36px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:22px 0 12px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:22px;align-items:flex-start}
+.phone{width:380px;background:#fff;border-radius:28px;border:10px solid #1A0014;padding:16px 14px;flex:none}
+.h{font-family:Montserrat;color:#7A0050;font-size:16px;font-weight:800;margin:0 0 10px;display:flex;gap:8px;align-items:center}
+.num{width:24px;height:24px;border-radius:50%;background:#CC1A8A;color:#fff;display:grid;place-items:center;font-size:12px}
+.vb{display:inline-block;border:2px solid #e5dff0;border-radius:9px;padding:6px 10px;font-size:12px;margin:0 4px 6px 0}
+.vb b{display:block;color:#4B0082}.vb span{color:#CC1A8A;font-weight:800}.vb.on{border-color:#CC1A8A;background:#F9EEF9}
+.ch{border:2px solid #e5dff0;border-radius:12px;padding:10px 12px;margin-top:8px;font-size:12.5px;line-height:1.45;position:relative}
+.ch.on{border-color:#CC1A8A;background:#F9EEF9}
+.ch b{font-family:Montserrat;color:#4B0082;font-size:13px}
+.ch .fee{position:absolute;right:10px;top:10px;background:#D4AF37;color:#4B0082;font-weight:800;font-size:11px;border-radius:9px;padding:2px 8px}
+.newo{outline:2px dashed #D4AF37;outline-offset:5px;border-radius:12px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:12px;text-align:center;margin:8px 0 10px}
+.cal span{padding:7px 0;border-radius:8px;background:#F9EEF9;color:#4B0082;font-weight:700}
+.cal span.off{background:#f1f1f1;color:#bbb;text-decoration:line-through;font-weight:400}
+.cal span.d1{background:#CC1A8A;color:#fff}.cal span.d2{background:#E89BCB;color:#fff}
+.cal b{font-size:10px;color:#6b5c78}
+.t{font-family:Montserrat;font-weight:700;color:#4B0082;font-size:12.5px;margin:6px 0 6px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.slots span{border:2px solid #e5dff0;border-radius:9px;padding:7px 0;text-align:center;font-size:12px;font-weight:700;color:#4B0082}
+.slots span.sel{background:#CC1A8A;border-color:#CC1A8A;color:#fff}.slots span.no{color:#bbb;background:#f6f6f6;text-decoration:line-through}
+.sum{margin-top:10px;background:#F9EEF9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.7}
+.sum .r{display:flex;justify-content:space-between}
+.admin{background:#f3f0f8;border-radius:12px;padding:16px;flex:1}
+.acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:14px 16px;margin-bottom:12px;font-size:13px;line-height:1.6}
+.atitle{font-family:Montserrat;font-weight:800;font-size:13.5px;color:#4B0082;margin-bottom:8px}
+.pill{display:inline-block;background:#E89BCB;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 8px;margin-left:6px}
+.calrow{display:flex;gap:6px}.calrow div{flex:1;border:1px solid #e5dff0;border-radius:8px;padding:6px;font-size:11.5px;min-height:70px}
+.calrow i{display:block;font-style:normal;background:#F9EEF9;border-left:3px solid #CC1A8A;border-radius:4px;padding:3px 5px;margin-top:4px}
+.sel2{display:inline-block;border:1px solid #d8cfe3;border-radius:8px;padding:5px 9px;background:#fff;font-size:12.5px}
+.hint{font-size:11.5px;color:#6b5c78;margin-top:4px}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Styles over 9½ hours (e.g. 12 or 15 hours):</b> the client chooses <b>one long day</b> (start from 7:00am, whole day booked) or <b>two days in a row for an extra £30</b>: the time is split in half, starting at the same time on both days, within normal hours (9:30am–7pm). Styles under 9½ hours work exactly as now.</div>
+<div class="row">
+  <div class="phone">
+    <div class="h"><span class="num">1</span>Boho braids · choose option</div>
+    <span class="vb"><b>Large</b><span>£95</span></span><span class="vb"><b>Small</b><span>£140</span></span><span class="vb on"><b>Extra small</b><span>£230</span><br><small>⏱ 15h</small></span>
+    <div class="newo" style="margin-top:6px">
+      <div class="t" style="margin-top:0">This style takes about 15 hours. How would you like it?</div>
+      <div class="ch"><b>One long day</b><br>Start from 7:00am. We finish the same day (about 15 hours) and the day is all yours.</div>
+      <div class="ch on"><span class="fee">+ £30</span><b>Two days in a row</b><br>About 7½ hours each day, same start time both days. Easier on you, with a night's rest in between.</div>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="h"><span class="num">2</span>Choose your first day</div>
+    <div class="cal">
+      <b>Mo</b><b>Tu</b><b>We</b><b>Th</b><b>Fr</b><b>Sa</b><b>Su</b>
+      <span>1</span><span class="off">2</span><span>3</span><span class="off">4</span><span class="d1">5</span><span class="d2">6</span><span class="off">7</span>
+      <span class="off">8</span><span>9</span><span>10</span><span class="off">11</span><span>12</span><span class="off">13</span><span>14</span>
+    </div>
+    <div class="t">Start time (same both days) · Fri 5 &amp; Sat 6 Dec</div>
+    <div class="slots"><span class="sel">9:30 AM</span><span>10:00 AM</span><span>10:30 AM</span><span>11:00 AM</span><span>11:30 AM</span><span class="no">12:00 PM</span></div>
+    <div class="hint">Only times free on <b>both</b> days are shown. Day 2 is always the next day.</div>
+    <div class="sum">
+      <div class="r"><span>Day 1 · Fri 5 Dec</span><b>9:30 AM – 5:00 PM</b></div>
+      <div class="r"><span>Day 2 · Sat 6 Dec</span><b>9:30 AM – 5:00 PM</b></div>
+      <div class="r"><span>Boho braids · Extra small</span><span>£230.00</span></div>
+      <div class="r"><span>Two-day appointment</span><span>£30.00</span></div>
+      <div class="r"><b>Total</b><b>£260.00</b></div>
+      <div class="r"><span>Deposit today (30%)</span><span>£78.00</span></div>
+    </div>
+  </div>
+
+  <div class="admin">
+    <div class="acard">
+      <div class="atitle">📅 Admin → Calendar</div>
+      <div class="calrow">
+        <div><b>Fri 5</b><i>9:30 Boho braids · Amara J.<span class="pill">DAY 1 OF 2</span></i></div>
+        <div><b>Sat 6</b><i>9:30 Boho braids · Amara J.<span class="pill">DAY 2 OF 2</span></i></div>
+        <div><b>Sun 7</b></div>
+      </div>
+    </div>
+    <div class="acard">
+      <div class="atitle">📋 Admin → Booking page</div>
+      Day 1: <b>Fri 5 Dec, 9:30 AM</b> · Day 2: <b>Sat 6 Dec, 9:30 AM</b> (7h 30m each)<br>
+      Two-day fee: <b>£30</b> (included in the total and deposit)<br>
+      Reminder emails go out before <b>each</b> day. Moving the booking moves both days together.
+    </div>
+    <div class="acard">
+      <div class="atitle">⚙️ Settings → Opening hours</div>
+      Long appointments, one day: earliest start <span class="sel2">7:00 AM</span> · finish by <span class="sel2">10:00 PM</span><br>
+      Two-day option fee: <span class="sel2">£30</span>
+      <div class="hint">Service times in Admin → Services can now go up to 15 hours (today they stop at 8).</div>
+    </div>
+  </div>
+</div>
+</body></html>

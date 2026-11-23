@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Long appointments (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1440px;padding:24px 32px 36px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:22px 0 12px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:flex-start}
+.phone{width:400px;background:#fff;border-radius:28px;border:10px solid #1A0014;padding:18px 16px;flex:none}
+.h{font-family:Montserrat;color:#7A0050;font-size:17px;font-weight:800;margin:0 0 10px;display:flex;gap:8px;align-items:center}
+.num{width:26px;height:26px;border-radius:50%;background:#CC1A8A;color:#fff;display:grid;place-items:center;font-size:12px}
+.note{background:#FFF8E0;border:1px solid #F5D584;border-left:4px solid #D4AF37;border-radius:0 10px 10px 0;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#5A4A00;margin-bottom:12px;outline:2px dashed #D4AF37;outline-offset:4px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:12px;text-align:center;margin-bottom:12px}
+.cal span{padding:7px 0;border-radius:8px;background:#F9EEF9;color:#4B0082;font-weight:700}
+.cal span.off{background:#f1f1f1;color:#bbb;text-decoration:line-through;font-weight:400}
+.cal span.sel{background:#CC1A8A;color:#fff}
+.cal b{font-size:10px;color:#6b5c78;font-weight:700}
+.t{font-family:Montserrat;font-weight:700;color:#4B0082;font-size:13px;margin:6px 0 8px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.slots span{border:2px solid #e5dff0;border-radius:9px;padding:8px 0;text-align:center;font-size:12.5px;font-weight:700;color:#4B0082}
+.slots span.early{border-color:#D4AF37;background:#fffbea}
+.slots span.sel{background:#CC1A8A;border-color:#CC1A8A;color:#fff}
+.slots span.no{color:#bbb;background:#f6f6f6;text-decoration:line-through}
+.sum{margin-top:12px;background:#F9EEF9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.6}
+.admin{background:#f3f0f8;border-radius:12px;padding:18px;flex:1}
+.acard{background:#fff;border:1px solid #e5dff0;border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.atitle{font-family:Montserrat;font-weight:800;font-size:14px;color:#4B0082;margin-bottom:10px}
+.lab{font-size:12px;font-weight:700;margin:8px 0 4px;display:block}
+.sel{display:inline-block;border:1px solid #d8cfe3;border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;min-width:70px}
+.list{border:1px solid #d8cfe3;border-radius:8px;display:inline-block;font-size:12px;vertical-align:top;margin-left:8px;max-height:150px;overflow:hidden}
+.list div{padding:2px 12px}.list .on{background:#CC1A8A;color:#fff}
+.new{outline:2px solid #D4AF37;outline-offset:4px;border-radius:6px}
+.hint{font-size:11.5px;color:#6b5c78;margin-top:6px;line-height:1.45}
+.rules{background:#fff;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.6}
+.rules h3{font-family:Montserrat;color:#4B0082;font-size:14px;margin:0 0 6px}.rules li{margin-bottom:4px}
+</style></head><body>
+
+<div class="cap" style="margin-top:0"><b>Long styles (over 9½ hours, e.g. 12 or 15 hours): the client books the whole day.</b> They can start from <b>7:00am</b> and it can run past 7pm. Days that already have any booking are greyed out, and once a long style is booked nothing else can be booked that day. Normal styles work exactly as now (9:30am to 7pm).</div>
+<div class="row">
+  <div class="phone">
+    <div class="h"><span class="num">2</span>Choose Date &amp; Time</div>
+    <div class="note"><b>This is a long appointment (about 12 hours).</b> You'll have the whole day with us. Choose a start time from 7:00am. We'll finish around 12 hours later.</div>
+    <div class="cal">
+      <b>Mo</b><b>Tu</b><b>We</b><b>Th</b><b>Fr</b><b>Sa</b><b>Su</b>
+      <span>1</span><span class="off">2</span><span>3</span><span class="off">4</span><span class="sel">5</span><span>6</span><span class="off">7</span>
+      <span class="off">8</span><span>9</span><span>10</span><span class="off">11</span><span>12</span><span class="off">13</span><span>14</span>
+    </div>
+    <div class="t">Start times, Friday 5 December</div>
+    <div class="slots">
+      <span class="early sel">7:00 AM</span><span class="early">7:30 AM</span><span class="early">8:00 AM</span>
+      <span class="early">8:30 AM</span><span class="early">9:00 AM</span><span>9:30 AM</span>
+      <span>10:00 AM</span><span class="no">10:30 AM</span><span class="no">11:00 AM</span>
+    </div>
+    <div class="sum">Start <b>7:00 AM</b> · finish about <b>7:00 PM</b><br>Latest start for this style: 10:00 AM (so it finishes by 10:00 PM)</div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;gap:14px">
+    <div class="admin">
+      <div class="acard new">
+        <div class="atitle">✂️ Admin → Services → edit an option (e.g. "Extra small")</div>
+        <span class="lab">How long it takes</span>
+        <span class="sel">12h ▾</span> <span class="sel">00m ▾</span>
+        <span class="list"><div>9h</div><div>10h</div><div>11h</div><div class="on">12h</div><div>13h</div><div>14h</div><div>15h</div></span>
+        <div class="hint">Hours now go up to <b>15h</b> (today they stop at 8h). Anything over 9h 30m is a <b>long appointment</b>: early start, whole day.</div>
+      </div>
+      <div class="acard new">
+        <div class="atitle">⚙️ Settings → Opening hours</div>
+        <span class="lab">Normal appointments</span>
+        <span class="sel">9:30 AM</span> to <span class="sel">7:00 PM</span> <span style="font-size:12px;color:#6b5c78">(as now)</span>
+        <span class="lab" style="margin-top:12px">Long appointments (whole day)</span>
+        Earliest start <span class="sel">7:00 AM</span> · must finish by <span class="sel">10:00 PM</span>
+        <div class="hint">10:00 PM lets a 15-hour style start at 7:00 AM. Change it here any time.</div>
+      </div>
+    </div>
+    <div class="rules">
+      <h3>Always true</h3>
+      <ul>
+        <li>A long style blocks your whole day, so you're never double-booked.</li>
+        <li>A day that already has any booking (or that you've blocked) can't take a long style.</li>
+        <li>You can still add or move long bookings yourself in the admin, with the same early-start times.</li>
+        <li>The booking page shows "about 12 hrs" on the style's card, as it does for other styles.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>

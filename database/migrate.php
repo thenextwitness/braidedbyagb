@@ -1661,6 +1661,27 @@ step('French curls: close-up service photo',
     },
     $report);
 
+// ── Long styles: one long day, or two days in a row for a fee (owner-approved
+// 23 Nov 2026, docs/mockups/2026-11-long-two-day.png). A two-day booking keeps
+// one bookings row: booked_date/booked_time is day 1, day2_date/day2_time is the
+// next day (same start), duration_mins is the length of EACH day.
+step('bookings.day2_date column',
+    fn() => columnExists($db, $dbName, 'bookings', 'day2_date'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN day2_date DATE DEFAULT NULL AFTER booked_time, ADD KEY idx_bookings_day2 (day2_date)"),
+    $report);
+step('bookings.day2_time column',
+    fn() => columnExists($db, $dbName, 'bookings', 'day2_time'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN day2_time TIME DEFAULT NULL AFTER day2_date"),
+    $report);
+step('bookings.two_day_fee column',
+    fn() => columnExists($db, $dbName, 'bookings', 'two_day_fee'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN two_day_fee DECIMAL(8,2) NOT NULL DEFAULT 0.00 AFTER day2_time"),
+    $report);
+step('bookings.reminder_day2_sent column',
+    fn() => columnExists($db, $dbName, 'bookings', 'reminder_day2_sent'),
+    fn() => $db->exec("ALTER TABLE bookings ADD COLUMN reminder_day2_sent TINYINT(1) NOT NULL DEFAULT 0 AFTER two_day_fee"),
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
