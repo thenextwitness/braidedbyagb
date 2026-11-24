@@ -129,6 +129,12 @@ $addons   = $addonsByService[$svc['id']] ?? [];
         </div>
 
         <div class="admin-form-group" style="margin-bottom:12px">
+          <label class="admin-label">Aftercare tips for this service only (optional, one per line)</label>
+          <textarea class="admin-input admin-textarea" name="aftercare" rows="3" placeholder="Empty: uses the tips for its category (Settings → Follow-ups)"><?= htmlspecialchars(html_entity_decode((string)($svc['aftercare'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></textarea>
+          <span style="font-size:0.7rem;color:var(--admin-muted)">Replaces the category's tips in the thank-you email, and shows under "Aftercare" on the booking page.</span>
+        </div>
+
+        <div class="admin-form-group" style="margin-bottom:12px">
           <label class="admin-label">Service Image</label>
           <?php if (!empty($svc['image_url'])): ?>
             <div style="margin-bottom:6px">

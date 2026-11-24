@@ -416,6 +416,80 @@ const AFTERCARE_TIPS_DEFAULT = "Sleep with a satin bonnet or scarf, or on a sati
     . "Don't pull or retie too tightly: if anything feels sore or itchy, message us.\n"
     . "Most styles last 4–8 weeks. Leaving them in much longer can strain your hair.";
 
+// ── Aftercare tips by style (owner-approved 24 Nov 2026,
+//    docs/mockups/2026-11-aftercare-by-style.png) ─────────────
+// The thank-you email only gives the tips for the style the client had:
+// the service's own tips (services.aftercare) if set, else its category's
+// (Settings → Follow-ups, setting aftercare_tips_by_category = JSON
+// {category: "tip\ntip"}). An empty box means no tips section.
+const AFTERCARE_DEFAULTS = [
+    'braids' => "Sleep in a satin bonnet or scarf, or on a satin pillowcase, to keep your braids neat and frizz-free.\n"
+              . "Keep your scalp moisturised with a light oil or braid spray, focusing on the partings.\n"
+              . "Cleanse your scalp every 1–2 weeks with diluted shampoo, then let your braids dry fully.\n"
+              . "Avoid tight high buns or ponytails for the first few days.\n"
+              . "Take them out within 6–8 weeks to protect your edges and natural hair.",
+    'locs'   => "Cover your locs with a satin bonnet or durag at night to keep lint out and your retwist neat.\n"
+              . "Use light, water-based products. Heavy creams and wax build up inside locs.\n"
+              . "Wash every 1–2 weeks with a residue-free shampoo, and dry your locs completely.\n"
+              . "Try not to twist your roots between visits, as it can thin them.\n"
+              . "Book your next retwist in 4–6 weeks.",
+    'twists' => "Sleep in a satin bonnet or scarf to keep your twists neat and frizz-free.\n"
+              . "Lightly moisturise your twists with a leave-in or light oil a few times a week.\n"
+              . "Cleanse your scalp gently every 1–2 weeks, and let your twists dry fully.\n"
+              . "If an end starts to unravel, twist it back gently rather than pulling.\n"
+              . "Take them out within 4–6 weeks to protect your natural hair.",
+    'cornrows' => "Wear a satin scarf or durag at night to keep your cornrows neat.\n"
+              . "Use a light oil on your scalp and avoid heavy gels that build up.\n"
+              . "Keep them as dry as you can, and dry them fully after washing.\n"
+              . "Take them out within 2–4 weeks to protect your edges and natural hair.",
+    'wash'   => "Sleep on satin, or in a satin bonnet, to keep the moisture in.\n"
+              . "Keep heat styling to a minimum, and use a heat protectant when you do.\n"
+              . "Moisturise your hair every few days with a water-based leave-in.\n"
+              . "Book a wash or treatment every 2–4 weeks to keep your hair healthy.",
+];
+/** Which care group a category or service name belongs to ('' = none). */
+function aftercareGroup(string $text): string {
+    $t = mb_strtolower(str_replace(['’', '‘'], "'", $text));
+    if (str_contains($t, 'loc'))     return 'locs';
+    if (str_contains($t, 'twist'))   return 'twists';
+    if (str_contains($t, 'cornrow')) return 'cornrows';
+    if (str_contains($t, "men's braid") || str_contains($t, 'mens braid')) return 'cornrows';
+    if (str_contains($t, 'braid'))   return 'braids';
+    if (str_contains($t, 'wash') || str_contains($t, 'treatment')) return 'wash';
+    return '';
+}
+
+/** Tips per category, in category order: [category => text]. Saved boxes win, even when empty. */
+function aftercareCategoryTips(): array {
+    $saved = json_decode((string)getSetting('aftercare_tips_by_category', ''), true);
+    if (!is_array($saved)) $saved = [];
+    $out = [];
+    foreach (serviceCategories() as $cat) {
+        $out[$cat] = array_key_exists($cat, $saved) ? (string)$saved[$cat] : (AFTERCARE_DEFAULTS[aftercareGroup($cat)] ?? '');
+    }
+    foreach ($saved as $cat => $txt) if (!array_key_exists($cat, $out)) $out[$cat] = (string)$txt;
+    return $out;
+}
+
+/**
+ * The aftercare for one service: ['noun' => 'braids'|'locs'|…|'hair', 'tips' => [lines]].
+ * $service needs name, category and aftercare.
+ */
+function aftercareTipsFor(array $service): array {
+    $own = trim((string)($service['aftercare'] ?? ''));
+    $cat = trim((string)($service['category'] ?? '')) ?: 'Other';
+    if ($own !== '') {
+        $text = $own;
+    } else {
+        $all  = aftercareCategoryTips();
+        $text = $all[$cat] ?? (AFTERCARE_DEFAULTS[aftercareGroup($cat)] ?? '');
+    }
+    $tips = array_values(array_filter(array_map('trim', preg_split('/\R/', html_entity_decode($text, ENT_QUOTES, 'UTF-8')))));
+    $group = aftercareGroup((string)($service['name'] ?? '')) ?: aftercareGroup($cat);
+    $noun  = ['braids' => 'braids', 'locs' => 'locs', 'twists' => 'twists', 'cornrows' => 'cornrows'][$group] ?? 'hair';
+    return ['noun' => $noun, 'tips' => $tips];
+}
+
 
 /**
  * The rebook follow-up for one booking — the ONE place the rule lives (admin

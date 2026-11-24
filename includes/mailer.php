@@ -528,18 +528,21 @@ HTML;
 // Sent a couple of hours after a completed appointment: thanks, aftercare tips
 // (Settings → Follow-ups), WhatsApp, and "Please follow our social media pages".
 // Replaced the old 48-hour aftercare email (same setting keys + sent marker).
-function emailAftercare(array $customer, string $serviceName, int $customerId = 0): bool {
+function emailAftercare(array $customer, string $serviceName, int $customerId = 0, string $category = '', ?string $serviceAftercare = null): bool {
     try {
         $mail = createMailer();
         $mail->addAddress($customer['email'], $customer['name']);
         $first = sanitize(trim(explode(' ', (string)$customer['name'])[0]) ?: 'there');
         $svc   = sanitize($serviceName);
         $mail->Subject = "Thank you for coming in, {$first} 💜";
+        // Only the tips for this client's style (owner-approved 24 Nov 2026).
+        $care = aftercareTipsFor(['name' => $serviceName, 'category' => $category, 'aftercare' => $serviceAftercare]);
         $tips = '';
-        foreach (preg_split('/\R/', (string)getSetting('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) as $t) {
-            $t = trim($t);
-            if ($t !== '') $tips .= '<li style="margin-bottom:6px">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</li>';
+        foreach ($care['tips'] as $t) {
+            $tips .= '<li style="margin-bottom:6px">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</li>';
         }
+        $tipsBlock = $tips === '' ? '' : '<p>A few tips to keep your ' . $care['noun'] . ' looking fresh for longer:</p>'
+                                       . '<ul style="padding-left:20px">' . $tips . '</ul>';
         $social = '';
         foreach (socialLinks() as $l) {
             $social .= '<a href="' . htmlspecialchars($l['url'], ENT_QUOTES, 'UTF-8') . '" class="cta-btn" style="background:' . $l['colour']
@@ -555,8 +558,7 @@ HTML;
         $content = <<<HTML
 <h2>Thank you for coming in, {$first}! 💜</h2>
 <p>It was a joy doing your <strong>{$svc}</strong>. Thank you for trusting BraidedbyAGB with your hair.</p>
-<p>A few tips to keep it looking fresh for longer:</p>
-<ul style="padding-left:20px">{$tips}</ul>
+{$tipsBlock}
 <p style="text-align:center;margin:22px 0 6px"><a href="{{WA_URL}}" class="cta-btn" style="background:#25D366">💬 WhatsApp me</a></p>
 {$socialBlock}
 <p style="font-size:13px;color:#6B5575;text-align:center">Love, AGB 💕</p>

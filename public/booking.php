@@ -402,7 +402,7 @@ $depositPct      = (int)getSetting('deposit_percent', '30');
           </details>
           <details class="svc-more" id="aftercare-box" style="display:none">
             <summary>💜 Aftercare</summary>
-            <p id="aftercare-text"></p>
+            <p id="aftercare-text" style="white-space:pre-line"></p>
           </details>
           <div id="svc-reviews"></div>
 

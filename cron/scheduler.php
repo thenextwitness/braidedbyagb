@@ -562,7 +562,8 @@ try {
         $dueBy  = (clone $now)->modify("-{$delay} hours")->format('Y-m-d H:i:s');
         $oldest = (clone $now)->modify('-7 days')->format('Y-m-d H:i:s');
         $stmt = $db->prepare("
-            SELECT b.id, b.booking_ref, b.customer_id, s.name AS s_name, c.name AS c_name, c.email AS c_email
+            SELECT b.id, b.booking_ref, b.customer_id, s.name AS s_name, s.category AS s_category, s.aftercare AS s_aftercare,
+                   c.name AS c_name, c.email AS c_email
             FROM bookings b
             JOIN services  s ON s.id = b.service_id
             JOIN customers c ON c.id = b.customer_id
@@ -578,7 +579,8 @@ try {
         $stmt->execute([$oldest, $dueBy]);
         $mark = $db->prepare("UPDATE bookings SET aftercare_sent_at = NOW() WHERE id = ?");
         foreach ($stmt->fetchAll() as $b) {
-            if (emailAftercare(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'], (int)$b['customer_id'])) {
+            if (emailAftercare(['name' => $b['c_name'], 'email' => $b['c_email']], $b['s_name'], (int)$b['customer_id'],
+                               (string)($b['s_category'] ?? ''), $b['s_aftercare'] ?? null)) {
                 $mark->execute([(int)$b['id']]);
                 cronLog("[aftercare] → {$b['c_email']} ({$b['booking_ref']})");
             }

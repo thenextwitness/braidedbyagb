@@ -84,7 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$error) {
                 $rebookRaw = trim((string)($_POST['rebook_weeks'] ?? ''));
                 $rebookWeeks = $rebookRaw === '' ? null : max(0, min(52, (int)$rebookRaw));
-                $db->prepare("UPDATE services SET name=?,description=?,duration_mins=?,price_from=?,category=?,prep_notes=?,image_url=?,is_new=?,is_active=?,rebook_weeks=? WHERE id=?")
+                $afterRaw = trim(strip_tags((string)($_POST['aftercare'] ?? '')));
+                $db->prepare("UPDATE services SET name=?,description=?,duration_mins=?,price_from=?,category=?,prep_notes=?,aftercare=?,image_url=?,is_new=?,is_active=?,rebook_weeks=? WHERE id=?")
                    ->execute([
                        sanitize($_POST['name']),
                        sanitize($_POST['description'] ?? ''),
@@ -92,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        (float)$_POST['price_from'],
                        trim(strip_tags($_POST['category'] ?? '')),
                        sanitize($_POST['prep_notes'] ?? ''),
+                       $afterRaw !== '' ? $afterRaw : null,
                        $img,
                        isset($_POST['is_new'])    ? 1 : 0,
                        isset($_POST['is_active']) ? 1 : 0,

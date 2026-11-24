@@ -61,12 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bizAddr = trim(strip_tags($_POST['business_address'] ?? ''));
         $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('business_address',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
            ->execute([$bizAddr]);
-        // Aftercare tips — multiline, one tip per line; stored raw and escaped
-        // when the email is built (emailAftercare), so no sanitize() here.
-        if (isset($_POST['aftercare_tips'])) {
-            $tips = trim(strip_tags((string)$_POST['aftercare_tips']));
-            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('aftercare_tips',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
-               ->execute([$tips !== '' ? $tips : AFTERCARE_TIPS_DEFAULT]);
+        // Aftercare tips by category (owner-approved 24 Nov 2026) — one box per
+        // category, one tip per line; stored raw (escaped when the email is
+        // built), an empty box = no tips. The old single list ('aftercare_tips')
+        // is left in the database untouched, as a copy.
+        if (isset($_POST['aftercare_cat_name']) && is_array($_POST['aftercare_cat_name'])) {
+            $byCat = json_decode((string)getSetting('aftercare_tips_by_category', ''), true);
+            if (!is_array($byCat)) $byCat = [];
+            foreach ($_POST['aftercare_cat_name'] as $i => $catName) {
+                $catName = trim(strip_tags((string)$catName));
+                if ($catName === '') continue;
+                $byCat[$catName] = trim(strip_tags((string)($_POST['aftercare_cat_tips'][$i] ?? '')));
+            }
+            $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('aftercare_tips_by_category',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")
+               ->execute([json_encode($byCat, JSON_UNESCAPED_UNICODE)]);
         }
         // Google review link — stored as typed (sanitize() would HTML-encode it),
         // and only if it's a web address; blank clears it (emails then show the
@@ -350,8 +358,17 @@ $isError = str_starts_with($msg, 'ERROR:');
           </label>
           <label class="admin-label" style="margin-top:8px">Send it this many hours after you mark the appointment completed</label>
           <input class="admin-input" type="number" name="aftercare_delay_hours" value="<?= htmlspecialchars($g('aftercare_delay_hours','2')) ?>" min="1" max="336" style="max-width:120px">
-          <label class="admin-label" style="margin-top:8px">Aftercare tips (one per line)</label>
-          <textarea class="admin-input admin-textarea" name="aftercare_tips" rows="6"><?= htmlspecialchars($g('aftercare_tips', AFTERCARE_TIPS_DEFAULT)) ?></textarea>
+          <label class="admin-label" style="margin-top:12px">Aftercare tips by category (one tip per line)</label>
+          <small style="color:var(--admin-muted);display:block;margin-bottom:6px">Clients only get the tips for the style they booked. Leave a box empty for no tips. A service can have its own tips instead (Services → edit → Aftercare tips for this service).</small>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 14px">
+          <?php $acI = 0; foreach (aftercareCategoryTips() as $acCat => $acTxt): ?>
+            <div>
+              <label class="admin-label" style="font-size:0.8rem"><?= htmlspecialchars(html_entity_decode($acCat, ENT_QUOTES, 'UTF-8')) ?></label>
+              <input type="hidden" name="aftercare_cat_name[<?= $acI ?>]" value="<?= htmlspecialchars($acCat) ?>">
+              <textarea class="admin-input admin-textarea" name="aftercare_cat_tips[<?= $acI ?>]" rows="5" placeholder="Empty: no tips section"><?= htmlspecialchars(html_entity_decode($acTxt, ENT_QUOTES, 'UTF-8')) ?></textarea>
+            </div>
+          <?php $acI++; endforeach; ?>
+          </div>
           <small style="color:var(--admin-muted)">The social buttons are the pages set in Social below (Instagram, TikTok, Facebook).</small>
         </div>
         <div class="admin-form-group" style="margin-top:14px">

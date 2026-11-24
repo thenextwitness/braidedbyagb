@@ -1705,6 +1705,33 @@ step('Faux Locs: close-up service photo',
     },
     $report);
 
+// Owner 24 Nov 2026 (docs/mockups/2026-11-aftercare-by-style.png): Faux Locs and
+// the starter locs services get their own aftercare tips (they need different
+// care from their category). Only fills services whose aftercare box is empty;
+// one-time (marker), so a box the owner later empties stays empty.
+step('Aftercare tips: Faux Locs + starter locs',
+    fn() => (int)$db->query("SELECT COUNT(*) FROM settings WHERE setting_key='aftercare_services_2026_11'")->fetchColumn() > 0,
+    function() use ($db) {
+        $tips = [
+            'faux_locs'    => "Sleep in a satin bonnet or scarf to stop frizz at the roots.\n"
+                            . "Spray your scalp with a light oil or braid spray, not the locs themselves.\n"
+                            . "Cleanse your scalp every 1–2 weeks with diluted shampoo, then dry your faux locs fully.\n"
+                            . "Avoid heavy products, which weigh the locs down and build up.\n"
+                            . "Take them out within 6–8 weeks to protect your natural hair.",
+            'starter_locs' => "Don't wash your new locs for the first 2–4 weeks, so they can settle. Cleanse your scalp with a damp cloth if needed.\n"
+                            . "Sleep in a satin bonnet or durag every night to stop them unravelling and keep lint out.\n"
+                            . "Avoid touching or twisting your locs, and skip heavy creams and wax.\n"
+                            . "Some frizz and unravelling is normal while your locs form.\n"
+                            . "Book your first retwist in 4–6 weeks.",
+        ];
+        $db->prepare("UPDATE services SET aftercare = ? WHERE slug = 'faux-locs' AND (aftercare IS NULL OR aftercare = '')")
+           ->execute([$tips['faux_locs']]);
+        $db->prepare("UPDATE services SET aftercare = ? WHERE LOWER(name) LIKE '%starter loc%' AND (aftercare IS NULL OR aftercare = '')")
+           ->execute([$tips['starter_locs']]);
+        $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('aftercare_services_2026_11', ?)")->execute([date('c')]);
+    },
+    $report);
+
 // ============================================================
 // OUTPUT
 // ============================================================
