@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Hide email from bots (mockup)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#ece6f2;font-family:Lato,Arial,sans-serif;color:#1A0014;width:1200px;padding:24px 32px 32px}
+.cap{background:#4B0082;color:#fff;border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:14px;line-height:1.55}.cap b{color:#D4AF37}
+.row{display:flex;gap:24px;align-items:flex-start}
+.col{flex:1;background:#f3f0f8;border-radius:12px;padding:16px}
+.col h3{font-family:Montserrat;color:#4B0082;font-size:14.5px;margin:0 0 10px}
+.card{background:#fff;border-radius:12px;padding:16px;font-size:14px;line-height:1.6}
+.ci{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.ic{width:40px;height:40px;border-radius:50%;background:#F9EEF9;display:grid;place-items:center;font-size:18px;flex:none}
+.t{font-family:Montserrat;font-weight:700;color:#4B0082;font-size:13px}
+a{color:#CC1A8A;font-weight:700;text-decoration:none}
+.foot{background:#1A0014;color:#fff;border-radius:10px;padding:14px 16px;font-size:13px;margin-top:12px}
+.foot a{color:#D4AF37}
+.code{background:#1e1b24;color:#e9e3f2;border-radius:10px;padding:14px;font:12.5px/1.6 Consolas,monospace}
+.bad{color:#ff8fa3}.good{color:#8ef0b5}
+.note{background:#fffbea;border:1px solid #f0e2a8;border-radius:8px;padding:9px 11px;margin-top:12px;font-size:12.5px;line-height:1.5}
+</style></head><body>
+<div class="cap"><b>Stop bots copying your email address.</b> Visitors see and click <b>hello@braidedbyagb.co.uk</b> exactly as now. The address is put together in the visitor's browser, so the bots that copy addresses from websites find nothing to take. This applies to the footer, Contact page, homepage and Policies page.</div>
+<div class="row">
+  <div class="col"><h3>What your visitors see (unchanged)</h3>
+    <div class="card">
+      <div class="ci"><div class="ic">📱</div><div><div class="t">Phone / WhatsApp</div><a>07xxx xxxxxx</a><br><a>Chat on WhatsApp</a></div></div>
+      <div class="ci"><div class="ic">✉️</div><div><div class="t">Email</div><a>hello@braidedbyagb.co.uk</a></div></div>
+      <div class="ci"><div class="ic">📍</div><div><div class="t">Location</div>Farnborough, Hampshire</div></div>
+    </div>
+    <div class="foot"><b style="color:#D4AF37">Contact</b><br>07xxx xxxxxx<br><a>hello@braidedbyagb.co.uk</a></div>
+  </div>
+  <div class="col"><h3>What a spam bot reads in the page</h3>
+    <div class="code"><span class="bad">Today:</span><br>
+&lt;a href="mailto:hello@braidedbyagb.co.uk"&gt;<br>&nbsp;&nbsp;hello@braidedbyagb.co.uk&lt;/a&gt;<br><span class="bad">→ address copied ✗</span><br><br>
+<span class="good">After:</span><br>
+&lt;a data-u="olleh" data-d="ku.oc.bgadediarb"&gt;<br>&nbsp;&nbsp;Email us&lt;/a&gt;<br><span class="good">→ no address to copy ✓</span></div>
+    <div class="note">Your contact form and WhatsApp stay as they are, and messages from the form still reach your inbox. The address is also removed from the hidden business details on the homepage that only search engines read. Google doesn't need it to list your business, and your phone, WhatsApp and address stay.</div>
+  </div>
+  <div class="col"><h3>What to expect</h3>
+    <div class="card" style="font-size:13.5px">
+      <ul style="margin:0;padding-left:18px">
+        <li>No change to how the site looks or works for clients.</li>
+        <li>New spam lists can't pick up your address from the website.</li>
+        <li>Lists that already have it will keep sending for a while, so spam drops off gradually rather than stopping overnight.</li>
+        <li>Keep marking spam as spam in your inbox, so the filter learns.</li>
+        <li>Your booking emails, receipts and replies are not affected.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>
