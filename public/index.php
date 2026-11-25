@@ -86,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     "description": "Professional African hair braiding specialist in Farnborough, Hampshire. Knotless braids, box braids, cornrows, starter locs and more.",
     "url": "https://braidedbyagb.co.uk",
     "telephone": "+<?= waNumberIntl() ?>",
-    "email": "hello@braidedbyagb.co.uk",
     "image": "https://braidedbyagb.co.uk/assets/images/braidedbyagblogo.png",
     "priceRange": "££",
     "address": {
@@ -313,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
         <div class="sp-contact-items">
           <div class="sp-ci"><span>📍</span><div><strong>Location</strong><em><?= htmlspecialchars(salonAddress()) ?></em><small>Serving Hampshire &amp; Surrey</small></div></div>
           <div class="sp-ci"><span>📞</span><div><strong>Phone / WhatsApp</strong><a href="tel:<?= waNumberLocal() ?>"><?= waNumberDisplay() ?></a></div></div>
-          <div class="sp-ci"><span>✉️</span><div><strong>Email</strong><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a><small>We'll respond within 24 hours</small></div></div>
+          <div class="sp-ci"><span>✉️</span><div><strong>Email</strong><?= protectedEmailLink() ?><small>We'll respond within 24 hours</small></div></div>
         </div>
         <div class="sp-social">
           <p>Follow Our Journey</p>

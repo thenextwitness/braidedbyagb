@@ -81,7 +81,7 @@
           <h4 class="footer-col-title" style="margin-top:1.5rem;">Contact</h4>
           <ul class="footer-links">
             <li><a href="tel:<?= waNumberLocal() ?>"><?= waNumberDisplay() ?></a></li>
-            <li><a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a></li>
+            <li><?= protectedEmailLink() ?></li>
             <li><a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode(salonAddress()) ?>" target="_blank" rel="noopener"><?= htmlspecialchars(salonAddress()) ?></a></li>
           </ul>
         </div>

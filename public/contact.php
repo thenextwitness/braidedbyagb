@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div>
               <p class="contact-info-title">Email</p>
               <p class="contact-info-value">
-                <a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a>
+                <?= protectedEmailLink() ?>
               </p>
             </div>
           </div>

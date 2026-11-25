@@ -565,6 +565,29 @@ function calculateRemainingBalance(float $total, float $deposit): float {
  * salonAddress — the public salon address, shown across the site.
  * Editable via the `business_address` setting; falls back to the studio address.
  */
+/**
+ * The business email as a link that spam bots can't harvest (owner-approved
+ * 25 Nov 2026, docs/mockups/2026-11-email-protect.png). The page only holds
+ * the two halves reversed; a tiny script (printed once) rebuilds the real
+ * mailto: link in the visitor's browser, so people see and click the address
+ * exactly as before. Without JavaScript it reads "Email us" and links to /contact.
+ */
+function protectedEmailLink(string $email = 'hello@braidedbyagb.co.uk'): string {
+    static $scriptDone = false;
+    [$u, $d] = array_pad(explode('@', $email, 2), 2, '');
+    $html = '<a href="/contact" class="js-em" data-u="' . htmlspecialchars(strrev($u), ENT_QUOTES, 'UTF-8')
+          . '" data-d="' . htmlspecialchars(strrev($d), ENT_QUOTES, 'UTF-8') . '">Email us</a>';
+    if (!$scriptDone) {
+        $scriptDone = true;
+        $html .= '<script>(function(){function r(s){return s.split("").reverse().join("")}'
+               . 'function go(){document.querySelectorAll("a.js-em").forEach(function(a){'
+               . 'var e=r(a.getAttribute("data-u")||"")+String.fromCharCode(64)+r(a.getAttribute("data-d")||"");'
+               . 'a.href="mai"+"lto:"+e;a.textContent=e;a.classList.remove("js-em")})}'
+               . 'if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go()})();</script>';
+    }
+    return $html;
+}
+
 function salonAddress(): string {
     $a = trim(getSetting('business_address', ''));
     return $a !== '' ? $a : 'Unit 4, Selnews Business Centre, Peabody Road, Farnborough, GU14 6GX';

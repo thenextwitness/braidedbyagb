@@ -128,7 +128,7 @@ require_once __DIR__ . '/../includes/helpers.php';
             <p><strong>What we collect:</strong> Name, email address, phone number, and appointment/order details provided at the time of booking or purchase.</p>
             <p><strong>How we use it:</strong> To process your bookings and orders, send appointment reminders and order updates, and to occasionally contact you about our services (only with your consent).</p>
             <p><strong>Who we share it with:</strong> We do not sell or share your personal data with third parties, except where required to process payments (Stripe) or deliver orders.</p>
-            <p><strong>Your rights:</strong> You have the right to access, correct, or request deletion of your personal data at any time. To exercise these rights, please email us at <a href="mailto:hello@braidedbyagb.co.uk">hello@braidedbyagb.co.uk</a>.</p>
+            <p><strong>Your rights:</strong> You have the right to access, correct, or request deletion of your personal data at any time. To exercise these rights, please email us at <?= protectedEmailLink() ?>.</p>
             <p><strong>Data retention:</strong> We retain your data for as long as necessary to provide our services and comply with legal obligations.</p>
             <p>By booking an appointment or placing an order, you consent to the above use of your personal data.</p>
           </div>
